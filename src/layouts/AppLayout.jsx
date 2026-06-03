@@ -141,19 +141,33 @@ export function AppLayout() {
 
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <button className="relative grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-[#eff5ef]" type="button">
+              <button
+                aria-label="Ouvrir les notifications"
+                className="relative grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-[#eff5ef] hover:text-[#00694c] focus:outline-none focus:ring-2 focus:ring-[#00694c]/30"
+                type="button"
+                onClick={() => navigate('/notifications')}
+              >
                 <Bell size={20} />
                 <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#ba1a1a]" />
               </button>
-              <button className="grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-[#eff5ef]" type="button">
+              <button
+                aria-label="Ouvrir les parametres"
+                className="grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-[#eff5ef] hover:text-[#00694c] focus:outline-none focus:ring-2 focus:ring-[#00694c]/30"
+                type="button"
+                onClick={() => navigate('/settings')}
+              >
                 <Settings size={20} />
               </button>
-              <div className="hidden text-right sm:block">
+              <button
+                className="hidden rounded-lg px-2 py-1 text-right transition hover:bg-[#eff5ef] focus:outline-none focus:ring-2 focus:ring-[#00694c]/30 sm:block"
+                type="button"
+                onClick={() => navigate('/profile')}
+              >
                 <p className="text-sm font-semibold text-slate-900">Maya Ben Ali</p>
                 <p className="text-xs text-slate-500">Patient account</p>
-              </div>
+              </button>
               <motion.button
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00694c]/30"
                 type="button"
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
