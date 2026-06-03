@@ -82,14 +82,52 @@ Request:
 
 ```json
 {
-  "age": 29,
-  "gender": "Female",
-  "weight": 68,
-  "symptoms": ["Chest Pain", "Fatigue"],
-  "description": "Chest tightness after walking, with mild fatigue today.",
+  "age": 52,
+  "biologicalSex": "F",
+  "weight": 72,
+  "height": 163,
+  "pregnancyStatus": "Non",
+  "bloodPressureSys": 148,
+  "bloodPressureDia": 92,
+  "heartRate": 82,
+  "spo2": 97,
+  "temperature": 37.4,
+  "glycemia": null,
+  "weightVariation": "Stable",
+  "chronicDiseases": ["HTA", "Diabete T1/T2"],
+  "hasDrugAllergies": "Oui",
+  "drugAllergies": "Penicilline",
+  "familyHistory": ["Cardio", "Diabete"],
+  "tobacco": "Non",
+  "tobaccoQuantity": "",
+  "alcohol": "Oui",
+  "alcoholQuantity": "Occasionnel",
+  "hasCurrentMedications": "Oui",
+  "currentMedications": "Metformine 1000mg 2x/j, Amlodipine 5mg/j",
+  "supplements": "",
+  "treatmentAdherence": "Toujours",
+  "symptoms": ["Fatigue", "Cephalees"],
+  "otherSymptoms": "",
+  "painIntensity": 6,
+  "symptomDuration": "Semaines",
+  "painLocation": ["Tete"],
+  "triggers": ["Stress"],
+  "generalState": "Moyen",
+  "physicalActivity": "Sedentaire",
+  "diet": ["Diabetique"],
+  "sleepQuality": "Mauvais",
+  "stressLevel": 4,
+  "description": "Contexte additionnel libre saisi par le patient.",
   "consent": true
 }
 ```
+
+Payload notes from `Indicateurs_formulaire.xlsx`:
+
+- Required core fields: `age`, `biologicalSex`, `weight`, `height`, `chronicDiseases`, `hasDrugAllergies`, `tobacco`, `alcohol`, `hasCurrentMedications`, `symptoms`, `consent`.
+- Conditional fields: `pregnancyStatus` if `biologicalSex = F`, `drugAllergies` if `hasDrugAllergies = Oui`, `tobaccoQuantity` if `tobacco = Oui`, `alcoholQuantity` if `alcohol = Oui`, `currentMedications` if `hasCurrentMedications = Oui`, `supplements` if `hasSupplements = Oui`, `symptomDuration` when symptoms are selected, `painIntensity` when a pain symptom is selected, `glycemia` mainly if chronic disease includes diabetes.
+- Optional indicators: device measures, family history, treatment adherence, pain location, triggers, general state, physical activity, diet, sleep quality, stress level, free-text description.
+- The backend LLM prompt can derive IMC from `weight` and `height`.
 
 Response:
 

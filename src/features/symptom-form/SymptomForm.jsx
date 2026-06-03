@@ -8,45 +8,192 @@ import { z } from 'zod'
 
 import { analyzeSymptoms } from '../../services/symptomService'
 import { ProgressBar } from './ProgressBar'
-import { StepDescription } from './StepDescription'
+import { StepDeviceMeasures } from './StepDeviceMeasures'
+import { StepLifestyleReview } from './StepLifestyleReview'
+import { StepMedicalHistory } from './StepMedicalHistory'
 import { StepPersonalInfo } from './StepPersonalInfo'
-import { StepReview } from './StepReview'
 import { StepSymptoms } from './StepSymptoms'
+import { StepTreatments } from './StepTreatments'
 
 const steps = [
-  { title: 'Personal Information', description: 'Basic details for context.' },
-  { title: 'Symptoms Selection', description: 'Choose your current symptoms.' },
-  { title: 'Additional Description', description: 'Tell us more in your words.' },
-  { title: 'Review & Submit', description: 'Confirm and run fake analysis.' },
+  { title: 'Donnees personnelles', description: 'Contexte permanent pour les modeles LLM.' },
+  { title: 'Mesures appareils', description: 'Donnees optionnelles mesurees a domicile.' },
+  { title: 'Antecedents medicaux', description: 'Historique patient et facteurs de risque.' },
+  { title: 'Traitements', description: 'Medicaments, complements et observance.' },
+  { title: 'Symptomes actuels', description: 'Point d entree principal de la consultation.' },
+  { title: 'Mode de vie & submit', description: 'Habitudes quotidiennes et validation finale.' },
 ]
 
-const stepFields = [['age', 'gender', 'weight'], ['symptoms'], ['description'], ['consent']]
+const stepFields = [
+  ['age', 'biologicalSex', 'weight', 'height', 'pregnancyStatus'],
+  ['bloodPressureSys', 'bloodPressureDia', 'heartRate', 'spo2', 'temperature', 'glycemia', 'weightVariation'],
+  [
+    'chronicDiseases',
+    'hasDrugAllergies',
+    'drugAllergies',
+    'familyHistory',
+    'tobacco',
+    'tobaccoQuantity',
+    'alcohol',
+    'alcoholQuantity',
+  ],
+  ['hasCurrentMedications', 'currentMedications', 'hasSupplements', 'supplements', 'treatmentAdherence'],
+  ['symptoms', 'otherSymptoms', 'painIntensity', 'symptomDuration', 'painLocation', 'triggers', 'generalState'],
+  ['physicalActivity', 'diet', 'sleepQuality', 'stressLevel', 'description', 'consent'],
+]
+
+const optionalNumber = z.preprocess((value) => {
+  if (value === '' || value === null || value === undefined) {
+    return undefined
+  }
+
+  return Number(value)
+}, z.number().optional())
 
 const schema = z.object({
-  age: z.coerce
-    .number({ error: 'Age is required.' })
-    .int('Age must be a whole number.')
-    .min(1, 'Enter a valid age.')
-    .max(120, 'Enter a valid age.'),
-  gender: z.string().min(1, 'Select a gender option.'),
-  weight: z.coerce
-    .number({ error: 'Weight is required.' })
-    .min(20, 'Enter a valid weight.')
-    .max(350, 'Enter a valid weight.'),
-  symptoms: z.array(z.string()).min(1, 'Select at least one symptom.'),
-  description: z
-    .string()
-    .trim()
-    .min(12, 'Describe your symptoms in at least 12 characters.')
-    .max(600, 'Keep the description under 600 characters.'),
-  consent: z.boolean().refine(Boolean, 'Consent is required before analysis.'),
+  age: z.coerce.number({ error: 'Age requis.' }).int('Age entier requis.').min(1, 'Age invalide.').max(120, 'Age invalide.'),
+  biologicalSex: z.string().min(1, 'Selectionnez le sexe biologique.'),
+  weight: z.coerce.number({ error: 'Poids requis.' }).min(20, 'Poids invalide.').max(350, 'Poids invalide.'),
+  height: z.coerce.number({ error: 'Taille requise.' }).int('Taille entiere requise.').min(80, 'Taille invalide.').max(240, 'Taille invalide.'),
+  pregnancyStatus: z.string().optional(),
+  bloodPressureSys: optionalNumber,
+  bloodPressureDia: optionalNumber,
+  heartRate: optionalNumber,
+  spo2: optionalNumber,
+  temperature: optionalNumber,
+  glycemia: optionalNumber,
+  weightVariation: z.string().optional(),
+  chronicDiseases: z.array(z.string()).min(1, 'Selectionnez au moins une maladie chronique.'),
+  hasDrugAllergies: z.string().min(1, 'Indiquez si le patient a des allergies.'),
+  drugAllergies: z.string().trim().optional(),
+  familyHistory: z.array(z.string()).optional(),
+  tobacco: z.string().min(1, 'Indiquez la consommation de tabac.'),
+  tobaccoQuantity: z.string().trim().optional(),
+  alcohol: z.string().min(1, 'Indiquez la consommation d alcool.'),
+  alcoholQuantity: z.string().trim().optional(),
+  hasCurrentMedications: z.string().min(1, 'Indiquez si un traitement est en cours.'),
+  currentMedications: z.string().trim().optional(),
+  hasSupplements: z.string().optional(),
+  supplements: z.string().trim().optional(),
+  treatmentAdherence: z.string().optional(),
+  symptoms: z.array(z.string()).min(1, 'Selectionnez au moins un symptome.'),
+  otherSymptoms: z.string().trim().optional(),
+  painIntensity: z.coerce.number().min(0).max(10).optional(),
+  symptomDuration: z.string().optional(),
+  painLocation: z.array(z.string()).optional(),
+  triggers: z.array(z.string()).optional(),
+  generalState: z.string().optional(),
+  physicalActivity: z.string().optional(),
+  diet: z.array(z.string()).optional(),
+  sleepQuality: z.string().optional(),
+  stressLevel: z.coerce.number().min(1).max(5).optional(),
+  description: z.string().trim().max(600, 'Limitez la description a 600 caracteres.').optional(),
+  consent: z.boolean().refine(Boolean, 'Consentement requis avant l analyse.'),
+}).superRefine((values, ctx) => {
+  if (values.biologicalSex === 'F' && !values.pregnancyStatus) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Indiquez le statut de grossesse.',
+      path: ['pregnancyStatus'],
+    })
+  }
+
+  if (values.hasDrugAllergies === 'Oui' && !values.drugAllergies) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Precisez les allergies medicamenteuses.',
+      path: ['drugAllergies'],
+    })
+  }
+
+  if (values.hasCurrentMedications === 'Oui' && !values.currentMedications) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Precisez les medicaments actuels.',
+      path: ['currentMedications'],
+    })
+  }
+
+  if (values.tobacco === 'Oui' && !values.tobaccoQuantity) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Precisez la quantite de tabac.',
+      path: ['tobaccoQuantity'],
+    })
+  }
+
+  if (values.alcohol === 'Oui' && !values.alcoholQuantity) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Precisez la frequence de consommation d alcool.',
+      path: ['alcoholQuantity'],
+    })
+  }
+
+  if (values.hasSupplements === 'Oui' && !values.supplements) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Precisez les complements ou plantes utilises.',
+      path: ['supplements'],
+    })
+  }
+
+  if (values.symptoms?.length && !values.symptomDuration) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Indiquez la duree des symptomes.',
+      path: ['symptomDuration'],
+    })
+  }
+
+  const hasPainSymptom = values.symptoms?.some((symptom) => symptom.toLowerCase().includes('douleur'))
+
+  if (hasPainSymptom && (values.painIntensity === undefined || values.painIntensity === null)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Indiquez l intensite de la douleur.',
+      path: ['painIntensity'],
+    })
+  }
 })
 
 const defaultValues = {
-  age: '',
-  gender: '',
-  weight: '',
-  symptoms: [],
+  age: 52,
+  biologicalSex: 'F',
+  weight: 72,
+  height: 163,
+  pregnancyStatus: 'Non',
+  bloodPressureSys: 148,
+  bloodPressureDia: 92,
+  heartRate: 82,
+  spo2: 97,
+  temperature: 37.4,
+  glycemia: '',
+  weightVariation: 'Stable',
+  chronicDiseases: ['HTA', 'Diabete T1/T2'],
+  hasDrugAllergies: 'Oui',
+  drugAllergies: 'Penicilline',
+  familyHistory: ['Cardio', 'Diabete'],
+  tobacco: 'Non',
+  tobaccoQuantity: '',
+  alcohol: 'Oui',
+  alcoholQuantity: 'Occasionnel',
+  hasCurrentMedications: 'Oui',
+  currentMedications: 'Metformine 1000mg 2x/j, Amlodipine 5mg/j',
+  hasSupplements: 'Non',
+  supplements: '',
+  treatmentAdherence: 'Toujours',
+  symptoms: ['Fatigue', 'Cephalees'],
+  otherSymptoms: '',
+  painIntensity: 6,
+  symptomDuration: 'Semaines',
+  painLocation: ['Tete'],
+  triggers: ['Stress'],
+  generalState: 'Moyen',
+  physicalActivity: 'Sedentaire',
+  diet: ['Diabetique'],
+  sleepQuality: 'Mauvais',
+  stressLevel: 4,
   description: '',
   consent: false,
 }
@@ -62,6 +209,7 @@ export function SymptomForm() {
     handleSubmit,
     register,
     reset,
+    setValue,
     trigger,
   } = useForm({
     defaultValues,
@@ -93,7 +241,7 @@ export function SymptomForm() {
       setResult(response)
       toast.success('Analysis completed successfully')
 
-      if (formValues.symptoms.includes('Chest Pain') || formValues.symptoms.includes('Shortness of Breath')) {
+      if (formValues.symptoms.includes('Douleur thoracique') || formValues.symptoms.includes('Essoufflement')) {
         toast('AI detected unusual symptoms', {
           icon: '!',
           style: {
@@ -116,44 +264,44 @@ export function SymptomForm() {
 
   if (result) {
     return (
-      <motion.section
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-teal-200 bg-white p-6 shadow-sm sm:p-8"
-        initial={{ opacity: 0, y: 16 }}
-      >
+      <motion.section animate={{ opacity: 1, y: 0 }} className="w-full sht-card p-8" initial={{ opacity: 0, y: 16 }}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-teal-50 text-teal-700">
+            <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#86f8c9]/35 text-[#00694c]">
               <CheckCircle2 size={30} />
             </div>
-            <h2 className="mt-5 text-2xl font-semibold text-slate-950">Analysis completed successfully</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Your report was analyzed with a fake frontend-only AI response. Reference:
+            <h2 className="mt-5 text-2xl font-semibold text-[#171d1a] dark:text-white">
+              Analyse terminee avec succes
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#3d4943]">
+              Votre rapport a ete analyse avec une reponse IA simulee. Reference:
               <span className="ml-1 font-semibold text-slate-900">{result.id.slice(0, 8)}</span>
             </p>
           </div>
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
-            {result.analysis.riskLevel} risk
+          <span className="rounded-full bg-[#ffdad6] px-3 py-1 text-sm font-semibold text-[#7e2a27]">
+            Risque {result.analysis.riskLevel}
           </span>
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_280px]">
-          <article className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-            <h3 className="font-semibold text-slate-950">AI summary</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-700">{result.analysis.summary}</p>
+          <article className="rounded-xl border border-[#dee4de] bg-[#f5fbf5] p-5">
+            <h3 className="font-semibold text-[#171d1a] dark:text-white">Resume IA</h3>
+            <p className="mt-2 text-sm leading-6 text-[#3d4943]">{result.analysis.summary}</p>
           </article>
-          <article className="rounded-xl border border-cyan-200 bg-cyan-50 p-5">
-            <p className="text-sm font-medium text-cyan-700">Confidence</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-950">{result.analysis.confidence}%</p>
+          <article className="rounded-xl border border-[#d2e4ff] bg-[#d2e4ff]/55 p-5">
+            <p className="text-sm font-medium text-[#0060a8]">Confiance</p>
+            <p className="font-metric mt-2 text-3xl font-semibold text-[#171d1a] dark:text-white">
+              {result.analysis.confidence}%
+            </p>
           </article>
         </div>
 
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-          <h3 className="font-semibold text-slate-950">Recommendations</h3>
+        <div className="mt-4 rounded-xl border border-[#dee4de] bg-white p-5">
+          <h3 className="font-semibold text-[#171d1a] dark:text-white">Recommandations</h3>
           <ul className="mt-3 space-y-2">
             {result.analysis.recommendations.map((item) => (
-              <li className="flex gap-2 text-sm leading-6 text-slate-700" key={item}>
-                <CheckCircle2 className="mt-0.5 text-teal-600" size={17} />
+              <li className="flex gap-2 text-sm leading-6 text-[#3d4943]" key={item}>
+                <CheckCircle2 className="mt-0.5 text-[#00694c]" size={17} />
                 {item}
               </li>
             ))}
@@ -161,21 +309,21 @@ export function SymptomForm() {
         </div>
 
         <button
-          className="mt-6 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+          className="mt-6 h-12 rounded-xl bg-[#00694c] px-5 text-sm font-bold text-white shadow-lg transition hover:bg-[#008560]"
           type="button"
           onClick={startOver}
         >
-          Start a new report
+          Nouvelle analyse
         </button>
       </motion.section>
     )
   }
 
   return (
-    <section className="space-y-5">
+    <section className="w-full">
       <ProgressBar currentStep={currentStep} steps={steps} />
 
-      <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" onSubmit={handleSubmit(onSubmit)}>
+      <form className="rounded-xl border border-[#bccac1]/30 bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:p-8" onSubmit={handleSubmit(onSubmit)}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -184,66 +332,80 @@ export function SymptomForm() {
             initial={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.22 }}
           >
-            {currentStep === 0 && <StepPersonalInfo errors={errors} register={register} />}
-            {currentStep === 1 && (
-              <StepSymptoms errors={errors} register={register} selectedSymptoms={values.symptoms} />
+            {currentStep === 0 && (
+              <StepPersonalInfo
+                errors={errors}
+                register={register}
+                values={values}
+              />
             )}
+            {currentStep === 1 && <StepDeviceMeasures errors={errors} register={register} values={values} />}
             {currentStep === 2 && (
-              <StepDescription description={values.description} errors={errors} register={register} />
+              <StepMedicalHistory errors={errors} register={register} setValue={setValue} values={values} />
             )}
-            {currentStep === 3 && <StepReview errors={errors} register={register} values={values} />}
+            {currentStep === 3 && <StepTreatments errors={errors} register={register} values={values} />}
+            {currentStep === 4 && (
+              <StepSymptoms
+                errors={errors}
+                register={register}
+                selectedSymptoms={values.symptoms}
+                setValue={setValue}
+                values={values}
+              />
+            )}
+            {currentStep === 5 && <StepLifestyleReview errors={errors} register={register} values={values} />}
           </motion.div>
         </AnimatePresence>
 
         {submitError && (
-          <div className="mt-5 flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">
+          <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#ffdad6] bg-[#ffdad6] p-4 text-sm font-medium text-[#93000a]">
             <AlertTriangle size={18} />
             {submitError || 'Something went wrong'}
           </div>
         )}
 
         {isSubmitting && (
-          <div className="mt-5 flex items-center gap-3 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm font-medium text-cyan-800">
+          <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#d2e4ff] bg-[#d2e4ff] p-4 text-sm font-medium text-[#004880]">
             <Loader2 className="animate-spin" size={18} />
-            Analyzing symptoms...
+            Analyse des symptomes...
           </div>
         )}
 
-        <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-4 border-t border-slate-100 pt-8 md:flex-row">
           <button
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={currentStep === 0 || isSubmitting}
+            className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-xl border-2 border-[#bccac1] text-sm font-semibold text-[#3d4943] transition hover:bg-[#eff5ef] disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={isSubmitting}
             type="button"
             onClick={goPrevious}
           >
-            <ChevronLeft size={18} />
-            Previous
+            {currentStep > 0 && <ChevronLeft size={18} />}
+            Retour
           </button>
 
           {currentStep < steps.length - 1 ? (
             <button
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+              className="inline-flex h-14 flex-[2] items-center justify-center gap-2 rounded-xl bg-[#00694c] text-sm font-bold text-white shadow-lg transition hover:bg-[#008560]"
               type="button"
               onClick={goNext}
             >
-              Next
+              {currentStep === 0 ? 'Continuer' : 'Suivant'}
               <ChevronRight size={18} />
             </button>
           ) : (
             <button
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-400"
+              className="inline-flex h-14 flex-[2] items-center justify-center gap-2 rounded-xl bg-[#00694c] text-sm font-bold text-white shadow-lg transition hover:bg-[#008560] disabled:cursor-not-allowed disabled:bg-[#68dbae]"
               disabled={isSubmitting}
               type="submit"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
-                  Analyzing
+                  Analyse
                 </>
               ) : (
                 <>
                   <Send size={18} />
-                  Submit for analysis
+                  Lancer l analyse
                 </>
               )}
             </button>

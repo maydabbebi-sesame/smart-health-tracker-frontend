@@ -15,29 +15,29 @@ export const navigationItems = [
     icon: LayoutDashboard,
   },
   {
-    label: 'Symptoms',
+    label: 'Profile',
+    to: '/profile',
+    icon: UserRound,
+  },
+  {
+    label: 'Suivi',
     to: '/symptoms',
     icon: ClipboardList,
   },
   {
-    label: 'Health History',
-    to: '/health-history',
-    icon: HeartPulse,
-  },
-  {
-    label: 'AI Analysis',
+    label: 'AI Recommendations',
     to: '/ai-analysis',
     icon: BrainCircuit,
   },
   {
-    label: 'Notifications',
+    label: 'Alerts',
     to: '/notifications',
     icon: Bell,
   },
   {
-    label: 'Profile',
-    to: '/profile',
-    icon: UserRound,
+    label: 'Historique',
+    to: '/health-history',
+    icon: HeartPulse,
   },
   {
     label: 'Settings',

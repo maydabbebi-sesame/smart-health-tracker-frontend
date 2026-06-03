@@ -2,8 +2,28 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  --sht-background: #f5fbf5;
+  --sht-surface: #ffffff;
+  --sht-surface-low: #eff5ef;
+  --sht-surface-container: #eaefea;
+  --sht-border: #dee4de;
+  --sht-border-strong: #bccac1;
+  --sht-text: #171d1a;
+  --sht-muted: #3d4943;
+  --sht-outline: #6d7a73;
+  --sht-primary: #00694c;
+  --sht-primary-container: #008560;
+  --sht-primary-soft: #86f8c9;
+  --sht-secondary: #0060a8;
+  --sht-secondary-soft: #d2e4ff;
+  --sht-danger: #ba1a1a;
+  --sht-danger-soft: #ffdad6;
+  --sht-shadow: 0 2px 12px rgb(0 0 0 / 0.06);
+}
+
 html {
-  background: #f8fafc;
+  background: var(--sht-background);
   transition: background-color 180ms ease;
 }
 
@@ -18,6 +38,8 @@ body {
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+  background: var(--sht-background);
+  color: var(--sht-text);
   transition:
     background-color 180ms ease,
     color 180ms ease;
@@ -31,6 +53,38 @@ html.dark body {
 button,
 input {
   font: inherit;
+}
+
+.font-metric {
+  font-family:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+}
+
+.sht-card {
+  border: 1px solid rgb(222 228 222 / 0.75);
+  border-radius: 0.75rem;
+  background: var(--sht-surface);
+  box-shadow: var(--sht-shadow);
+}
+
+.sht-soft-card {
+  border: 1px solid rgb(188 202 193 / 0.35);
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 0.72);
+  box-shadow: var(--sht-shadow);
+}
+
+.sht-kicker {
+  color: var(--sht-outline);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sht-primary-gradient {
+  background: linear-gradient(135deg, #f5fff7 0%, #e6f1fb 100%);
 }
 
 section,

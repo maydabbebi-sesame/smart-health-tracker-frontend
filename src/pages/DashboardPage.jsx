@@ -1,5 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import { Activity, Bell, BrainCircuit, CalendarCheck, HeartPulse, Thermometer } from 'lucide-react'
+import {
+  Activity,
+  AlertTriangle,
+  Bell,
+  BrainCircuit,
+  CalendarCheck,
+  CalendarDays,
+  CheckCircle2,
+  HeartPulse,
+  Thermometer,
+} from 'lucide-react'
 import {
   Area,
   AreaChart,
@@ -46,9 +56,9 @@ function ChartTooltip({ active, label, payload }) {
 
 function ChartCard({ children, subtitle, title }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="sht-card p-5">
       <div className="mb-5">
-        <h2 className="font-semibold text-slate-950">{title}</h2>
+        <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
         <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
       </div>
       <div className="h-72">{children}</div>
@@ -72,23 +82,37 @@ function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50 via-white to-cyan-50 p-6 shadow-sm">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700">Patient dashboard</p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-950">Good morning, Maya</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Your health indicators are stable. Continue tracking symptoms and reviewing AI insights.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">Next reminder</p>
-            <p className="mt-1 flex items-center gap-2 font-semibold text-slate-950">
-              <CalendarCheck size={18} className="text-teal-600" />
-              Medication at 20:00
-            </p>
-          </div>
+      <section className="grid gap-6 md:grid-cols-12">
+        <div className="flex flex-col justify-center md:col-span-8">
+          <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">Bonjour Maya</h1>
+          <p className="mt-3 flex items-center gap-2 text-base text-[#6d7a73]">
+            <CalendarDays size={19} />
+            Mardi 2 Juin 2026
+          </p>
         </div>
+        <article className="sht-card flex items-center justify-between p-5 md:col-span-4">
+          <div>
+            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Score Sante</h2>
+            <p className="mt-1 text-sm text-[#6d7a73]">Excellente progression</p>
+          </div>
+          <div className="relative grid h-20 w-20 place-items-center">
+            <svg className="h-full w-full -rotate-90">
+              <circle cx="40" cy="40" fill="transparent" r="34" stroke="#dee4de" strokeWidth="8" />
+              <circle
+                cx="40"
+                cy="40"
+                fill="transparent"
+                r="34"
+                stroke="#00694c"
+                strokeDasharray="213.6"
+                strokeDashoffset="47"
+                strokeLinecap="round"
+                strokeWidth="8"
+              />
+            </svg>
+            <span className="font-metric absolute text-lg font-semibold text-[#00694c]">78</span>
+          </div>
+        </article>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -96,23 +120,29 @@ function DashboardPage() {
           const StatIcon = statIcons[stat.icon]
 
           return (
-          <article key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
+            <article key={stat.label} className="sht-card p-5">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
+                  <StatIcon size={23} />
+                </div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#86f8c9]/35 px-2 py-1 text-xs font-semibold text-[#00513a]">
+                  <CheckCircle2 size={14} />
+                  Normal
+                </span>
+              </div>
               <div>
                 <p className="text-sm text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">{stat.value}</p>
+                <p className="font-metric mt-2 text-[28px] font-semibold leading-none text-[#171d1a] dark:text-white">
+                  {stat.value}
+                </p>
               </div>
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-teal-50 text-teal-700">
-                <StatIcon size={22} />
-              </div>
-            </div>
-          </article>
+            </article>
           )
         })}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <ChartCard subtitle="Average resting BPM over the last 7 days" title="Heart rate">
+        <ChartCard subtitle="Average resting BPM over the last 7 days" title="Evolution de sante (7 jours)">
           <ResponsiveContainer height="100%" width="100%">
             <AreaChart data={charts.heartRateData} margin={{ left: -18, right: 8, top: 8 }}>
               <defs>
@@ -142,7 +172,7 @@ function DashboardPage() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard subtitle="Weekly trend based on mock weigh-ins" title="Weight progress">
+        <ChartCard subtitle="Weekly trend based on mock weigh-ins" title="Progression du poids">
           <ResponsiveContainer height="100%" width="100%">
             <LineChart data={charts.weightData} margin={{ left: -18, right: 8, top: 8 }}>
               <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
@@ -168,7 +198,7 @@ function DashboardPage() {
         </ChartCard>
       </section>
 
-      <ChartCard subtitle="Mock weekly steps with sleep context" title="Weekly health activity">
+      <ChartCard subtitle="Mock weekly steps with sleep context" title="Activite sante hebdomadaire">
         <ResponsiveContainer height="100%" width="100%">
           <BarChart data={charts.activityData} margin={{ left: -18, right: 8, top: 8 }}>
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
@@ -182,31 +212,67 @@ function DashboardPage() {
       </ChartCard>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_360px]">
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Today&apos;s health plan</h2>
+        <article className="sht-card p-5">
+          <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-950">
+            <CalendarCheck className="text-[#00694c]" size={22} />
+            Prochains rendez-vous
+          </h2>
           <div className="mt-4 divide-y divide-slate-100">
             {summary.healthPlanItems.map((item, index) => (
-                <div key={item} className="flex items-center justify-between gap-4 py-3">
-                  <div>
-                    <p className="font-medium text-slate-900">{item}</p>
-                    <p className="text-sm text-slate-500">Personal task #{index + 1}</p>
-                  </div>
-                  <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                    Due
-                  </span>
+              <div key={item} className="flex items-center justify-between gap-4 py-3">
+                <div>
+                  <p className="font-medium text-slate-900">{item}</p>
+                  <p className="text-sm text-slate-500">Action personnelle #{index + 1}</p>
                 </div>
+                <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                  Planifie
+                </span>
+              </div>
             ))}
           </div>
         </article>
 
-        <article className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-cyan-600 text-white">
+        <article className="rounded-xl border border-dashed border-[#68dbae] bg-[#eff5ef] p-5">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
             <BrainCircuit size={21} />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-slate-950">AI analysis preview</h2>
+          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">AI Recommendation</h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
             Recent entries suggest fatigue is most common after shorter sleep. Full analysis is available in the AI
             Analysis section.
+          </p>
+        </article>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        <article className="sht-card border-l-4 border-l-[#ba1a1a] p-5">
+          <div className="flex gap-4">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#ffdad6] text-[#ba1a1a]">
+              <AlertTriangle size={22} />
+            </div>
+            <div>
+              <h2 className="font-semibold text-[#171d1a] dark:text-white">Alerte a verifier</h2>
+              <p className="mt-2 text-sm leading-6 text-[#3d4943]">
+                Fatigue repetee et sommeil court detectes dans les donnees mockees de la semaine.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article className="sht-card p-5">
+          <p className="sht-kicker">Objectif</p>
+          <h2 className="mt-2 font-semibold text-[#171d1a] dark:text-white">Hydratation quotidienne</h2>
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#dce5df]">
+            <div className="h-full w-[72%] rounded-full bg-[#00694c]" />
+          </div>
+          <p className="mt-3 text-sm text-[#6d7a73]">72% de l'objectif journalier atteint.</p>
+        </article>
+
+        <article className="sht-card p-5">
+          <p className="sht-kicker">Backend</p>
+          <h2 className="mt-2 font-semibold text-[#171d1a] dark:text-white">Contrats API prets</h2>
+          <p className="mt-2 text-sm leading-6 text-[#3d4943]">
+            Les donnees du dashboard passent par des services frontend mockes et pourront etre remplacees par Axios.
           </p>
         </article>
       </section>
