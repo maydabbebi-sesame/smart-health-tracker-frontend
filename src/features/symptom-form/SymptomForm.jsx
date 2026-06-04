@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Send } from 'lucide-react'
+import { AlertTriangle, BrainCircuit, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Send } from 'lucide-react'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
 import { analyzeSymptoms } from '../../services/symptomService'
@@ -72,7 +73,7 @@ const schema = z.object({
   alcohol: z.string().min(1, 'Indiquez la consommation d alcool.'),
   alcoholQuantity: z.string().trim().optional(),
   hasCurrentMedications: z.string().min(1, 'Indiquez si un traitement est en cours.'),
-  currentMedications: z.string().trim().optional(),
+  currentMedications: z.array(z.object({ value: z.string().trim() })).optional(),
   hasSupplements: z.string().optional(),
   supplements: z.string().trim().optional(),
   treatmentAdherence: z.string().optional(),
@@ -106,10 +107,10 @@ const schema = z.object({
     })
   }
 
-  if (values.hasCurrentMedications === 'Oui' && !values.currentMedications) {
+  if (values.hasCurrentMedications === 'Oui' && (!values.currentMedications || values.currentMedications.every((m) => !m.value?.trim()))) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Precisez les medicaments actuels.',
+      message: 'Precisez au moins un medicament.',
       path: ['currentMedications'],
     })
   }
@@ -179,7 +180,7 @@ const defaultValues = {
   alcohol: 'Oui',
   alcoholQuantity: 'Occasionnel',
   hasCurrentMedications: 'Oui',
-  currentMedications: 'Metformine 1000mg 2x/j, Amlodipine 5mg/j',
+  currentMedications: [{ value: 'Metformine 1000mg 2x/j' }, { value: 'Amlodipine 5mg/j' }],
   hasSupplements: 'Non',
   supplements: '',
   treatmentAdherence: 'Toujours',
@@ -199,8 +200,9 @@ const defaultValues = {
 }
 
 export function SymptomForm() {
+  const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(0)
-  const [result, setResult] = useState(null)
+  const [savedData, setSavedData] = useState(null)
   const [submitError, setSubmitError] = useState('')
 
   const {
@@ -237,84 +239,68 @@ export function SymptomForm() {
     setSubmitError('')
 
     try {
-      const response = await analyzeSymptoms(formValues)
-      setResult(response)
-      toast.success('Analysis completed successfully')
-
-      if (formValues.symptoms.includes('Douleur thoracique') || formValues.symptoms.includes('Essoufflement')) {
-        toast('AI detected unusual symptoms', {
-          icon: '!',
-          style: {
-            borderColor: '#fde68a',
-          },
-        })
+      const payload = {
+        ...formValues,
+        currentMedications: formValues.currentMedications?.map((m) => m.value).filter(Boolean).join(', ') || '',
       }
+      await analyzeSymptoms(payload)
+      setSavedData(payload)
+      toast.success('Indicateurs sauvegardés avec succès')
     } catch (error) {
-      setSubmitError(error.message || 'Something went wrong')
-      toast.error('Something went wrong')
+      setSubmitError(error.message || 'Une erreur est survenue.')
+      toast.error('Une erreur est survenue.')
     }
   }
 
   function startOver() {
     reset(defaultValues)
     setCurrentStep(0)
-    setResult(null)
+    setSavedData(null)
     setSubmitError('')
   }
 
-  if (result) {
+  if (savedData) {
     return (
       <motion.section animate={{ opacity: 1, y: 0 }} className="w-full sht-card p-8" initial={{ opacity: 0, y: 16 }}>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#86f8c9]/35 text-[#00694c]">
-              <CheckCircle2 size={30} />
-            </div>
-            <h2 className="mt-5 text-2xl font-semibold text-[#171d1a] dark:text-white">
-              Analyse terminee avec succes
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#3d4943]">
-              Votre rapport a ete analyse avec une reponse IA simulee. Reference:
-              <span className="ml-1 font-semibold text-slate-900">{result.id.slice(0, 8)}</span>
-            </p>
-          </div>
-          <span className="rounded-full bg-[#ffdad6] px-3 py-1 text-sm font-semibold text-[#7e2a27]">
-            Risque {result.analysis.riskLevel}
-          </span>
+        <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#86f8c9]/35 text-[#00694c]">
+          <CheckCircle2 size={30} />
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_280px]">
-          <article className="rounded-xl border border-[#dee4de] bg-[#f5fbf5] p-5">
-            <h3 className="font-semibold text-[#171d1a] dark:text-white">Resume IA</h3>
-            <p className="mt-2 text-sm leading-6 text-[#3d4943]">{result.analysis.summary}</p>
-          </article>
-          <article className="rounded-xl border border-[#d2e4ff] bg-[#d2e4ff]/55 p-5">
-            <p className="text-sm font-medium text-[#0060a8]">Confiance</p>
-            <p className="font-metric mt-2 text-3xl font-semibold text-[#171d1a] dark:text-white">
-              {result.analysis.confidence}%
-            </p>
-          </article>
-        </div>
+        <h2 className="mt-5 text-2xl font-semibold text-[#171d1a] dark:text-white">
+          Indicateurs sauvegardés
+        </h2>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-[#3d4943]">
+          Vos données de santé ont bien été enregistrées. Souhaitez-vous obtenir des recommandations
+          personnalisées et discuter avec notre médecin IA ?
+        </p>
 
-        <div className="mt-4 rounded-xl border border-[#dee4de] bg-white p-5">
-          <h3 className="font-semibold text-[#171d1a] dark:text-white">Recommandations</h3>
-          <ul className="mt-3 space-y-2">
-            {result.analysis.recommendations.map((item) => (
-              <li className="flex gap-2 text-sm leading-6 text-[#3d4943]" key={item}>
-                <CheckCircle2 className="mt-0.5 text-[#00694c]" size={17} />
-                {item}
-              </li>
-            ))}
+        <div className="mt-6 rounded-xl border border-[#dee4de] bg-[#f5fbf5] p-4 text-sm leading-6 text-[#3d4943]">
+          <p className="font-semibold text-[#171d1a]">MediAssist va :</p>
+          <ul className="mt-2 space-y-1">
+            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-[#00694c]" size={15} /> Analyser vos symptômes et indicateurs biologiques</li>
+            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-[#00694c]" size={15} /> Évaluer le niveau d'urgence de votre situation</li>
+            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-[#00694c]" size={15} /> Vous fournir des recommandations personnalisées</li>
+            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-[#00694c]" size={15} /> Répondre à vos questions de santé</li>
           </ul>
         </div>
 
-        <button
-          className="mt-6 h-12 rounded-xl bg-[#00694c] px-5 text-sm font-bold text-white shadow-lg transition hover:bg-[#008560]"
-          type="button"
-          onClick={startOver}
-        >
-          Nouvelle analyse
-        </button>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            className="inline-flex items-center gap-2 rounded-xl bg-[#00694c] px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-[#008560]"
+            type="button"
+            onClick={() => navigate('/ai-analysis', { state: { patientData: savedData } })}
+          >
+            <BrainCircuit size={18} />
+            Parler à MediAssist
+          </button>
+          <button
+            className="inline-flex h-12 items-center rounded-xl border-2 border-[#bccac1] px-5 text-sm font-semibold text-[#3d4943] transition hover:bg-[#eff5ef]"
+            type="button"
+            onClick={startOver}
+          >
+            Nouvelle analyse
+          </button>
+        </div>
       </motion.section>
     )
   }
@@ -343,7 +329,7 @@ export function SymptomForm() {
             {currentStep === 2 && (
               <StepMedicalHistory errors={errors} register={register} setValue={setValue} values={values} />
             )}
-            {currentStep === 3 && <StepTreatments errors={errors} register={register} values={values} />}
+            {currentStep === 3 && <StepTreatments control={control} errors={errors} register={register} values={values} />}
             {currentStep === 4 && (
               <StepSymptoms
                 errors={errors}

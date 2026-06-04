@@ -1,4 +1,5 @@
 export const chronicDiseaseOptions = [
+  'Aucune pathologie connue',
   'Diabete T1/T2',
   'HTA',
   'Asthme',

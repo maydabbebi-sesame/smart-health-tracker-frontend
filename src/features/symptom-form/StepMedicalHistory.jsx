@@ -1,18 +1,105 @@
-import { AlertCircle, CheckCircle2, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { chronicDiseaseOptions, familyHistoryOptions } from './formOptions'
 
-function FieldError({ message }) {
-  if (!message) {
-    return null
-  }
+const AUCUNE = 'Aucune pathologie connue'
 
+function FieldError({ message }) {
+  if (!message) return null
   return (
     <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-rose-600">
       <AlertCircle size={16} />
       {message}
     </p>
+  )
+}
+
+function ChronicDiseaseTagGroup({ name, options, selected = [], setValue }) {
+  const [isAdding, setIsAdding] = useState(false)
+  const [customValue, setCustomValue] = useState('')
+  const mergedOptions = [...options, ...selected.filter((item) => !options.includes(item))]
+
+  function handleToggle(option) {
+    let next
+    if (option === AUCUNE) {
+      next = selected.includes(AUCUNE) ? [] : [AUCUNE]
+    } else if (selected.includes(AUCUNE)) {
+      next = [option]
+    } else {
+      next = selected.includes(option)
+        ? selected.filter((o) => o !== option)
+        : [...selected, option]
+    }
+    setValue(name, next, { shouldDirty: true, shouldValidate: true })
+  }
+
+  function addCustomOption() {
+    const nextValue = customValue.trim()
+    if (!nextValue) return
+    const next = selected.includes(AUCUNE)
+      ? [nextValue]
+      : Array.from(new Set([...selected, nextValue]))
+    setValue(name, next, { shouldDirty: true, shouldValidate: true })
+    setCustomValue('')
+    setIsAdding(false)
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {mergedOptions.map((option) => {
+        const isSelected = selected.includes(option)
+        const isAucune = option === AUCUNE
+        return (
+          <label
+            className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+              isSelected
+                ? isAucune
+                  ? 'border-[#6b7280] bg-[#6b7280]/10 font-semibold text-[#374151]'
+                  : 'border-[#008560] bg-[#008560]/10 font-semibold text-[#008560]'
+                : 'border-[#bccac1] bg-[#f5fbf5] text-[#3d4943] hover:border-[#008560]'
+            }`}
+            key={option}
+            onClick={(e) => { e.preventDefault(); handleToggle(option) }}
+          >
+            <input className="sr-only" type="checkbox" readOnly checked={isSelected} onChange={() => {}} />
+            {isSelected && <CheckCircle2 size={14} />}
+            {option}
+          </label>
+        )
+      })}
+      {!selected.includes(AUCUNE) && (
+        isAdding ? (
+          <span className="inline-flex items-center gap-2">
+            <input
+              className="h-10 w-40 rounded-full border border-[#008560] bg-white px-4 text-sm outline-none ring-2 ring-[#008560]/20"
+              placeholder="Autre..."
+              type="text"
+              value={customValue}
+              onChange={(event) => setCustomValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') { event.preventDefault(); addCustomOption() }
+              }}
+            />
+            <button
+              className="rounded-full bg-[#00694c] px-4 py-2 text-sm font-semibold text-white"
+              type="button"
+              onClick={addCustomOption}
+            >
+              Ajouter
+            </button>
+          </span>
+        ) : (
+          <button
+            className="rounded-full border border-dashed border-[#bccac1] px-4 py-2 text-sm italic text-[#3d4943] transition hover:bg-[#eaefea]"
+            type="button"
+            onClick={() => setIsAdding(true)}
+          >
+            + Autre
+          </button>
+        )
+      )}
+    </div>
   )
 }
 
@@ -23,11 +110,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
 
   function addCustomOption() {
     const nextValue = customValue.trim()
-
-    if (!nextValue) {
-      return
-    }
-
+    if (!nextValue) return
     setValue(name, Array.from(new Set([...selected, nextValue])), {
       shouldDirty: true,
       shouldValidate: true,
@@ -40,7 +123,6 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
     <div className="flex flex-wrap gap-2">
       {mergedOptions.map((option) => {
         const isSelected = selected.includes(option)
-
         return (
           <label
             className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
@@ -65,10 +147,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
             value={customValue}
             onChange={(event) => setCustomValue(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                addCustomOption()
-              }
+              if (event.key === 'Enter') { event.preventDefault(); addCustomOption() }
             }}
           />
           <button
@@ -92,15 +171,6 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
   )
 }
 
-function DataTag({ children }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded bg-[#e4eae4] px-2 py-1 text-xs font-medium text-[#3d4943]">
-      {children}
-      <X size={12} />
-    </span>
-  )
-}
-
 export function StepMedicalHistory({ errors, register, setValue, values }) {
   return (
     <div>
@@ -113,12 +183,11 @@ export function StepMedicalHistory({ errors, register, setValue, values }) {
 
       <div>
         <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Maladies chroniques
+          Maladies chroniques <span className="text-[#ba1a1a]">*</span>
         </label>
-        <TagGroup
+        <ChronicDiseaseTagGroup
           name="chronicDiseases"
           options={chronicDiseaseOptions}
-          register={register}
           selected={values.chronicDiseases}
           setValue={setValue}
         />
@@ -128,7 +197,7 @@ export function StepMedicalHistory({ errors, register, setValue, values }) {
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-            Allergies medicamenteuses
+            Allergies medicamenteuses <span className="text-[#ba1a1a]">*</span>
           </span>
           <div className="mt-2 flex gap-2">
             {['Oui', 'Non'].map((option) => (
@@ -146,18 +215,15 @@ export function StepMedicalHistory({ errors, register, setValue, values }) {
 
         {values.hasDrugAllergies === 'Oui' && (
           <label className="block">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">Nom du medicament</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
+              Nom du / des medicaments
+            </span>
             <input
               className="mt-2 h-12 w-full rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
-              placeholder="Ex: Penicilline"
+              placeholder="Ex: Penicilline, Ibuprofene, Aspirine"
               type="text"
               {...register('drugAllergies')}
             />
-            {values.drugAllergies && (
-              <div className="mt-2">
-                <DataTag>{values.drugAllergies}</DataTag>
-              </div>
-            )}
             <FieldError message={errors.drugAllergies?.message} />
           </label>
         )}
@@ -182,7 +248,9 @@ export function StepMedicalHistory({ errors, register, setValue, values }) {
           ['Alcool', 'alcohol', 'alcoholQuantity', 'verres/semaine'],
         ].map(([label, name, quantityName, placeholder]) => (
           <div key={name}>
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">{label}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
+              {label} <span className="text-[#ba1a1a]">*</span>
+            </span>
             <div className="mt-2 flex gap-2">
               {['Oui', 'Non'].map((option) => (
                 <label
