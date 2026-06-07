@@ -13,6 +13,27 @@ function FieldError({ message }) {
   )
 }
 
+// ── IMC (mirrors mediassist_service/prompt_builder.py's calc_imc, so the
+// indicator the patient sees here matches what MediAssist reasons about) ────
+function calcImc(weight, height) {
+  const w = Number(weight)
+  const h = Number(height)
+  if (!w || !h) {
+    return { value: 'N/R', category: 'Renseignez le poids et la taille' }
+  }
+
+  const v = w / (h / 100) ** 2
+  let category
+  if (v < 18.5) category = 'Insuffisance pondérale'
+  else if (v < 25) category = 'Poids normal'
+  else if (v < 30) category = 'Surpoids'
+  else if (v < 35) category = 'Obésité classe I'
+  else if (v < 40) category = 'Obésité classe II'
+  else category = 'Obésité classe III'
+
+  return { value: v.toFixed(1), category }
+}
+
 function NumberField({ error, label, name, placeholder, register, step = '1' }) {
   return (
     <label className="block">
@@ -32,6 +53,9 @@ function NumberField({ error, label, name, placeholder, register, step = '1' }) 
 
 export function StepDeviceMeasures({ errors, register, values }) {
   const hasDiabetes = values.chronicDiseases?.some((disease) => disease.toLowerCase().includes('diabete'))
+  const imc = calcImc(values.weight, values.height)
+  const variation = values.weightVariation
+  const showVariationKg = variation === 'Prise' || variation === 'Perte'
 
   return (
     <div>
@@ -40,6 +64,14 @@ export function StepDeviceMeasures({ errors, register, values }) {
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
           Donnees optionnelles mesurees a domicile avec tensiometre, oxymetre, thermometre, glucometre ou balance.
         </p>
+      </div>
+
+      <div className="mb-6 flex items-center justify-between rounded-xl border border-[#bccac1] bg-[#f5fbf5] p-4">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wide text-[#171d1a]">Indice de masse corporelle (IMC)</span>
+          <p className="mt-1 text-sm text-[#3d4943]">{imc.category}</p>
+        </div>
+        <span className="font-metric text-2xl font-semibold text-[#00694c]">{imc.value}</span>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -66,6 +98,18 @@ export function StepDeviceMeasures({ errors, register, values }) {
             </label>
           ))}
         </div>
+        {showVariationKg && (
+          <div className="mt-3 max-w-[220px]">
+            <NumberField
+              error={errors.weightVariationKg}
+              label={`Quantité ${variation === 'Prise' ? 'prise' : 'perdue'} (kg)`}
+              name="weightVariationKg"
+              placeholder="Ex: 3"
+              register={register}
+              step="0.5"
+            />
+          </div>
+        )}
       </div>
     </div>
   )

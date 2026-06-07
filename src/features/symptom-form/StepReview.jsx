@@ -54,8 +54,8 @@ export function StepReview({ errors, register, values }) {
             </p>
           </div>
           <div className="mt-4 rounded-lg bg-[#eff5ef] p-4">
-            <p className="text-sm font-medium text-[#6d7a73]">Description</p>
-            <p className="mt-1 text-sm leading-6 text-[#3d4943]">{values.description || 'Aucune description'}</p>
+            <p className="text-sm font-medium text-[#6d7a73]">Question pour MediAssist</p>
+            <p className="mt-1 text-sm leading-6 text-[#3d4943]">{values.description || 'Aucune question — analyse automatique des données'}</p>
           </div>
         </div>
 

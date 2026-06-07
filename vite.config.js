@@ -6,10 +6,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/llm': {
-        target: 'http://172.26.33.20:12345',
+      '/mediassist': {
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/llm/, ''),
+        rewrite: (path) => path.replace(/^\/mediassist/, ''),
       },
     },
   },

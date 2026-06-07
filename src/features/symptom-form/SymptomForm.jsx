@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, BrainCircuit, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Send } from 'lucide-react'
+import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, Send } from 'lucide-react'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
 import { analyzeSymptoms } from '../../services/symptomService'
+import { useMedAssistStore } from '../../store/medAssistStore'
 import { ProgressBar } from './ProgressBar'
 import { StepDeviceMeasures } from './StepDeviceMeasures'
 import { StepLifestyleReview } from './StepLifestyleReview'
@@ -64,6 +65,7 @@ const schema = z.object({
   temperature: optionalNumber,
   glycemia: optionalNumber,
   weightVariation: z.string().optional(),
+  weightVariationKg: optionalNumber,
   chronicDiseases: z.array(z.string()).min(1, 'Selectionnez au moins une maladie chronique.'),
   hasDrugAllergies: z.string().min(1, 'Indiquez si le patient a des allergies.'),
   drugAllergies: z.string().trim().optional(),
@@ -147,6 +149,14 @@ const schema = z.object({
     })
   }
 
+  if ((values.weightVariation === 'Prise' || values.weightVariation === 'Perte') && values.weightVariationKg === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Indiquez le nombre de kilos pris ou perdus.',
+      path: ['weightVariationKg'],
+    })
+  }
+
   const hasPainSymptom = values.symptoms?.some((symptom) => symptom.toLowerCase().includes('douleur'))
 
   if (hasPainSymptom && (values.painIntensity === undefined || values.painIntensity === null)) {
@@ -171,6 +181,7 @@ const defaultValues = {
   temperature: 37.4,
   glycemia: '',
   weightVariation: 'Stable',
+  weightVariationKg: '',
   chronicDiseases: ['HTA', 'Diabete T1/T2'],
   hasDrugAllergies: 'Oui',
   drugAllergies: 'Penicilline',
@@ -201,8 +212,8 @@ const defaultValues = {
 
 export function SymptomForm() {
   const navigate = useNavigate()
+  const setPatientData = useMedAssistStore((s) => s.setPatientData)
   const [currentStep, setCurrentStep] = useState(0)
-  const [savedData, setSavedData] = useState(null)
   const [submitError, setSubmitError] = useState('')
 
   const {
@@ -210,7 +221,6 @@ export function SymptomForm() {
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
-    reset,
     setValue,
     trigger,
   } = useForm({
@@ -244,65 +254,16 @@ export function SymptomForm() {
         currentMedications: formValues.currentMedications?.map((m) => m.value).filter(Boolean).join(', ') || '',
       }
       await analyzeSymptoms(payload)
-      setSavedData(payload)
-      toast.success('Indicateurs sauvegardés avec succès')
+      toast.success('Indicateurs sauvegardés — MediAssist analyse vos données...')
+      // Persist alongside the navigation state: the sidebar link to "AI
+      // Recommendations" doesn't carry location.state, so without this the
+      // page (and its chat) would look empty when revisited that way.
+      setPatientData(payload)
+      navigate('/ai-analysis', { state: { patientData: payload } })
     } catch (error) {
       setSubmitError(error.message || 'Une erreur est survenue.')
       toast.error('Une erreur est survenue.')
     }
-  }
-
-  function startOver() {
-    reset(defaultValues)
-    setCurrentStep(0)
-    setSavedData(null)
-    setSubmitError('')
-  }
-
-  if (savedData) {
-    return (
-      <motion.section animate={{ opacity: 1, y: 0 }} className="w-full sht-card p-8" initial={{ opacity: 0, y: 16 }}>
-        <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#86f8c9]/35 text-[#00694c]">
-          <CheckCircle2 size={30} />
-        </div>
-
-        <h2 className="mt-5 text-2xl font-semibold text-[#171d1a] dark:text-white">
-          Indicateurs sauvegardés
-        </h2>
-        <p className="mt-2 max-w-xl text-sm leading-6 text-[#3d4943]">
-          Vos données de santé ont bien été enregistrées. Souhaitez-vous obtenir des recommandations
-          personnalisées et discuter avec notre médecin IA ?
-        </p>
-
-        <div className="mt-6 rounded-xl border border-[#dee4de] bg-[#f5fbf5] p-4 text-sm leading-6 text-[#3d4943]">
-          <p className="font-semibold text-[#171d1a]">MediAssist va :</p>
-          <ul className="mt-2 space-y-1">
-            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-[#00694c]" size={15} /> Analyser vos symptômes et indicateurs biologiques</li>
-            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-[#00694c]" size={15} /> Évaluer le niveau d'urgence de votre situation</li>
-            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-[#00694c]" size={15} /> Vous fournir des recommandations personnalisées</li>
-            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-[#00694c]" size={15} /> Répondre à vos questions de santé</li>
-          </ul>
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            className="inline-flex items-center gap-2 rounded-xl bg-[#00694c] px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-[#008560]"
-            type="button"
-            onClick={() => navigate('/ai-analysis', { state: { patientData: savedData } })}
-          >
-            <BrainCircuit size={18} />
-            Parler à MediAssist
-          </button>
-          <button
-            className="inline-flex h-12 items-center rounded-xl border-2 border-[#bccac1] px-5 text-sm font-semibold text-[#3d4943] transition hover:bg-[#eff5ef]"
-            type="button"
-            onClick={startOver}
-          >
-            Nouvelle analyse
-          </button>
-        </div>
-      </motion.section>
-    )
   }
 
   return (

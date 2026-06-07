@@ -1,8 +1,8 @@
-import { AlertTriangle, BrainCircuit, CheckCircle2, Loader2, Send, ShieldAlert, User } from 'lucide-react'
+import { AlertTriangle, BrainCircuit, CheckCircle2, ListChecks, Loader2, Send, ShieldAlert, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { callMediAssist, FALLBACK_RESPONSE, parseResponse } from '../../services/llmService'
-import { buildSystemPrompt, buildUserMessage } from '../../utils/promptBuilder'
+import { sendMediAssistMessage } from '../../services/mediAssistService'
+import { useMedAssistStore } from '../../store/medAssistStore'
 
 // ── Urgence config ────────────────────────────────────────────────────────────
 const URGENCE_CONFIG = {
@@ -12,12 +12,6 @@ const URGENCE_CONFIG = {
   critique: { label: 'CRITIQUE', bg: 'bg-[#93000a]',   text: 'text-white',       border: 'border-[#93000a]'   },
 }
 
-const PRIORITE_CONFIG = {
-  haute:   'bg-[#ffdad6] text-[#93000a]',
-  moyenne: 'bg-[#fef3c7] text-[#92400e]',
-  basse:   'bg-[#d1fae5] text-[#065f46]',
-}
-
 const ORIENTATION_LABELS = {
   automedication:      'Automédication',
   medecin_generaliste: 'Médecin généraliste',
@@ -25,9 +19,21 @@ const ORIENTATION_LABELS = {
   urgences:            'Urgences',
 }
 
+// Pre-built questions — sent through the same LLM turn as free-form input,
+// so a tap here can also create new recommendations/alerts.
+const QUICK_SUGGESTIONS = [
+  { label: 'Conseils sommeil', prompt: 'Donne-moi des conseils concrets pour améliorer mon sommeil ce soir.' },
+  { label: 'Menu du jour', prompt: 'Propose-moi un exemple de menu équilibré et adapté à mon profil pour aujourd’hui.' },
+  { label: 'Exercices doux', prompt: 'Quels exercices physiques doux me recommandes-tu vu mon état actuel ?' },
+]
+
 // ── Structured analysis card (first message) ─────────────────────────────────
+// Note: the "recommandations" parsed from the LLM's JSON response are rendered
+// as cards on the AI Recommendations page (left panel), not duplicated here —
+// the chat stays focused on the conversational summary, alerts and orientation.
 function AnalysisCard({ parsed }) {
   const urg = URGENCE_CONFIG[parsed.urgence] || URGENCE_CONFIG.moderee
+  const recCount = parsed.recommandations?.length || 0
 
   return (
     <div className={`rounded-xl border ${urg.border} overflow-hidden`}>
@@ -50,6 +56,7 @@ function AnalysisCard({ parsed }) {
                 </li>
               ))}
             </ul>
+            <p className="mt-2 text-xs text-[#7e2a27]/80">→ Ajoutées au Centre d'Alertes.</p>
           </div>
         )}
 
@@ -61,23 +68,13 @@ function AnalysisCard({ parsed }) {
           <p className="text-sm leading-6 text-[#3d4943]">{parsed.analyse}</p>
         )}
 
-        {/* Recommandations */}
-        {parsed.recommandations?.length > 0 && (
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#171d1a]">Recommandations</p>
-            <div className="space-y-2">
-              {parsed.recommandations.map((r, i) => (
-                <div className="rounded-lg border border-[#dee4de] bg-[#f5fbf5] p-3" key={i}>
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-[#171d1a]">{r.titre}</p>
-                    <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-bold uppercase ${PRIORITE_CONFIG[r.priorite] || PRIORITE_CONFIG.basse}`}>
-                      {r.priorite}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm leading-5 text-[#3d4943]">{r.detail}</p>
-                </div>
-              ))}
-            </div>
+        {/* Pointer vers le panneau de recommandations */}
+        {recCount > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-[#dee4de] bg-[#f5fbf5] p-3 text-sm text-[#3d4943]">
+            <ListChecks className="shrink-0 text-[#00694c]" size={18} />
+            <span>
+              <strong>{recCount}</strong> recommandation{recCount > 1 ? 's' : ''} personnalisée{recCount > 1 ? 's' : ''} {recCount > 1 ? 'ont' : 'a'} été ajoutée{recCount > 1 ? 's' : ''} dans le panneau de gauche.
+            </span>
           </div>
         )}
 
@@ -129,15 +126,64 @@ function UserBubble({ content }) {
   )
 }
 
-function ThinkingBubble() {
+// Pull a handful of the patient's own data points to surface while the model
+// "thinks" — seeing their own info scroll by makes the wait feel like real
+// work being done on their case, not a generic spinner.
+function buildReviewItems(patientData) {
+  if (!patientData) return []
+  const items = []
+
+  if (patientData.age || patientData.biologicalSex) {
+    items.push({ label: 'Profil', value: `${patientData.age || '–'} ans · ${patientData.biologicalSex || '–'}` })
+  }
+  if (patientData.bloodPressureSys && patientData.bloodPressureDia) {
+    items.push({ label: 'Tension artérielle', value: `${patientData.bloodPressureSys}/${patientData.bloodPressureDia} mmHg` })
+  }
+  if (patientData.heartRate) {
+    items.push({ label: 'Fréquence cardiaque', value: `${patientData.heartRate} bpm` })
+  }
+  const symptoms = [...(patientData.symptoms || []), patientData.otherSymptoms].filter(Boolean)
+  if (symptoms.length) {
+    items.push({ label: 'Symptômes', value: symptoms.join(', ') })
+  }
+  if (patientData.chronicDiseases?.length) {
+    items.push({ label: 'Antécédents', value: patientData.chronicDiseases.join(', ') })
+  }
+  if (patientData.sleepQuality || patientData.stressLevel) {
+    items.push({ label: 'Mode de vie', value: `Sommeil : ${patientData.sleepQuality || '–'} · Stress : ${patientData.stressLevel || '–'}/5` })
+  }
+
+  return items.slice(0, 5)
+}
+
+function ThinkingBubble({ patientData }) {
+  const items = buildReviewItems(patientData)
+
   return (
     <div className="flex items-start gap-3">
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#00694c] text-white shadow">
         <BrainCircuit size={18} />
       </div>
-      <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-[#dee4de] bg-white px-4 py-3 text-sm text-[#6d7a73] shadow-sm">
-        <Loader2 className="animate-spin" size={15} />
-        MediAssist analyse...
+      <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[#dee4de] bg-white px-4 py-3 text-sm shadow-sm">
+        <div className="flex items-center gap-2 text-[#6d7a73]">
+          <Loader2 className="animate-spin" size={15} />
+          MediAssist passe vos informations en revue...
+        </div>
+        {items.length > 0 && (
+          <ul className="mt-3 space-y-1.5 border-t border-[#dee4de] pt-3">
+            {items.map((item, i) => (
+              <li
+                className="flex flex-wrap items-center gap-1.5 text-xs leading-5 text-[#3d4943] animate-pulse"
+                key={item.label}
+                style={{ animationDelay: `${i * 0.18}s` }}
+              >
+                <CheckCircle2 className="shrink-0 text-[#00694c]" size={13} />
+                <span className="font-semibold">{item.label} :</span>
+                <span className="text-[#6d7a73]">{item.value}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )
@@ -145,70 +191,121 @@ function ThinkingBubble() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function MediAssistChat({ patientData }) {
+  // Conversation lives in the MediAssist store (persisted) so leaving this
+  // page and coming back resumes the discussion instead of wiping it.
   // Each message: { role: 'user'|'assistant', text: string, parsed: object|null, isInitial: bool }
-  const [messages, setMessages] = useState([])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const bottomRef = useRef(null)
-  // LLM conversation history (role/content pairs for the API)
-  const historyRef = useRef([])
-  const systemPromptRef = useRef(buildSystemPrompt(patientData))
-  const abortRef = useRef(null)
+  const messages = useMedAssistStore((s) => s.chatMessages)
+  const setMessages = useMedAssistStore((s) => s.setChatMessages)
+  const chatSessionKey = useMedAssistStore((s) => s.chatSessionKey)
+  const startChatSession = useMedAssistStore((s) => s.startChatSession)
+  const appendChatHistory = useMedAssistStore((s) => s.appendChatHistory)
 
-  // Auto-scroll
+  const [input, setInput] = useState('')
+  const bottomRef = useRef(null)
+  // Guards the initial analysis call against StrictMode's dev double-invoke —
+  // without it, mount → cleanup → mount fires sendToLLM twice and the first
+  // request gets cancelled mid-flight (visible as "cancelled" in the Network tab).
+  const hasInitializedRef = useRef(false)
+
+  // Fingerprint of the current patient data — a fresh form submission produces
+  // a different fingerprint (new conversation), while returning to the same
+  // analysis (e.g. browser back) keeps the fingerprint and resumes the chat.
+  const sessionKey = patientData ? JSON.stringify(patientData) : null
+  const isCurrentSession = sessionKey === chatSessionKey
+  const hasPersistedMessages = isCurrentSession && messages.length > 0
+  // The store may still be holding a previous patient's conversation for an
+  // instant after a fresh form submission (it's only cleared once the mount
+  // effect below calls startChatSession) — filter it out so it never flashes
+  // on screen while this session is about to replace it.
+  const visibleMessages = isCurrentSession ? messages : []
+
+  // Show "MediAssist is thinking" from the very first paint of a fresh
+  // analysis — not after a tick once the mount effect kicks in — so the
+  // patient sees the assistant at work on their data immediately, with no
+  // intermediate static placeholder bubble.
+  const [isLoading, setIsLoading] = useState(() => !hasPersistedMessages)
+
+  // Auto-scroll — depend on the stable store array + the session flag rather
+  // than visibleMessages (a fresh [] literal on every render of a stale
+  // session would otherwise re-fire this on each paint).
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+  }, [messages, isCurrentSession, isLoading])
 
-  // Send initial automated analysis on mount
+  // Send initial automated analysis on mount — this is what populates the
+  // "no recommendations yet" panel as soon as the model responds. If the
+  // patient wrote their own question in the form, lead with that instead of
+  // the generic prompt, and show it as their message in the conversation.
+  // Skipped entirely when resuming an existing conversation for this patient.
   useEffect(() => {
-    sendToLLM('Analyse mes données et donne-moi tes recommandations.', true)
-    return () => abortRef.current?.abort()
+    if (hasInitializedRef.current) return
+    hasInitializedRef.current = true
+
+    if (hasPersistedMessages) {
+      return // resume the persisted conversation as-is
+    }
+
+    // startChatSession reports whether IT actually claimed the session — if
+    // another mount already did (a near-simultaneous race: StrictMode's
+    // double-invoke, a lazy/Suspense replay...), back off instead of firing a
+    // second concurrent analysis into the same conversation. The component
+    // ref above only protects this one instance; the store call is the part
+    // that's atomic across all of them.
+    if (!startChatSession(sessionKey)) return
+
+    const ownQuestion = patientData?.description?.trim()
+    sendToLLM(ownQuestion || 'Analyse mes données et donne-moi tes recommandations.', true, Boolean(ownQuestion))
   }, [])
 
-  async function sendToLLM(userText, isInitial = false) {
+  // ── Simple chat turn: hand the patient profile, the persisted conversation
+  // history and the new question to the MediAssist backend (mediassist_service
+  // — see services/mediAssistService.js), which builds the system/user prompts,
+  // calls the model and parses its JSON reply. The patient profile travels in
+  // the system prompt (sent on every turn) and in the running history, so a
+  // follow-up question stays grounded in the original analysis without having
+  // to repeat the full profile on each turn (see prompt_builder.py).
+  async function sendToLLM(userText, isInitial = false, showUserMessage = !isInitial) {
+    // Captured so a reply that arrives after the patient has already started
+    // a new analysis (new form submission → new sessionKey) can be told apart
+    // from one belonging to the conversation that's still on screen — without
+    // this, a slow, abandoned turn would land its message/history/recommendations
+    // in the new session once it finally resolves.
+    const requestSessionKey = sessionKey
+    const isStale = () => useMedAssistStore.getState().chatSessionKey !== requestSessionKey
+
     setIsLoading(true)
 
-    // Add user message to UI (don't show the automated first message)
-    if (!isInitial) {
+    // Show the user's own message, but not the generic automated first prompt
+    if (showUserMessage) {
       setMessages((prev) => [...prev, { role: 'user', text: userText }])
     }
 
-    // Build user message with re-injected patient context
-    const userContent = buildUserMessage(patientData, userText)
-
-    // Update LLM history
-    historyRef.current = [
-      ...historyRef.current,
-      { role: 'user', content: userContent },
-    ]
-
-    const apiMessages = [
-      { role: 'system', content: systemPromptRef.current },
-      ...historyRef.current,
-    ]
-
-    const controller = new AbortController()
-    abortRef.current = controller
-
     try {
-      const raw = await callMediAssist(apiMessages, controller.signal)
-      const parsed = parseResponse(raw) || FALLBACK_RESPONSE
+      const { userContent, assistantContent, parsed } = await sendMediAssistMessage({
+        patientData,
+        history: useMedAssistStore.getState().chatHistory,
+        userText,
+      })
 
-      // Store assistant response in history
-      historyRef.current = [
-        ...historyRef.current,
-        { role: 'assistant', content: raw || JSON.stringify(FALLBACK_RESPONSE) },
-      ]
+      if (isStale()) return
 
-      // Display in UI
+      appendChatHistory([
+        { role: 'user', content: userContent },
+        { role: 'assistant', content: assistantContent },
+      ])
+
+      // New recommendations/alerts from this turn become cards on the AI
+      // Recommendations page (left panel) and entries in the Alerts center.
+      useMedAssistStore.getState().applyAnalysis(parsed)
+
       const displayText = parsed.analyse || parsed.resume_situation || ''
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', text: displayText, parsed, isInitial },
       ])
     } catch (err) {
-      if (err.name === 'AbortError') return
+      if (isStale()) return
+
       setMessages((prev) => [
         ...prev,
         {
@@ -230,6 +327,11 @@ export function MediAssistChat({ patientData }) {
     sendToLLM(text)
   }
 
+  function handleSuggestion(prompt) {
+    if (isLoading) return
+    sendToLLM(prompt)
+  }
+
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -238,30 +340,25 @@ export function MediAssistChat({ patientData }) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-180px)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-[#bccac1]/40 bg-[#f5fbf5] shadow-lg">
+    <div className="flex h-full min-h-[560px] flex-col overflow-hidden rounded-2xl border border-[#bccac1]/40 bg-[#f5fbf5] shadow-lg">
       {/* ── Header ── */}
       <div className="flex items-center gap-3 border-b border-[#dee4de] bg-white px-5 py-4">
         <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white shadow">
           <BrainCircuit size={22} />
         </div>
         <div>
-          <h2 className="font-bold text-[#171d1a]">MediAssist</h2>
+          <h2 className="font-bold text-[#171d1a]">Assistant MediAssist</h2>
           <p className="text-xs text-[#6d7a73]">Assistant médical IA — Propulsé par MedGemma 1.5</p>
         </div>
         <span className="ml-auto flex items-center gap-1.5 rounded-full bg-[#d1fae5] px-3 py-1 text-xs font-semibold text-[#065f46]">
           <CheckCircle2 size={12} />
-          En ligne
+          CONNECTÉ
         </span>
       </div>
 
       {/* ── Messages ── */}
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
-        {/* Welcome message */}
-        {messages.length === 0 && !isLoading && (
-          <AssistantBubble content="Bonjour ! J'analyse vos indicateurs de santé..." />
-        )}
-
-        {messages.map((msg, i) => {
+        {visibleMessages.map((msg, i) => {
           if (msg.role === 'user') {
             return <UserBubble key={i} content={msg.text} />
           }
@@ -284,18 +381,33 @@ export function MediAssistChat({ patientData }) {
           return <AssistantBubble key={i} content={msg.text} />
         })}
 
-        {isLoading && <ThinkingBubble />}
+        {isLoading && <ThinkingBubble patientData={patientData} />}
         <div ref={bottomRef} />
       </div>
 
+      {/* ── Quick suggestions ── */}
+      <div className="flex flex-wrap gap-2 border-t border-[#dee4de] bg-white px-4 pt-3">
+        {QUICK_SUGGESTIONS.map((s) => (
+          <button
+            className="rounded-full border border-[#bccac1] bg-[#f5fbf5] px-3 py-1.5 text-xs font-medium text-[#3d4943] transition hover:border-[#00694c] hover:text-[#00694c] disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={isLoading}
+            key={s.label}
+            type="button"
+            onClick={() => handleSuggestion(s.prompt)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Input ── */}
-      <div className="border-t border-[#dee4de] bg-white px-4 py-3">
+      <div className="bg-white px-4 pb-3 pt-2">
         <div className="flex items-end gap-3">
           <textarea
             className="flex-1 resize-none rounded-xl border border-[#bccac1] bg-[#f5fbf5] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]/20 disabled:opacity-50"
             disabled={isLoading}
             maxLength={600}
-            placeholder="Posez une question à MediAssist..."
+            placeholder="Posez une question..."
             rows={2}
             value={input}
             onChange={(e) => setInput(e.target.value)}

@@ -98,11 +98,13 @@ export function StepLifestyleReview({ errors, register, values }) {
         </div>
 
         <label className="block">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">Notes libres</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
+            Votre question pour MediAssist (optionnel)
+          </span>
           <textarea
             className="mt-2 min-h-28 w-full resize-y rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
             maxLength={600}
-            placeholder="Contexte additionnel utile pour l'analyse..."
+            placeholder="Ex. : Que puis-je faire pour mieux dormir cette semaine ? Posez ici la question que vous voulez soumettre à l'assistant IA, sinon il analysera vos données automatiquement."
             {...register('description')}
           />
           <FieldError message={errors.description?.message} />
