@@ -1,0 +1,114 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+title Diagramme de classes conceptuel - Smart Health Tracker
+
+class User {
+  +id: string
+  +name: string
+  +email: string
+  +role: Role
+}
+
+enum Role {
+  PATIENT
+  ADMIN
+}
+
+class PatientProfile {
+  +age: number
+  +biologicalSex: string
+  +weight: number
+  +height: number
+  +phone: string
+  +location: string
+  +photoUrl: string
+}
+
+class HealthSubmission {
+  +id: string
+  +createdAt: Date
+  +consent: boolean
+  +description: string
+}
+
+class DeviceMeasures {
+  +bloodPressureSys: number
+  +bloodPressureDia: number
+  +heartRate: number
+  +spo2: number
+  +temperature: number
+  +glycemia: number
+  +weightVariation: string
+}
+
+class MedicalHistory {
+  +chronicDiseases: string[]
+  +drugAllergies: string[]
+  +familyHistory: string[]
+  +tobacco: string
+  +alcohol: string
+}
+
+class Treatment {
+  +currentMedications: string[]
+  +supplements: string
+  +treatmentAdherence: string
+}
+
+class SymptomReport {
+  +symptoms: string[]
+  +painIntensity: number
+  +duration: string
+  +painLocation: string[]
+  +triggers: string[]
+  +generalState: string
+}
+
+class Lifestyle {
+  +physicalActivity: string
+  +diet: string[]
+  +sleepQuality: string
+  +stressLevel: number
+}
+
+class AIAnalysis {
+  +id: string
+  +riskLevel: string
+  +summary: string
+  +confidence: number
+  +recommendations: string[]
+}
+
+class Notification {
+  +id: string
+  +title: string
+  +text: string
+  +status: string
+  +read: boolean
+}
+
+class ChatMessage {
+  +id: string
+  +sender: string
+  +content: string
+  +createdAt: Date
+}
+
+User "1" -- "1" PatientProfile
+User "1" -- "*" HealthSubmission
+HealthSubmission "1" -- "1" DeviceMeasures
+HealthSubmission "1" -- "1" MedicalHistory
+HealthSubmission "1" -- "1" Treatment
+HealthSubmission "1" -- "1" SymptomReport
+HealthSubmission "1" -- "1" Lifestyle
+HealthSubmission "1" -- "0..1" AIAnalysis
+User "1" -- "*" Notification
+User "1" -- "*" ChatMessage
+AIAnalysis "1" -- "*" Notification : peut generer
+
+note right of Role
+  Pas de role docteur/praticien.
+end note
+
+@enduml

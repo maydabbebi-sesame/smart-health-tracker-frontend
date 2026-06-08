@@ -141,6 +141,50 @@ function DashboardPage() {
         })}
       </section>
 
+      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <article className="sht-card overflow-hidden border-l-4 border-l-[#ba1a1a]">
+          <div className="flex flex-col gap-5 p-5 md:flex-row md:items-start md:justify-between">
+            <div className="flex gap-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[#ffdad6] text-[#ba1a1a]">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded bg-[#ba1a1a] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                    Alerte critique
+                  </span>
+                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Symptomes inhabituels detectes</h2>
+                </div>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
+                  Le front signale une fatigue repetee combinee a un sommeil court. Cette alerte est mockee et devra
+                  etre confirmee par le moteur IA prive et les endpoints backend.
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-medium text-[#6d7a73]">Il y a 2 h</span>
+          </div>
+          <div className="flex flex-wrap gap-3 border-t border-[#bccac1]/30 px-5 py-4">
+            <a className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white" href="/notifications">
+              Voir les alertes
+            </a>
+            <a className="rounded-lg bg-[#e4eae4] px-4 py-2 text-sm font-medium text-[#3d4943]" href="/ai-analysis">
+              Ouvrir analyse IA
+            </a>
+          </div>
+        </article>
+
+        <article className="rounded-xl border border-dashed border-[#68dbae] bg-[#eff5ef] p-5">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
+            <BrainCircuit size={21} />
+          </div>
+          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">AI Recommendation</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            Les recommandations du dashboard sont frontend-only aujourd hui. Elles illustrent les donnees que le
+            backend devra fournir a partir du modele IA prive.
+          </p>
+        </article>
+      </section>
+
       <section className="grid gap-4 xl:grid-cols-2">
         <ChartCard subtitle="Average resting BPM over the last 7 days" title="Evolution de sante (7 jours)">
           <ResponsiveContainer height="100%" width="100%">
@@ -236,10 +280,9 @@ function DashboardPage() {
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
             <BrainCircuit size={21} />
           </div>
-          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">AI Recommendation</h2>
+          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">Resume IA</h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
-            Recent entries suggest fatigue is most common after shorter sleep. Full analysis is available in the AI
-            Analysis section.
+            Les donnees recentes suggerent une fatigue plus frequente apres des nuits courtes.
           </p>
         </article>
       </section>

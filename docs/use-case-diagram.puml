@@ -1,0 +1,106 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #F5FBF5
+  BorderColor #00694C
+  ArrowColor #00694C
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #00694C
+  FontColor #171D1A
+}
+
+title Smart Health Tracker - Diagramme global de cas d'utilisation
+
+actor "Patient / User" as Patient
+actor "Admin\n(optionnel)" as Admin
+actor "Service IA prive" as AI
+database "Base de donnees" as DB
+
+rectangle "Smart Health Tracker" {
+  usecase "S'inscrire" as UC_Register
+  usecase "Se connecter" as UC_Login
+  usecase "Se connecter avec\nGoogle / Apple" as UC_OAuth
+
+  usecase "Consulter le\ndashboard sante" as UC_Dashboard
+  usecase "Consulter les\nalertes" as UC_Alerts
+  usecase "Marquer une alerte\ncomme lue" as UC_ReadAlert
+
+  usecase "Remplir le formulaire\nde suivi sante" as UC_Form
+  usecase "Renseigner les donnees\npersonnelles" as UC_Personal
+  usecase "Renseigner les mesures\nappareils" as UC_Measures
+  usecase "Renseigner les\nantecedents medicaux" as UC_HistoryInput
+  usecase "Renseigner les\ntraitements" as UC_Treatments
+  usecase "Renseigner les\nsymptomes actuels" as UC_Symptoms
+  usecase "Renseigner le\nmode de vie" as UC_Lifestyle
+
+  usecase "Consulter l'historique\nmedical" as UC_History
+  usecase "Consulter l'analyse IA" as UC_AIAnalysis
+  usecase "Discuter avec\nMediAssist" as UC_Chat
+
+  usecase "Modifier le profil" as UC_Profile
+  usecase "Ajouter une photo\nde profil" as UC_Photo
+  usecase "Configurer les\npreferences" as UC_Settings
+
+  usecase "Consulter le dashboard\nadmin" as UC_AdminDashboard
+}
+
+Patient --> UC_Register
+Patient --> UC_Login
+Patient --> UC_OAuth
+Patient --> UC_Dashboard
+Patient --> UC_Alerts
+Patient --> UC_ReadAlert
+Patient --> UC_Form
+Patient --> UC_History
+Patient --> UC_AIAnalysis
+Patient --> UC_Chat
+Patient --> UC_Profile
+Patient --> UC_Photo
+Patient --> UC_Settings
+
+Admin --> UC_AdminDashboard
+
+UC_Form .> UC_Personal : <<include>>
+UC_Form .> UC_Measures : <<include>>
+UC_Form .> UC_HistoryInput : <<include>>
+UC_Form .> UC_Treatments : <<include>>
+UC_Form .> UC_Symptoms : <<include>>
+UC_Form .> UC_Lifestyle : <<include>>
+
+UC_Profile .> UC_Photo : <<extend>>
+UC_Alerts .> UC_ReadAlert : <<extend>>
+
+UC_Register --> DB
+UC_Login --> DB
+UC_OAuth --> DB
+UC_Dashboard --> DB
+UC_Form --> DB
+UC_History --> DB
+UC_Profile --> DB
+UC_Settings --> DB
+UC_Alerts --> DB
+UC_AdminDashboard --> DB
+
+UC_Form --> AI
+UC_AIAnalysis --> AI
+UC_Chat --> AI
+AI --> UC_AIAnalysis
+AI --> UC_Alerts
+AI --> UC_Chat
+
+note right of AI
+  L'IA est un service/API prive,
+  pas un role utilisateur.
+end note
+
+note bottom of Admin
+  Role optionnel et isole.
+  Aucun role docteur/praticien.
+end note
+
+@enduml

@@ -1,5 +1,6 @@
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Plus, X } from 'lucide-react'
 import { useState } from 'react'
+import { useFieldArray } from 'react-hook-form'
 
 import { chronicDiseaseOptions, familyHistoryOptions } from './formOptions'
 
@@ -171,7 +172,13 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
   )
 }
 
-export function StepMedicalHistory({ errors, register, setValue, values }) {
+export function StepMedicalHistory({ control, errors, register, setValue, values }) {
+  const {
+    append: appendAllergy,
+    fields: allergyFields,
+    remove: removeAllergy,
+  } = useFieldArray({ control, name: 'drugAllergies' })
+
   return (
     <div>
       <div className="mb-8">
@@ -214,18 +221,39 @@ export function StepMedicalHistory({ errors, register, setValue, values }) {
         </div>
 
         {values.hasDrugAllergies === 'Oui' && (
-          <label className="block">
+          <div>
             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
               Nom du / des medicaments
             </span>
-            <input
-              className="mt-2 h-12 w-full rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
-              placeholder="Ex: Penicilline, Ibuprofene, Aspirine"
-              type="text"
-              {...register('drugAllergies')}
-            />
+            <div className="mt-2 space-y-2">
+              {allergyFields.map((field, index) => (
+                <div className="flex items-center gap-2" key={field.id}>
+                  <input
+                    className="h-12 flex-1 rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
+                    placeholder="Ex: Penicilline"
+                    type="text"
+                    {...register(`drugAllergies.${index}.value`)}
+                  />
+                  <button
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[#ffdad6] bg-[#ffdad6] text-[#93000a] transition hover:bg-[#ffb4ab]"
+                    type="button"
+                    onClick={() => removeAllergy(index)}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-dashed border-[#bccac1] px-4 py-2 text-sm text-[#3d4943] transition hover:bg-[#eff5ef]"
+              type="button"
+              onClick={() => appendAllergy({ value: '' })}
+            >
+              <Plus size={15} />
+              Ajouter une allergie
+            </button>
             <FieldError message={errors.drugAllergies?.message} />
-          </label>
+          </div>
         )}
       </div>
 

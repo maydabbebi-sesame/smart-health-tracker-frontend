@@ -46,6 +46,14 @@ export function AuthLayout() {
               </p>
             </div>
 
+            <div className="mt-8 overflow-hidden rounded-xl border border-[#bccac1]/30 bg-white/70 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+              <img
+                alt="Patient utilisant une application de suivi sante"
+                className="h-56 w-full object-cover"
+                src="/login-ai-healthcare.png"
+              />
+            </div>
+
             <div className="mt-8 space-y-4">
               {valueProps.map((item) => (
                 <div

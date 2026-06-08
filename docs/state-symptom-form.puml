@@ -1,0 +1,34 @@
+@startuml
+title Etat-transition - Formulaire de suivi sante
+
+[*] --> Disclaimer
+Disclaimer --> DonneesPersonnelles : commencer
+DonneesPersonnelles --> DonneesPersonnelles : validation echoue
+DonneesPersonnelles --> MesuresAppareils : suivant / champs valides
+
+MesuresAppareils --> DonneesPersonnelles : retour
+MesuresAppareils --> AntecedentsMedicaux : suivant
+
+AntecedentsMedicaux --> AntecedentsMedicaux : validation echoue
+AntecedentsMedicaux --> MesuresAppareils : retour
+AntecedentsMedicaux --> Traitements : suivant / champs valides
+
+Traitements --> Traitements : validation echoue
+Traitements --> AntecedentsMedicaux : retour
+Traitements --> SymptomesActuels : suivant / champs valides
+
+SymptomesActuels --> SymptomesActuels : validation echoue
+SymptomesActuels --> Traitements : retour
+SymptomesActuels --> ModeDeVie : suivant / champs valides
+
+ModeDeVie --> ModeDeVie : validation echoue
+ModeDeVie --> SymptomesActuels : retour
+ModeDeVie --> Soumission : lancer analyse
+
+Soumission --> AnalyseEnCours
+AnalyseEnCours --> AnalyseReussie : reponse IA OK
+AnalyseEnCours --> Erreur : erreur API / validation backend
+Erreur --> ModeDeVie : corriger
+AnalyseReussie --> [*]
+
+@enduml

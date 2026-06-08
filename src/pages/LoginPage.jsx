@@ -20,6 +20,14 @@ function LoginPage() {
     navigate(from, { replace: true })
   }
 
+  function handleSocialLogin(provider) {
+    loginWithFakeJwt({
+      email: `${provider.toLowerCase()}@smarthealth.local`,
+      role: 'patient',
+    })
+    navigate(from, { replace: true })
+  }
+
   return (
     <div className="w-full max-w-md">
       <div className="mb-8">
@@ -101,6 +109,7 @@ function LoginPage() {
             className="flex items-center justify-center gap-2 rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm font-semibold text-[#171d1a] shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition hover:border-[#00694c] hover:text-[#00694c]"
             key={provider}
             type="button"
+            onClick={() => handleSocialLogin(provider)}
           >
             <span className="grid h-6 w-6 place-items-center rounded-full bg-[#eff5ef] text-xs font-bold text-[#00694c]">
               {provider[0]}
@@ -108,6 +117,11 @@ function LoginPage() {
             {provider}
           </button>
         ))}
+      </div>
+
+      <div className="mt-4 rounded-lg border border-[#d2e4ff] bg-[#eff5ef] p-3 text-xs leading-5 text-[#3d4943]">
+        Google et Apple sont proposes pour reduire la friction utilisateur et preparer une authentification OAuth
+        securisee cote backend. Dans ce MVP, le clic simule une connexion patient.
       </div>
 
       <p className="mt-6 text-center text-sm text-[#3d4943]">

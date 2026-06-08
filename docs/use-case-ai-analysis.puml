@@ -1,0 +1,43 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+title Cas d'utilisation - Analyse IA et MediAssist
+
+actor "Patient / User" as Patient
+actor "Service IA prive" as AI
+database "Base de donnees" as DB
+
+rectangle "Smart Health Tracker" {
+  usecase "Consulter analyse IA" as ViewAnalysis
+  usecase "Generer recommandations\npersonnalisees" as Recommendations
+  usecase "Detecter alertes\ninhabituelles" as DetectAlerts
+  usecase "Discuter avec\nMediAssist" as Chat
+  usecase "Envoyer question\nau modele IA" as AskAI
+  usecase "Afficher reponse IA" as ShowAnswer
+  usecase "Consulter resume\npatient" as PatientContext
+}
+
+Patient --> ViewAnalysis
+Patient --> Chat
+
+ViewAnalysis .> Recommendations : <<include>>
+ViewAnalysis .> DetectAlerts : <<include>>
+Chat .> AskAI : <<include>>
+Chat .> ShowAnswer : <<include>>
+AskAI .> PatientContext : <<include>>
+
+Recommendations --> AI
+DetectAlerts --> AI
+AskAI --> AI
+PatientContext --> DB
+ViewAnalysis --> DB
+
+note right of AI
+  L'IA est integree comme API/service.
+  Elle n'est pas un role utilisateur.
+end note
+
+@enduml

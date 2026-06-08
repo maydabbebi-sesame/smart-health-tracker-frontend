@@ -1,0 +1,30 @@
+@startuml
+title Sequence systeme - Consultation notifications
+
+actor Patient
+boundary "Frontend React" as FE
+control "Backend API" as API
+database "Base de donnees" as DB
+control "Service IA prive" as AI
+
+Patient -> FE : Ouvrir /notifications
+FE -> API : GET /notifications
+API -> DB : Charger alertes patient
+DB --> API : Liste notifications
+API --> FE : Notifications
+FE --> Patient : Afficher centre d'alertes
+
+Patient -> FE : Filtrer "Critiques" / "Non lues"
+FE -> FE : Filtrer localement
+FE --> Patient : Afficher resultat
+
+Patient -> FE : Marquer comme lu
+FE -> API : PATCH /notifications/:id/read
+API -> DB : Mettre read=true
+DB --> API : OK
+API --> FE : Notification mise a jour
+FE --> Patient : Feedback succes
+
+AI --> DB : Creer alertes IA si anomalie detectee
+
+@enduml

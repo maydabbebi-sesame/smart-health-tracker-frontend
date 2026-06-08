@@ -96,7 +96,7 @@ Request:
   "weightVariation": "Stable",
   "chronicDiseases": ["HTA", "Diabete T1/T2"],
   "hasDrugAllergies": "Oui",
-  "drugAllergies": "Penicilline",
+  "drugAllergies": "Penicilline, Ibuprofene",
   "familyHistory": ["Cardio", "Diabete"],
   "tobacco": "Non",
   "tobaccoQuantity": "",
@@ -125,7 +125,7 @@ Request:
 Payload notes from `Indicateurs_formulaire.xlsx`:
 
 - Required core fields: `age`, `biologicalSex`, `weight`, `height`, `chronicDiseases`, `hasDrugAllergies`, `tobacco`, `alcohol`, `hasCurrentMedications`, `symptoms`, `consent`.
-- Conditional fields: `pregnancyStatus` if `biologicalSex = F`, `drugAllergies` if `hasDrugAllergies = Oui`, `tobaccoQuantity` if `tobacco = Oui`, `alcoholQuantity` if `alcohol = Oui`, `currentMedications` if `hasCurrentMedications = Oui`, `supplements` if `hasSupplements = Oui`, `symptomDuration` when symptoms are selected, `painIntensity` when a pain symptom is selected, `glycemia` mainly if chronic disease includes diabetes.
+- Conditional fields: `pregnancyStatus` if `biologicalSex = F`, `drugAllergies` if `hasDrugAllergies = Oui` (entered as multiple frontend rows and serialized before submission), `tobaccoQuantity` if `tobacco = Oui`, `alcoholQuantity` if `alcohol = Oui`, `currentMedications` if `hasCurrentMedications = Oui`, `supplements` if `hasSupplements = Oui`, `symptomDuration` when symptoms are selected, `painIntensity` when a pain symptom is selected, `glycemia` mainly if chronic disease includes diabetes.
 - Optional indicators: device measures, family history, treatment adherence, pain location, triggers, general state, physical activity, diet, sleep quality, stress level, free-text description.
 - The backend LLM prompt can derive IMC from `weight` and `height`.
 

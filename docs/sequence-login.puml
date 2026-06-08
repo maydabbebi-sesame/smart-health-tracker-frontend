@@ -1,0 +1,31 @@
+@startuml
+title Sequence systeme - Connexion
+
+actor Patient
+boundary "Frontend React" as FE
+control "Auth Service" as Auth
+control "Backend API" as API
+database "Base de donnees" as DB
+
+Patient -> FE : Saisir email + mot de passe
+Patient -> FE : Cliquer "Se connecter"
+FE -> Auth : login(email, password)
+Auth -> API : POST /auth/login
+API -> DB : Verifier utilisateur
+DB --> API : Utilisateur trouve
+API --> Auth : JWT + user
+Auth --> FE : Stocker JWT
+FE -> FE : Redirection /dashboard
+
+alt Identifiants invalides
+  API --> Auth : Erreur 401
+  Auth --> FE : Erreur
+  FE --> Patient : Afficher message erreur
+end
+
+note over FE
+  MVP actuel : fake JWT local.
+  Cible : JWT fourni par backend.
+end note
+
+@enduml

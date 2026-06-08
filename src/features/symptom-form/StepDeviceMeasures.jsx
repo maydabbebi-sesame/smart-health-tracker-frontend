@@ -66,6 +66,11 @@ export function StepDeviceMeasures({ errors, register, values }) {
         </p>
       </div>
 
+      <div className="mb-6 rounded-xl border border-[#d2e4ff] bg-[#eff5ef] p-4 text-sm leading-6 text-[#3d4943]">
+        Renseignez ces champs uniquement si vous disposez d'un materiel de mesure fiable et d'une valeur recente.
+        Ne saisissez pas de valeurs aleatoires : les champs peuvent rester vides si vous n'avez pas l'appareil.
+      </div>
+
       <div className="mb-6 flex items-center justify-between rounded-xl border border-[#bccac1] bg-[#f5fbf5] p-4">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wide text-[#171d1a]">Indice de masse corporelle (IMC)</span>

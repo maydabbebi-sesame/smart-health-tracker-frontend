@@ -1,0 +1,34 @@
+@startuml
+title Sequence systeme - Modification profil patient
+
+actor Patient
+boundary "Frontend React" as FE
+control "Backend API" as API
+database "Base de donnees" as DB
+
+Patient -> FE : Ouvrir /profile
+FE -> API : GET /profile
+API -> DB : Charger profil
+DB --> API : Donnees profil
+API --> FE : Profil patient
+FE --> Patient : Afficher profil
+
+Patient -> FE : Cliquer "Modifier le profil"
+Patient -> FE : Modifier nom/email/localisation/tel
+opt Ajout photo
+  Patient -> FE : Choisir image locale
+  FE --> Patient : Apercu immediat
+end
+Patient -> FE : Cliquer "Enregistrer"
+FE -> API : PATCH /profile + upload photo si presente
+API -> DB : Mettre a jour profil
+DB --> API : Profil mis a jour
+API --> FE : Profil actualise
+FE --> Patient : Feedback succes
+
+note over FE
+  MVP actuel : edition locale.
+  Cible : PATCH /profile.
+end note
+
+@enduml

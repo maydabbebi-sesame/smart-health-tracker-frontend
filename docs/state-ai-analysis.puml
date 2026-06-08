@@ -1,0 +1,21 @@
+@startuml
+title Etat-transition - Analyse IA
+
+[*] --> AucunContexte
+AucunContexte --> DonneesDisponibles : formulaire soumis
+DonneesDisponibles --> AnalyseEnCours : appel service IA
+AnalyseEnCours --> AnalyseDisponible : succes
+AnalyseEnCours --> ErreurAnalyse : erreur API / modele
+ErreurAnalyse --> DonneesDisponibles : relancer
+
+AnalyseDisponible --> ConsultationRecommandations : ouvrir recommandations
+AnalyseDisponible --> ChatOuvert : ouvrir MediAssist
+ChatOuvert --> MessageEnvoye : envoyer question
+MessageEnvoye --> ReponseEnCours
+ReponseEnCours --> ChatOuvert : reponse IA recue
+ReponseEnCours --> ErreurAnalyse : erreur
+
+ConsultationRecommandations --> AlerteGeneree : symptome inhabituel detecte
+AlerteGeneree --> AnalyseDisponible : retour analyse
+
+@enduml

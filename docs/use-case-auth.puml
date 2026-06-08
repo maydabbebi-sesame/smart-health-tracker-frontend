@@ -1,0 +1,50 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+title Cas d'utilisation - Authentification
+
+actor "Patient / User" as Patient
+actor "Admin\n(optionnel)" as Admin
+actor "Provider OAuth\nGoogle / Apple" as OAuth
+database "Base de donnees" as DB
+
+rectangle "Smart Health Tracker" {
+  usecase "S'inscrire" as Register
+  usecase "Se connecter\nemail/password" as Login
+  usecase "Se connecter avec\nGoogle / Apple" as SocialLogin
+  usecase "Verifier les identifiants" as Verify
+  usecase "Generer JWT" as JWT
+  usecase "Acceder aux routes\nprotegees" as Protected
+  usecase "Se deconnecter" as Logout
+}
+
+Patient --> Register
+Patient --> Login
+Patient --> SocialLogin
+Patient --> Protected
+Patient --> Logout
+
+Admin --> Login
+Admin --> Protected
+Admin --> Logout
+
+Login .> Verify : <<include>>
+Register .> JWT : <<include>>
+Login .> JWT : <<include>>
+SocialLogin .> JWT : <<include>>
+Protected .> JWT : <<include>>
+
+SocialLogin --> OAuth
+Verify --> DB
+JWT --> DB
+
+note right of SocialLogin
+  Cote frontend : boutons et redirection.
+  Cote backend : OAuth, callback,
+  creation utilisateur et JWT.
+end note
+
+@enduml

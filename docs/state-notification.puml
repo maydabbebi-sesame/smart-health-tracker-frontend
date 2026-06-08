@@ -1,0 +1,17 @@
+@startuml
+title Etat-transition - Notification
+
+[*] --> Creee
+Creee --> NonLue : affichee au patient
+NonLue --> DetailOuvert : voir details
+DetailOuvert --> NonLue : fermer details
+NonLue --> Lue : marquer comme lue
+DetailOuvert --> Lue : marquer comme lue
+Lue --> Archivee : archivage futur
+Archivee --> [*]
+
+NonLue --> Critique : status = critique
+Critique --> DetailOuvert : voir details
+Critique --> Lue : marquer comme lue
+
+@enduml

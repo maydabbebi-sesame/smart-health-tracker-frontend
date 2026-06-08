@@ -1,0 +1,45 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+title Cas d'utilisation - Profil, notifications et preferences
+
+actor "Patient / User" as Patient
+database "Base de donnees" as DB
+
+rectangle "Smart Health Tracker" {
+  usecase "Consulter profil" as ViewProfile
+  usecase "Modifier profil" as EditProfile
+  usecase "Ajouter photo\nde profil" as UploadPhoto
+  usecase "Consulter notifications" as Notifications
+  usecase "Filtrer notifications" as Filter
+  usecase "Voir details alerte" as AlertDetails
+  usecase "Marquer alerte\ncomme lue" as MarkRead
+  usecase "Configurer preferences" as Settings
+  usecase "Activer/desactiver\nnotifications" as ToggleNotif
+  usecase "Changer theme" as Theme
+}
+
+Patient --> ViewProfile
+Patient --> EditProfile
+Patient --> UploadPhoto
+Patient --> Notifications
+Patient --> Settings
+
+EditProfile .> UploadPhoto : <<extend>>
+Notifications .> Filter : <<include>>
+Notifications .> AlertDetails : <<extend>>
+Notifications .> MarkRead : <<extend>>
+Settings .> ToggleNotif : <<include>>
+Settings .> Theme : <<include>>
+
+ViewProfile --> DB
+EditProfile --> DB
+UploadPhoto --> DB
+Notifications --> DB
+MarkRead --> DB
+Settings --> DB
+
+@enduml

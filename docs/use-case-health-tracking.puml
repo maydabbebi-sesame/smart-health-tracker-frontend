@@ -1,0 +1,48 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+title Cas d'utilisation - Suivi sante et formulaire IA
+
+actor "Patient / User" as Patient
+database "Base de donnees" as DB
+actor "Service IA prive" as AI
+
+rectangle "Smart Health Tracker" {
+  usecase "Remplir formulaire\nsuivi sante" as Form
+  usecase "Saisir donnees\npersonnelles" as Personal
+  usecase "Saisir mesures\nappareils" as Measures
+  usecase "Saisir antecedents\nmedicaux" as History
+  usecase "Saisir traitements" as Treatments
+  usecase "Saisir symptomes\nactuels" as Symptoms
+  usecase "Saisir mode de vie" as Lifestyle
+  usecase "Valider les champs" as Validate
+  usecase "Afficher erreurs\ninline" as Errors
+  usecase "Soumettre les donnees" as Submit
+  usecase "Afficher disclaimer\nstockage + IA privee" as Disclaimer
+}
+
+Patient --> Form
+Form .> Disclaimer : <<include>>
+Form .> Personal : <<include>>
+Form .> Measures : <<include>>
+Form .> History : <<include>>
+Form .> Treatments : <<include>>
+Form .> Symptoms : <<include>>
+Form .> Lifestyle : <<include>>
+Form .> Validate : <<include>>
+Validate .> Errors : <<extend>>
+Form .> Submit : <<include>>
+
+Submit --> DB
+Submit --> AI
+
+note right of Measures
+  Les mesures sont renseignees
+  uniquement si le patient possede
+  un appareil fiable.
+end note
+
+@enduml

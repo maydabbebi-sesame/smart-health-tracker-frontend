@@ -68,7 +68,7 @@ const schema = z.object({
   weightVariationKg: optionalNumber,
   chronicDiseases: z.array(z.string()).min(1, 'Selectionnez au moins une maladie chronique.'),
   hasDrugAllergies: z.string().min(1, 'Indiquez si le patient a des allergies.'),
-  drugAllergies: z.string().trim().optional(),
+  drugAllergies: z.array(z.object({ value: z.string().trim() })).optional(),
   familyHistory: z.array(z.string()).optional(),
   tobacco: z.string().min(1, 'Indiquez la consommation de tabac.'),
   tobaccoQuantity: z.string().trim().optional(),
@@ -101,10 +101,10 @@ const schema = z.object({
     })
   }
 
-  if (values.hasDrugAllergies === 'Oui' && !values.drugAllergies) {
+  if (values.hasDrugAllergies === 'Oui' && (!values.drugAllergies || values.drugAllergies.every((allergy) => !allergy.value?.trim()))) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Precisez les allergies medicamenteuses.',
+      message: 'Precisez au moins une allergie medicamenteuse.',
       path: ['drugAllergies'],
     })
   }
@@ -169,43 +169,43 @@ const schema = z.object({
 })
 
 const defaultValues = {
-  age: 52,
-  biologicalSex: 'F',
-  weight: 72,
-  height: 163,
-  pregnancyStatus: 'Non',
-  bloodPressureSys: 148,
-  bloodPressureDia: 92,
-  heartRate: 82,
-  spo2: 97,
-  temperature: 37.4,
+  age: '',
+  biologicalSex: '',
+  weight: '',
+  height: '',
+  pregnancyStatus: '',
+  bloodPressureSys: '',
+  bloodPressureDia: '',
+  heartRate: '',
+  spo2: '',
+  temperature: '',
   glycemia: '',
-  weightVariation: 'Stable',
+  weightVariation: '',
   weightVariationKg: '',
-  chronicDiseases: ['HTA', 'Diabete T1/T2'],
-  hasDrugAllergies: 'Oui',
-  drugAllergies: 'Penicilline',
-  familyHistory: ['Cardio', 'Diabete'],
-  tobacco: 'Non',
+  chronicDiseases: [],
+  hasDrugAllergies: '',
+  drugAllergies: [],
+  familyHistory: [],
+  tobacco: '',
   tobaccoQuantity: '',
-  alcohol: 'Oui',
-  alcoholQuantity: 'Occasionnel',
-  hasCurrentMedications: 'Oui',
-  currentMedications: [{ value: 'Metformine 1000mg 2x/j' }, { value: 'Amlodipine 5mg/j' }],
-  hasSupplements: 'Non',
+  alcohol: '',
+  alcoholQuantity: '',
+  hasCurrentMedications: '',
+  currentMedications: [],
+  hasSupplements: '',
   supplements: '',
-  treatmentAdherence: 'Toujours',
-  symptoms: ['Fatigue', 'Cephalees'],
+  treatmentAdherence: '',
+  symptoms: [],
   otherSymptoms: '',
-  painIntensity: 6,
-  symptomDuration: 'Semaines',
-  painLocation: ['Tete'],
-  triggers: ['Stress'],
-  generalState: 'Moyen',
-  physicalActivity: 'Sedentaire',
-  diet: ['Diabetique'],
-  sleepQuality: 'Mauvais',
-  stressLevel: 4,
+  painIntensity: 0,
+  symptomDuration: '',
+  painLocation: [],
+  triggers: [],
+  generalState: '',
+  physicalActivity: '',
+  diet: [],
+  sleepQuality: '',
+  stressLevel: 1,
   description: '',
   consent: false,
 }
@@ -252,6 +252,7 @@ export function SymptomForm() {
       const payload = {
         ...formValues,
         currentMedications: formValues.currentMedications?.map((m) => m.value).filter(Boolean).join(', ') || '',
+        drugAllergies: formValues.drugAllergies?.map((allergy) => allergy.value).filter(Boolean).join(', ') || '',
       }
       await analyzeSymptoms(payload)
       toast.success('Indicateurs sauvegardés — MediAssist analyse vos données...')
@@ -268,6 +269,15 @@ export function SymptomForm() {
 
   return (
     <section className="w-full">
+      <div className="mb-5 rounded-xl border border-[#d2e4ff] bg-[#eff5ef] p-4">
+        <p className="text-sm font-semibold text-[#00694c]">Information importante</p>
+        <p className="mt-2 text-sm leading-6 text-[#3d4943]">
+          Les donnees saisies dans ce formulaire seront stockees dans notre base de donnees et fournies a un modele IA
+          prive pour generer une analyse personnalisee. Cette demo reste frontend-only, mais le flux prepare le futur
+          contrat backend.
+        </p>
+      </div>
+
       <ProgressBar currentStep={currentStep} steps={steps} />
 
       <form className="rounded-xl border border-[#bccac1]/30 bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:p-8" onSubmit={handleSubmit(onSubmit)}>
@@ -288,7 +298,7 @@ export function SymptomForm() {
             )}
             {currentStep === 1 && <StepDeviceMeasures errors={errors} register={register} values={values} />}
             {currentStep === 2 && (
-              <StepMedicalHistory errors={errors} register={register} setValue={setValue} values={values} />
+              <StepMedicalHistory control={control} errors={errors} register={register} setValue={setValue} values={values} />
             )}
             {currentStep === 3 && <StepTreatments control={control} errors={errors} register={register} values={values} />}
             {currentStep === 4 && (

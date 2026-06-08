@@ -1,0 +1,36 @@
+@startuml
+title Sequence systeme - Soumission formulaire sante vers IA
+
+actor Patient
+boundary "Frontend React" as FE
+control "React Hook Form + Zod" as Form
+control "Backend API" as API
+database "Base de donnees" as DB
+control "Service IA prive" as AI
+
+Patient -> FE : Remplir formulaire multi-etapes
+FE -> Patient : Afficher disclaimer stockage + IA privee
+Patient -> FE : Cliquer "Suivant"
+FE -> Form : Valider etape courante
+
+alt Champs invalides
+  Form --> FE : Erreurs inline
+  FE --> Patient : Afficher messages
+else Champs valides
+  Form --> FE : OK
+  Patient -> FE : Cliquer "Lancer l'analyse"
+  FE -> Form : Validation finale
+  FE -> API : POST /symptoms/analyze(payload)
+  API -> DB : Stocker donnees patient
+  API -> AI : Envoyer contexte medical structure
+  AI --> API : Analyse + recommandations + alertes
+  API --> FE : Resultat analyse IA
+  FE --> Patient : Redirection /ai-analysis
+end
+
+note over FE,AI
+  MVP actuel : soumission mockee.
+  Cible : stockage DB + modele IA prive.
+end note
+
+@enduml
