@@ -253,21 +253,62 @@ Rappel des règles critiques :
 - Réponds dans la langue détectée dans le message de l'utilisateur
 - Maximum 5 recommandations, triées par priorité décroissante
 
-Le champ "alertes" est un tableau de COURTES phrases signalant chacune un élément
-clinique précis qui justifie une vigilance immédiate (ex : "Tension artérielle très
-élevée : 178/108 mmHg", "Association Aspirine + traitement anticoagulant en cours").
-Il est distinct de "recommandations" (qui propose des actions) et de "urgence" (qui
-qualifie la gravité globale) — ne les duplique pas. Laisse-le vide [] seulement si
-rien dans les données ne justifie un signalement explicite.
+Le champ "alertes" est un tableau d'OBJETS — un objet par point de vigilance clinique
+identifié. Chaque objet contient OBLIGATOIREMENT quatre champs :
+  - "titre"   : nom court du problème (ex : "Tension artérielle critique")
+  - "detail"  : explication factuelle avec la valeur précise ou l'interaction détectée
+                (ex : "178/108 mmHg — seuil de crise hypertensive dépassé")
+  - "action"  : ce que le patient doit faire concrètement (ex : "Consultez les urgences
+                immédiatement" ou "Signalez cette association à votre médecin")
+  - "urgence" : sévérité SPÉCIFIQUE à cette alerte, indépendamment de l'urgence globale.
+                Valeurs possibles UNIQUEMENT : "critique", "elevee", "moderee", "normale".
+                Ex : une hypertension légère dans un contexte par ailleurs grave vaut
+                "moderee", même si l'urgence globale est "elevee".
+Il est distinct de "recommandations" (actions préventives) et de "urgence" (gravité
+globale). Laisse "alertes" vide ([]) si rien ne justifie de signalement.
+
+Le champ "analyse" doit contenir ton RAISONNEMENT CLINIQUE — pas une reformulation
+des données. Le patient les connaît déjà. Explique ce que les mesures signifient
+ensemble, les risques que leur combinaison crée, le lien entre les symptômes et les
+antécédents. Une analyse vide ou répétitive est une erreur.
+
+Chaque recommandation DOIT remplir le champ "pourquoi" avec le lien direct entre
+l'action recommandée et les données spécifiques du patient (valeur mesurée, symptôme,
+antécédent concerné).
+
+Le champ "priorite" de chaque recommandation est OBLIGATOIRE. Valeurs possibles
+UNIQUEMENT : "haute", "moyenne", "basse".
+  - "haute"   → action immédiate ou dans les 24h (douleur sévère, signe d'alerte majeur)
+  - "moyenne" → action recommandée dans la semaine
+  - "basse"   → conseil général, prévention à long terme
+Trie les recommandations par priorité décroissante (haute → moyenne → basse).
 
 Structure JSON obligatoire :
 {
   "urgence": "normale",
-  "alertes": ["Tension artérielle élevée : 148/92 mmHg (HTA grade 2)"],
+  "alertes": [
+    {
+      "titre": "Tension artérielle élevée",
+      "detail": "148/92 mmHg — HTA grade 2 confirmée.",
+      "action": "Consultez votre médecin généraliste dans la semaine.",
+      "urgence": "moderee"
+    }
+  ],
   "resume_situation": "...",
-  "analyse": "...",
+  "analyse": "Raisonnement clinique ici — interprétation, risques, liens entre données.",
   "recommandations": [
-    { "titre": "...", "detail": "...", "priorite": "haute" }
+    {
+      "titre": "...",
+      "detail": "Actions concrètes et précises.",
+      "pourquoi": "Lien direct avec les données du patient.",
+      "priorite": "haute"
+    },
+    {
+      "titre": "...",
+      "detail": "...",
+      "pourquoi": "...",
+      "priorite": "moyenne"
+    }
   ],
   "orientation": {
     "niveau": "...",
@@ -278,38 +319,17 @@ Structure JSON obligatoire :
   "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale."
 }"""
 
-USER_PROMPT_TEMPLATE = """--- DONNÉES PATIENT ---
+USER_PROMPT_TEMPLATE = """--- DEMANDE D'ANALYSE INITIALE ---
 
-Allergies médicamenteuses : {allergies}
-Médicaments actuels : {medicaments}
-Compléments / phytothérapie : {complements}
-Observance : {observance}
+{message_utilisateur}
 
-Maladies chroniques : {maladies_chroniques}
-Antécédents familiaux : {antecedents_familiaux}
-Tabac : {tabac} | Alcool : {alcool}
-
-Âge : {age} ans | Sexe : {sexe}
-IMC : {imc} → {categorie_imc}
-Grossesse : {grossesse}
-Tension : {tension_sys}/{tension_dia} mmHg → {categorie_tension}
-FC : {fc} bpm | SpO₂ : {spo2}% | Temp : {temperature}°C
-Glycémie : {glycemie} g/L
-Variation poids (1 mois) : {variation_poids}
-
-Symptômes : {symptomes}
-Intensité douleur (EVA) : {intensite}/10
-Durée : {duree} | Localisation : {localisation}
-Facteurs déclenchants : {declenchants}
-État général : {etat_general}
-
-Activité physique : {activite_physique}
-Alimentation : {alimentation}
-Sommeil : {sommeil} | Stress : {stress}/5
-
---- QUESTION ---
-
-{message_utilisateur}"""
+Rappel des exigences pour cette réponse :
+- "analyse" : raisonnement clinique (interprétation des mesures, liens entre symptômes
+  et antécédents, risques identifiés) — pas une liste ou reformulation des données.
+- "alertes" : chaque objet doit citer la valeur précise ou l'interaction qui justifie
+  le signalement.
+- "recommandations" : chaque entrée doit remplir "pourquoi" avec le lien direct entre
+  l'action et les données spécifiques du patient."""
 
 # Used for every turn AFTER the first one. The patient profile is already in the
 # system prompt (present on every call) and in the conversation history — repeating
@@ -330,6 +350,5 @@ def build_user_message(patient_data, user_question, is_followup=False):
             "{message_utilisateur}", user_question or "Peux-tu préciser ta question ?",
         )
 
-    variables = _build_vars(patient_data)
-    variables["{message_utilisateur}"] = user_question or "Analyse mes données et donne-moi tes recommandations."
-    return _fill(USER_PROMPT_TEMPLATE, variables)
+    question = user_question or "Analyse mes données et donne-moi tes recommandations."
+    return USER_PROMPT_TEMPLATE.replace("{message_utilisateur}", question)

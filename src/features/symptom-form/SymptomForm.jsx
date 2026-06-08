@@ -213,6 +213,7 @@ const defaultValues = {
 export function SymptomForm() {
   const navigate = useNavigate()
   const setPatientData = useMedAssistStore((s) => s.setPatientData)
+  const resetSession = useMedAssistStore((s) => s.resetSession)
   const [currentStep, setCurrentStep] = useState(0)
   const [submitError, setSubmitError] = useState('')
 
@@ -256,9 +257,9 @@ export function SymptomForm() {
       }
       await analyzeSymptoms(payload)
       toast.success('Indicateurs sauvegardés — MediAssist analyse vos données...')
-      // Persist alongside the navigation state: the sidebar link to "AI
-      // Recommendations" doesn't carry location.state, so without this the
-      // page (and its chat) would look empty when revisited that way.
+      // Reset chat session BEFORE navigate so MediAssistChat always mounts
+      // with isLoading = true, even when the same form data is resubmitted.
+      resetSession()
       setPatientData(payload)
       navigate('/ai-analysis', { state: { patientData: payload } })
     } catch (error) {

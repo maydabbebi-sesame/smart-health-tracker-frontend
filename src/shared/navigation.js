@@ -1,10 +1,10 @@
 import {
-  Bell,
   BrainCircuit,
   ClipboardList,
   HeartPulse,
   LayoutDashboard,
   Settings,
+  Stethoscope,
   UserRound,
 } from 'lucide-react'
 
@@ -30,9 +30,9 @@ export const navigationItems = [
     icon: BrainCircuit,
   },
   {
-    label: 'Alerts',
+    label: 'Doctor Agent',
     to: '/notifications',
-    icon: Bell,
+    icon: Stethoscope,
   },
   {
     label: 'Historique',

@@ -1,5 +1,6 @@
 import { AlertTriangle, BrainCircuit, CheckCircle2, ListChecks, Loader2, Send, ShieldAlert, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 
 import { sendMediAssistMessage } from '../../services/mediAssistService'
 import { useMedAssistStore } from '../../store/medAssistStore'
@@ -47,16 +48,26 @@ function AnalysisCard({ parsed }) {
         {/* Alertes */}
         {parsed.alertes?.length > 0 && (
           <div className="rounded-lg border border-[#ffdad6] bg-[#fff8f7] p-3">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#93000a]">Alertes</p>
-            <ul className="space-y-1">
-              {parsed.alertes.map((a, i) => (
-                <li className="flex gap-2 text-sm text-[#7e2a27]" key={i}>
-                  <AlertTriangle className="mt-0.5 shrink-0" size={14} />
-                  {a}
-                </li>
-              ))}
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#93000a]">Alertes</p>
+            <ul className="space-y-2.5">
+              {parsed.alertes.map((a, i) => {
+                const isObj = a && typeof a === 'object'
+                const titre  = isObj ? a.titre  : a
+                const detail = isObj ? a.detail : null
+                const action = isObj ? a.action : null
+                return (
+                  <li key={i} className="flex gap-2 text-sm text-[#7e2a27]">
+                    <AlertTriangle className="mt-0.5 shrink-0" size={14} />
+                    <div>
+                      <p className="font-semibold">{titre}</p>
+                      {detail && <p className="mt-0.5 text-xs leading-5">{detail}</p>}
+                      {action && <p className="mt-0.5 text-xs italic">→ {action}</p>}
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
-            <p className="mt-2 text-xs text-[#7e2a27]/80">→ Ajoutées au Centre d'Alertes.</p>
+            <p className="mt-2 text-xs text-[#7e2a27]/80">→ Ajoutées dans le panneau de gauche.</p>
           </div>
         )}
 
@@ -273,12 +284,16 @@ export function MediAssistChat({ patientData }) {
     const requestSessionKey = sessionKey
     const isStale = () => useMedAssistStore.getState().chatSessionKey !== requestSessionKey
 
-    setIsLoading(true)
-
-    // Show the user's own message, but not the generic automated first prompt
-    if (showUserMessage) {
-      setMessages((prev) => [...prev, { role: 'user', text: userText }])
-    }
+    // flushSync forces React to commit the ThinkingBubble to the DOM
+    // synchronously before the API request starts — without this, a fast
+    // (gateway-cached) response can resolve within the same render batch,
+    // and the browser never paints the loading state.
+    flushSync(() => {
+      setIsLoading(true)
+      if (showUserMessage) {
+        setMessages((prev) => [...prev, { role: 'user', text: userText }])
+      }
+    })
 
     try {
       const { userContent, assistantContent, parsed } = await sendMediAssistMessage({

@@ -8,6 +8,23 @@ function makeId(prefix) {
   return `${prefix}-${Date.now()}-${seq}`
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+const VALID_PRIORITES = new Set(['haute', 'moyenne', 'basse'])
+
+// When the model omits or misspells "priorite", infer from list position so
+// the most impactful recommendation (first) always gets the highest badge.
+function normalizePriorite(value, index) {
+  if (VALID_PRIORITES.has(value)) return value
+  if (index === 0) return 'haute'
+  if (index === 1) return 'moyenne'
+  return 'basse'
+}
+
+const VALID_URGENCES = new Set(['normale', 'moderee', 'elevee', 'critique'])
+function normalizeUrgence(value, fallback) {
+  return VALID_URGENCES.has(value) ? value : (fallback || 'normale')
+}
+
 // ── Store ─────────────────────────────────────────────────────────────────────
 // Holds everything MediAssist produces from a structured LLM analysis (see
 // features/chatbot/MediAssistChat.jsx, which parses the model's JSON response
@@ -27,6 +44,13 @@ export const useMedAssistStore = create(
 
       setPatientData(patientData) {
         set({ patientData })
+      },
+
+      // Called by the symptom form on every submission — clears all prior
+      // analysis state so a fresh form run always triggers a new analysis,
+      // even when the patient data hasn't changed.
+      resetSession() {
+        set({ chatMessages: [], chatHistory: [], chatSessionKey: null, recommendations: [], alerts: [] })
       },
 
       // Chat conversation — persisted so leaving the AI Recommendations page
@@ -49,7 +73,13 @@ export const useMedAssistStore = create(
         set((state) => {
           if (state.chatSessionKey === sessionKey) return state
           claimed = true
-          return { chatMessages: [], chatHistory: [], chatSessionKey: sessionKey }
+          return {
+            chatMessages: [],
+            chatHistory: [],
+            chatSessionKey: sessionKey,
+            recommendations: [],
+            alerts: [],
+          }
         })
         return claimed
       },
@@ -73,28 +103,44 @@ export const useMedAssistStore = create(
           const knownTitles = new Set(
             state.recommendations.map((r) => r.titre.trim().toLowerCase()),
           )
-          const newRecommendations = (parsed.recommandations || [])
+          const filteredRecs = (parsed.recommandations || [])
             .filter((r) => r?.titre && !knownTitles.has(r.titre.trim().toLowerCase()))
-            .map((r) => ({
-              id: makeId('rec'),
-              titre: r.titre,
-              detail: r.detail || '',
-              priorite: r.priorite || 'basse',
-              urgence: parsed.urgence || 'normale',
-              createdAt: now,
-              done: false,
-            }))
+          const newRecommendations = filteredRecs.map((r, i) => ({
+            id: makeId('rec'),
+            titre: r.titre,
+            detail: r.detail || '',
+            pourquoi: r.pourquoi || '',
+            priorite: normalizePriorite(r.priorite, i),
+            urgence: normalizeUrgence(parsed.urgence),
+            createdAt: now,
+            done: false,
+          }))
 
-          const knownAlerts = new Set(state.alerts.map((a) => a.text.trim().toLowerCase()))
+          // alertes can be strings (legacy) or objects {titre, detail, action}
+          const knownAlerts = new Set(
+            state.alerts.map((a) => (a.titre || a.text || '').trim().toLowerCase()),
+          )
           const newAlerts = (parsed.alertes || [])
-            .filter((text) => text && !knownAlerts.has(text.trim().toLowerCase()))
-            .map((text) => ({
-              id: makeId('alert'),
-              text,
-              urgence: parsed.urgence || 'normale',
-              createdAt: now,
-              read: false,
-            }))
+            .filter((a) => {
+              if (!a) return false
+              const key = typeof a === 'string' ? a : (a.titre || a.detail || '')
+              return key && !knownAlerts.has(key.trim().toLowerCase())
+            })
+            .map((a) => {
+              if (typeof a === 'string') {
+                return { id: makeId('alert'), titre: a, text: null, action: null, urgence: normalizeUrgence(parsed.urgence), createdAt: now, read: false }
+              }
+              return {
+                id: makeId('alert'),
+                titre: a.titre || '',
+                text: a.detail || '',
+                action: a.action || '',
+                // Per-alert urgence (from model) takes priority over global urgence
+                urgence: normalizeUrgence(a.urgence, parsed.urgence),
+                createdAt: now,
+                read: false,
+              }
+            })
 
           return {
             recommendations: [...newRecommendations, ...state.recommendations],

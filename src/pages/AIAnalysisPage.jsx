@@ -1,10 +1,13 @@
 import {
   Activity,
+  AlertTriangle,
   Apple,
   BrainCircuit,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
   ClipboardList,
+  Clock,
   Droplet,
   Gauge,
   Moon,
@@ -57,6 +60,78 @@ function pickCategory(rec) {
   return 'general'
 }
 
+// ── Alert severity → visual language ─────────────────────────────────────────
+const ALERT_THEME = {
+  critique: { label: 'Critique', border: 'border-l-[#93000a]', Icon: AlertTriangle, iconBox: 'bg-[#ffdad6] text-[#93000a]', badge: 'bg-[#93000a] text-white' },
+  elevee:   { label: 'Élevée',   border: 'border-l-[#ba1a1a]', Icon: AlertTriangle, iconBox: 'bg-[#ffdad6] text-[#ba1a1a]', badge: 'bg-[#ba1a1a] text-white' },
+  moderee:  { label: 'Modérée',  border: 'border-l-[#9a6700]', Icon: Clock,         iconBox: 'bg-[#fef3c7] text-[#9a6700]', badge: 'bg-[#9a6700] text-white' },
+  normale:  { label: 'Normale',  border: 'border-l-[#00694c]', Icon: CheckCircle2,  iconBox: 'bg-[#86f8c9]/40 text-[#00694c]', badge: 'bg-[#008560] text-white' },
+}
+
+function AlertItem({ alert }) {
+  const [expanded, setExpanded] = useState(false)
+  const theme = ALERT_THEME[alert.urgence] || ALERT_THEME.moderee
+  const { Icon } = theme
+  const markRead = useMedAssistStore((s) => s.markAlertRead)
+  const dismiss = useMedAssistStore((s) => s.dismissAlert)
+
+  return (
+    <article className={`sht-card overflow-hidden border-l-[6px] ${theme.border} ${alert.read ? 'opacity-60' : ''}`}>
+      <div className="flex gap-4 p-5">
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${theme.iconBox}`}>
+          <Icon size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${theme.badge}`}>
+              {theme.label}
+            </span>
+            {!alert.read && <span className="h-2 w-2 rounded-full bg-[#ba1a1a]" title="Non lu" />}
+            <span className="ml-auto text-xs text-[#6d7a73]">{formatRelativeTime(alert.createdAt)}</span>
+          </div>
+          <h3 className="mt-2 font-semibold text-[#171d1a] dark:text-white">{alert.titre}</h3>
+          {alert.text && (
+            <p className="mt-1 text-sm leading-6 text-[#3d4943]">{alert.text}</p>
+          )}
+          {expanded && alert.action && (
+            <div className="mt-2 rounded-lg border border-[#dee4de] bg-[#f5fbf5] p-3 text-sm text-[#3d4943]">
+              <span className="font-semibold">Action recommandée : </span>{alert.action}
+            </div>
+          )}
+          <div className="mt-3 flex flex-wrap gap-3">
+            {alert.action && (
+              <button
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#e4eae4] px-3 py-1.5 text-xs font-medium text-[#3d4943] transition hover:bg-[#dee4de]"
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                {expanded ? 'Masquer' : 'Que faire ?'}
+              </button>
+            )}
+            {!alert.read && (
+              <button
+                className="rounded-lg bg-[#00694c] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#008560]"
+                type="button"
+                onClick={() => markRead(alert.id)}
+              >
+                Marquer comme lu
+              </button>
+            )}
+            <button
+              className="rounded-lg bg-[#e4eae4] px-3 py-1.5 text-xs font-medium text-[#3d4943] transition hover:bg-[#dee4de]"
+              type="button"
+              onClick={() => dismiss(alert.id)}
+            >
+              Ignorer
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}
+
 // ── Recommendation card ───────────────────────────────────────────────────────
 function RecommendationCard({ rec }) {
   const [expanded, setExpanded] = useState(false)
@@ -85,12 +160,18 @@ function RecommendationCard({ rec }) {
           <p className="mt-1.5 text-sm leading-6 text-[#3d4943]">{rec.detail}</p>
 
           {expanded && (
-            <div className="mt-3 rounded-lg border border-[#dee4de] bg-[#f5fbf5] p-3 text-xs leading-5 text-[#3d4943]">
+            <div className="mt-3 space-y-1.5 rounded-lg border border-[#dee4de] bg-[#f5fbf5] p-3 text-xs leading-5 text-[#3d4943]">
+              {rec.pourquoi && (
+                <p>
+                  <span className="font-semibold">Pourquoi cette recommandation : </span>
+                  {rec.pourquoi}
+                </p>
+              )}
               <p>
                 <span className="font-semibold">Niveau d'urgence au moment de l'analyse : </span>
                 {URGENCE_LABELS[rec.urgence] || rec.urgence}
               </p>
-              <p className="mt-1">
+              <p>
                 <span className="font-semibold">Priorité : </span>
                 {theme.badge.charAt(0) + theme.badge.slice(1).toLowerCase()}
               </p>
@@ -144,12 +225,12 @@ function EmptyRecommendations() {
 function AIAnalysisPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  // Fall back to the persisted patient data: navigating here via the sidebar
-  // link (rather than straight from the form submission) carries no
-  // location.state, but the page should still show the last analysis.
   const storedPatientData = useMedAssistStore((s) => s.patientData)
   const patientData = location.state?.patientData ?? storedPatientData
   const recommendations = useMedAssistStore((s) => s.recommendations)
+  const alerts = useMedAssistStore((s) => s.alerts)
+  const [alertsOpen, setAlertsOpen] = useState(true)
+  const [recsOpen, setRecsOpen] = useState(true)
 
   if (!patientData) {
     return (
@@ -196,12 +277,50 @@ function AIAnalysisPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_minmax(360px,420px)]">
-        <section aria-label="Recommandations" className="space-y-4">
-          {recommendations.length === 0 ? (
-            <EmptyRecommendations />
-          ) : (
-            recommendations.map((rec) => <RecommendationCard key={rec.id} rec={rec} />)
+        <section aria-label="Analyse" className="space-y-6">
+          {alerts.length > 0 && (
+            <div className="space-y-3">
+              <button
+                className="flex w-full items-center gap-2 text-left"
+                type="button"
+                onClick={() => setAlertsOpen((v) => !v)}
+              >
+                <AlertTriangle size={15} className="text-[#ba1a1a]" />
+                <span className="text-sm font-semibold uppercase tracking-wide text-[#ba1a1a]">
+                  Alertes détectées ({alerts.length})
+                </span>
+                <span className="ml-auto text-[#ba1a1a]">
+                  {alertsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </span>
+              </button>
+              {alertsOpen && alerts.map((alert) => (
+                <AlertItem alert={alert} key={alert.id} />
+              ))}
+            </div>
           )}
+
+          <div className="space-y-4">
+            <button
+              className="flex w-full items-center gap-2 text-left"
+              type="button"
+              onClick={() => setRecsOpen((v) => !v)}
+            >
+              <Sparkles size={15} className="text-[#3d4943]" />
+              <span className="text-sm font-semibold uppercase tracking-wide text-[#3d4943]">
+                Recommandations ({recommendations.length})
+              </span>
+              <span className="ml-auto text-[#3d4943]">
+                {recsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </span>
+            </button>
+            {recsOpen && (
+              recommendations.length === 0 ? (
+                <EmptyRecommendations />
+              ) : (
+                recommendations.map((rec) => <RecommendationCard key={rec.id} rec={rec} />)
+              )
+            )}
+          </div>
         </section>
 
         {/* Keyed by the patient-data fingerprint: a fresh form submission

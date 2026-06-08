@@ -22,6 +22,14 @@ TIMEOUT_S = 500
 
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 _JSON_OBJECT_RE = re.compile(r"\{[\s\S]*\}")
+# medgemma1.5 separates its internal reasoning from its actual output with
+# special tokens like <unused95>. Everything AFTER the last such token is
+# the "real" response; everything before is chain-of-thought that should
+# not be fed into the JSON parser (it contains stray { } that break the
+# greedy regex extraction).
+_THINKING_SEPARATOR_RE = re.compile(r"<unused\d+>|<\|assistant\|>|<\|end_header_id\|>")
+# Matches JSON wrapped in a markdown code fence (```json ... ``` or ``` ... ```)
+_CODE_FENCE_JSON_RE = re.compile(r"```(?:json)?\s*(\{[\s\S]*?\})\s*```")
 
 
 def call_model(messages):
@@ -36,7 +44,7 @@ def call_model(messages):
             json={
                 "model": MODEL,
                 "stream": False,
-                "options": {"temperature": 0.3, "num_predict": 3500, "num_ctx": 8192},
+                "options": {"temperature": 0.3, "num_predict": 6000, "num_ctx": 16384},
                 "messages": messages,
             },
             timeout=TIMEOUT_S,
@@ -84,23 +92,42 @@ def parse_response(raw):
 
     text = raw.strip()
 
+    # medgemma1.5 emits its chain-of-thought before a separator token like
+    # <unused95>, then the actual JSON output after it. Taking the last segment
+    # isolates the real response and prevents the greedy regex below from
+    # anchoring on stray { } characters inside the reasoning block.
+    parts = _THINKING_SEPARATOR_RE.split(text)
+    if len(parts) > 1:
+        text = parts[-1].strip()
+
+    # 1. Direct parse (model output is clean JSON)
     try:
         return json.loads(text)
     except ValueError:
         pass
 
+    # 2. JSON inside a markdown code fence (```json ... ```)
+    match = _CODE_FENCE_JSON_RE.search(text)
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except ValueError:
+            pass
+
+    # 3. Control-character cleanup then retry
     try:
         cleaned = _CONTROL_CHARS_RE.sub("", text.replace("\t", "\\t").replace("\r", "\\r"))
         return json.loads(cleaned)
     except ValueError:
         pass
 
-    match = _JSON_OBJECT_RE.search(text)
-    if match:
+    # 4. Last resort: try every JSON-object-shaped substring (not just the
+    #    greedy first match, which can span unrelated text).
+    for match in _JSON_OBJECT_RE.finditer(text):
         try:
             return json.loads(match.group(0))
         except ValueError:
-            pass
+            continue
 
     return None
 
