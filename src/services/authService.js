@@ -61,11 +61,12 @@ export function getCurrentUser() {
 /**
  * Login with email and password
  */
-export async function login(email, password) {
+export async function login(authData) {
+  debugger;
   try {
     const response = await apiClient.post(AUTH_ENDPOINTS.LOGIN, {
-      email,
-      password,
+      email: authData.email,
+      password: authData.password,
     })
 
     if (response.data.success && response.data.data) {

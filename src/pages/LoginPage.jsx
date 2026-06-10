@@ -1,7 +1,7 @@
 import { ArrowRight, Eye, Lock, Mail, ShieldPlus } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
-import { loginWithFakeJwt } from '../features/auth/auth'
+import { login } from '../features/auth/auth'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -12,16 +12,16 @@ function LoginPage() {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
 
-    loginWithFakeJwt({
+    login({
       email: formData.get('email'),
-      role: formData.get('email') === 'admin@smarthealth.local' ? 'admin' : 'patient',
+      password : formData.get('password')
     })
 
     navigate(from, { replace: true })
   }
 
   function handleSocialLogin(provider) {
-    loginWithFakeJwt({
+    login({
       email: `${provider.toLowerCase()}@smarthealth.local`,
       role: 'patient',
     })
