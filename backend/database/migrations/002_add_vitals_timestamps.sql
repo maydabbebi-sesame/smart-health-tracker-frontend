@@ -1,0 +1,4 @@
+-- Migration: add created_at and updated_at columns to vitals
+ALTER TABLE vitals
+    ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
