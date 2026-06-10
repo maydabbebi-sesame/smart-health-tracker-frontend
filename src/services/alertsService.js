@@ -1,0 +1,236 @@
+import { apiClient } from './apiClient'
+import { ALERT_ENDPOINTS } from '../constants/apiEndpoints'
+
+/**
+ * Alerts Service - Real API Integration
+ * Handles alert management (health alerts from vitals and forms)
+ */
+
+/**
+ * Get all alerts for the user
+ */
+export async function getAlerts(page = 1, pageSize = 20, unreadOnly = false) {
+  try {
+    const params = {
+      page,
+      pageSize,
+    }
+
+    if (unreadOnly) {
+      params.unreadOnly = true
+    }
+
+    const response = await apiClient.get(ALERT_ENDPOINTS.GET_ALERTS, { params })
+
+    if (response.data.success && response.data.data) {
+      return { success: true, data: response.data.data }
+    }
+
+    return {
+      success: false,
+      error: response.data.error || 'Failed to fetch alerts',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to fetch alerts',
+    }
+  }
+}
+
+/**
+ * Get specific alert by ID
+ */
+export async function getAlertById(id) {
+  try {
+    const response = await apiClient.get(ALERT_ENDPOINTS.GET_ALERT_BY_ID(id))
+
+    if (response.data.success && response.data.data) {
+      return { success: true, data: response.data.data }
+    }
+
+    return {
+      success: false,
+      error: response.data.error || 'Failed to fetch alert',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to fetch alert',
+    }
+  }
+}
+
+/**
+ * Mark alert as read
+ */
+export async function markAlertAsRead(id) {
+  try {
+    const response = await apiClient.post(
+      ALERT_ENDPOINTS.MARK_AS_READ(id),
+      {},
+    )
+
+    if (response.data.success) {
+      return { success: true }
+    }
+
+    return {
+      success: false,
+      error: response.data.error || 'Failed to mark alert as read',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to mark alert as read',
+    }
+  }
+}
+
+/**
+ * Mark alert as unread
+ */
+export async function markAlertAsUnread(id) {
+  try {
+    const response = await apiClient.post(
+      ALERT_ENDPOINTS.MARK_AS_UNREAD(id),
+      {},
+    )
+
+    if (response.data.success) {
+      return { success: true }
+    }
+
+    return {
+      success: false,
+      error: response.data.error || 'Failed to mark alert as unread',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to mark alert as unread',
+    }
+  }
+}
+
+/**
+ * Acknowledge/dismiss an alert
+ */
+export async function acknowledgeAlert(id) {
+  try {
+    const response = await apiClient.post(
+      ALERT_ENDPOINTS.ACKNOWLEDGE_ALERT(id),
+      {},
+    )
+
+    if (response.data.success) {
+      return { success: true }
+    }
+
+    return {
+      success: false,
+      error: response.data.error || 'Failed to acknowledge alert',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to acknowledge alert',
+    }
+  }
+}
+
+/**
+ * Delete an alert
+ */
+export async function deleteAlert(id) {
+  try {
+    const response = await apiClient.delete(ALERT_ENDPOINTS.DELETE_ALERT(id))
+
+    if (response.data.success) {
+      return { success: true }
+    }
+
+    return {
+      success: false,
+      error: response.data.error || 'Failed to delete alert',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to delete alert',
+    }
+  }
+}
+
+/**
+ * Delete all alerts
+ */
+export async function deleteAllAlerts() {
+  try {
+    const response = await apiClient.post(
+      ALERT_ENDPOINTS.DELETE_ALL_ALERTS,
+      {},
+    )
+
+    if (response.data.success) {
+      return { success: true }
+    }
+
+    return {
+      success: false,
+      error: response.data.error || 'Failed to delete all alerts',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to delete all alerts',
+    }
+  }
+}
+
+/**
+ * Get count of unread alerts
+ */
+export async function getUnreadAlertCount() {
+  try {
+    const response = await apiClient.get(ALERT_ENDPOINTS.GET_UNREAD_COUNT)
+
+    if (response.data.success && response.data.data) {
+      return { success: true, data: response.data.data }
+    }
+
+    return {
+      success: false,
+      error: response.data.error || 'Failed to fetch unread count',
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to fetch unread count',
+    }
+  }
+}
