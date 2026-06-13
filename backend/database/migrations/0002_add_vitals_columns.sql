@@ -1,0 +1,31 @@
+-- 0002_add_vitals_columns.sql
+-- Migration: add additional columns to vitals to cover frontend form fields
+
+ALTER TABLE vitals
+  ADD COLUMN age INT DEFAULT NULL,
+  ADD COLUMN gender VARCHAR(50) DEFAULT NULL,
+  ADD COLUMN height INT DEFAULT NULL,
+  ADD COLUMN weight FLOAT DEFAULT NULL,
+  ADD COLUMN glycemia FLOAT DEFAULT NULL,
+  ADD COLUMN weight_variation VARCHAR(50) DEFAULT NULL,
+  ADD COLUMN weight_variation_kg FLOAT DEFAULT NULL,
+  ADD COLUMN health_issues_history TEXT DEFAULT NULL,
+  ADD COLUMN drug_allergies_flag BOOLEAN DEFAULT NULL,
+  ADD COLUMN drug_allergies TEXT DEFAULT NULL,
+  ADD COLUMN family_health_issues TEXT DEFAULT NULL,
+  ADD COLUMN smoking BOOLEAN DEFAULT NULL,
+  ADD COLUMN cigarettes_per_day INT DEFAULT NULL,
+  ADD COLUMN alcohol BOOLEAN DEFAULT NULL,
+  ADD COLUMN alcohol_glasses INT DEFAULT NULL,
+  ADD COLUMN current_treatment BOOLEAN DEFAULT NULL,
+  ADD COLUMN current_treatments TEXT DEFAULT NULL,
+  ADD COLUMN complements BOOLEAN DEFAULT NULL,
+  ADD COLUMN complements_text TEXT DEFAULT NULL,
+  ADD COLUMN observance VARCHAR(255) DEFAULT NULL,
+  ADD COLUMN symptoms TEXT DEFAULT NULL,
+  ADD COLUMN pain_intensity INT DEFAULT NULL,
+  ADD COLUMN symptoms_description VARCHAR(255) DEFAULT NULL,
+  ADD COLUMN symptoms_duration VARCHAR(255) DEFAULT NULL,
+  ADD COLUMN pain_location TEXT DEFAULT NULL,
+  ADD COLUMN triggers TEXT DEFAULT NULL,
+  ADD COLUMN general_state VARCHAR(255) DEFAULT NULL;

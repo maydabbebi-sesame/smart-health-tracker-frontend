@@ -11,6 +11,7 @@ from auth import auth_bp
 from alerts import alerts_bp
 from forms import forms_bp
 from vitals import vitals_bp
+from admin import admin_bp
 
 if not hasattr(pkgutil, "get_loader"):
     def _fallback_get_loader(name):
@@ -28,6 +29,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(alerts_bp)
 app.register_blueprint(forms_bp)
 app.register_blueprint(vitals_bp)
+app.register_blueprint(admin_bp)
 
 
 if __name__ == "__main__":

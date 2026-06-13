@@ -224,3 +224,133 @@ def delete_alert(uid: str):
     cursor.close()
     conn.close()
     return jsonify({"message": "Alert deleted successfully!"})
+
+
+@alerts_bp.route("/<uid>/read", methods=["POST"])
+@token_required
+def mark_alert_as_read(uid: str):
+    """Mark a specific alert as read."""
+    internal_id = decode_id(uid)
+    if internal_id is None:
+        return jsonify({"error": "Invalid alert UID"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM alerts WHERE id = %s", (internal_id,))
+    alert = cursor.fetchone()
+    if not alert:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Alert not found"}), 404
+
+    requester = g.current_user
+    user_internal_id = decode_id(requester.get("uid"))
+    if requester.get("role") != "admin" and alert.get("user_id") != user_internal_id:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Forbidden"}), 403
+
+    cursor.execute("UPDATE alerts SET is_read = 1 WHERE id = %s", (internal_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Alert marked as read"})
+
+
+@alerts_bp.route("/<uid>/unread", methods=["POST"])
+@token_required
+def mark_alert_as_unread(uid: str):
+    """Mark a specific alert as unread."""
+    internal_id = decode_id(uid)
+    if internal_id is None:
+        return jsonify({"error": "Invalid alert UID"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM alerts WHERE id = %s", (internal_id,))
+    alert = cursor.fetchone()
+    if not alert:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Alert not found"}), 404
+
+    requester = g.current_user
+    user_internal_id = decode_id(requester.get("uid"))
+    if requester.get("role") != "admin" and alert.get("user_id") != user_internal_id:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Forbidden"}), 403
+
+    cursor.execute("UPDATE alerts SET is_read = 0 WHERE id = %s", (internal_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Alert marked as unread"})
+
+
+@alerts_bp.route("/<uid>/acknowledge", methods=["POST"])
+@token_required
+def acknowledge_alert(uid: str):
+    """Acknowledge an alert (mark as read and acknowledged)."""
+    internal_id = decode_id(uid)
+    if internal_id is None:
+        return jsonify({"error": "Invalid alert UID"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM alerts WHERE id = %s", (internal_id,))
+    alert = cursor.fetchone()
+    if not alert:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Alert not found"}), 404
+
+    requester = g.current_user
+    user_internal_id = decode_id(requester.get("uid"))
+    if requester.get("role") != "admin" and alert.get("user_id") != user_internal_id:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Forbidden"}), 403
+
+    cursor.execute("UPDATE alerts SET is_read = 1, acknowledged = 1 WHERE id = %s", (internal_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Alert acknowledged"})
+
+
+@alerts_bp.route("/delete-all", methods=["POST"])
+@token_required
+def delete_all_alerts():
+    """Delete all alerts for the current user."""
+    requester = g.current_user
+    user_internal_id = decode_id(requester.get("uid"))
+    if user_internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM alerts WHERE user_id = %s", (user_internal_id,))
+    deleted_count = cursor.rowcount
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": f"Deleted {deleted_count} alerts"})
+
+
+@alerts_bp.route("/unread-count", methods=["GET"])
+@token_required
+def get_unread_alert_count():
+    """Get count of unread alerts for the current user."""
+    requester = g.current_user
+    user_internal_id = decode_id(requester.get("uid"))
+    if user_internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT COUNT(*) as count FROM alerts WHERE user_id = %s AND is_read = 0", (user_internal_id,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return jsonify({"unread_count": result["count"] if result else 0})

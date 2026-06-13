@@ -584,3 +584,209 @@ def enable_mfa():
     cursor.close()
     conn.close()
     return jsonify({"message": "MFA enabled for your account"}), 200
+
+
+@auth_bp.route("/disable-mfa", methods=["POST"])
+@token_required
+def disable_mfa():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+    current_password = data.get("current_password")
+    if not current_password:
+        return jsonify({"error": "Missing required field: current_password"}), 400
+
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT password FROM users WHERE id = %s", (internal_id,))
+    user = cursor.fetchone()
+    if not user or not check_password_hash(user["password"], current_password):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Invalid current password"}), 401
+
+    cursor.execute("UPDATE users SET mfa_enabled = 0, mfa_code = NULL, mfa_expiry = NULL WHERE id = %s", (internal_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "MFA disabled for your account"}), 200
+
+
+@auth_bp.route("/request-mfa", methods=["POST"])
+@token_required
+def request_mfa():
+    """Request a new MFA code to be sent (for already-enabled MFA users)."""
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT email, mfa_enabled FROM users WHERE id = %s", (internal_id,))
+    user = cursor.fetchone()
+    if not user:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "User not found"}), 404
+
+    if not user.get("mfa_enabled"):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "MFA is not enabled for this account"}), 400
+
+    mfa_code = f"{secrets.randbelow(1000000):06d}"
+    mfa_expiry = datetime.utcnow() + timedelta(seconds=MFA_CODE_EXPIRY_SECONDS)
+    cursor.execute("UPDATE users SET mfa_code = %s, mfa_expiry = %s WHERE id = %s", (mfa_code, mfa_expiry, internal_id))
+    conn.commit()
+    try:
+        send_mfa_email(user.get("email"), mfa_code)
+    except Exception:
+        pass
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "MFA code sent to your email"}), 200
+
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+    email = data.get("email")
+    if not email:
+        return jsonify({"error": "Missing required field: email"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, email FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    if not user:
+        cursor.close()
+        conn.close()
+        # Return success even if user not found to avoid user enumeration
+        return jsonify({"message": "If the email exists, a reset code has been sent"}), 200
+
+    reset_code = f"{secrets.randbelow(1000000):06d}"
+    reset_expiry = datetime.utcnow() + timedelta(seconds=VERIFICATION_CODE_EXPIRY_SECONDS)
+    cursor.execute("UPDATE users SET verification_code = %s, verification_expiry = %s WHERE id = %s", (reset_code, reset_expiry, user["id"]))
+    conn.commit()
+    try:
+        send_verification_email(email, encode_id(user["id"]), reset_code)
+    except Exception:
+        pass
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "If the email exists, a reset code has been sent"}), 200
+
+
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+    email = data.get("email")
+    code = data.get("code")
+    new_password = data.get("new_password")
+    if not email or not code or not new_password:
+        return jsonify({"error": "Missing required fields: email, code, new_password"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, verification_code, verification_expiry FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    if not user:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Invalid email or code"}), 400
+
+    if user.get("verification_code") != code:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Invalid reset code"}), 400
+
+    expiry = user.get("verification_expiry")
+    if expiry is not None and expiry < datetime.utcnow():
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Reset code expired"}), 400
+
+    password_hash = generate_password_hash(new_password)
+    cursor.execute("UPDATE users SET password = %s, verification_code = NULL, verification_expiry = NULL WHERE id = %s", (password_hash, user["id"]))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Password reset successfully"}), 200
+
+
+@auth_bp.route("/social-login", methods=["POST"])
+def social_login():
+    """Unified social login endpoint that delegates to provider-specific logic."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+    provider = data.get("provider")
+    if not provider:
+        return jsonify({"error": "Missing required field: provider"}), 400
+
+    if provider == "google":
+        id_token = data.get("id_token")
+        if not id_token:
+            return jsonify({"error": "Missing required field: id_token"}), 400
+        payload = verify_google_id_token(id_token)
+        if not payload:
+            return jsonify({"error": "Invalid Google ID token"}), 401
+        email = payload.get("email")
+        name = payload.get("name") or payload.get("given_name")
+        provider_id = payload.get("sub")
+        user = get_or_create_social_user("google", provider_id, email, name)
+        return social_login_response(user)
+    elif provider == "facebook":
+        access_token = data.get("access_token")
+        if not access_token:
+            return jsonify({"error": "Missing required field: access_token"}), 400
+        payload = verify_facebook_access_token(access_token)
+        if not payload:
+            return jsonify({"error": "Invalid Facebook access token"}), 401
+        email = payload.get("email")
+        name = payload.get("name")
+        provider_id = payload.get("id")
+        user = get_or_create_social_user("facebook", provider_id, email, name)
+        return social_login_response(user)
+    elif provider == "apple":
+        id_token = data.get("id_token")
+        if not id_token:
+            return jsonify({"error": "Missing required field: id_token"}), 400
+        payload = verify_apple_id_token(id_token)
+        if not payload:
+            return jsonify({"error": "Invalid Apple ID token"}), 401
+        email = payload.get("email")
+        name = payload.get("name")
+        provider_id = payload.get("sub")
+        user = get_or_create_social_user("apple", provider_id, email, name)
+        return social_login_response(user)
+    else:
+        return jsonify({"error": f"Unsupported provider: {provider}"}), 400
+
+
+@auth_bp.route("/refresh-token", methods=["POST"])
+@token_required
+def refresh_token():
+    """Issue a new token with extended expiry."""
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    # Revoke old token
+    old_token = get_token_from_header()
+    if old_token:
+        revoke_token(old_token)
+
+    new_token = create_access_token(internal_id, requester.get("role"))
+    return jsonify({"access_token": new_token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS})

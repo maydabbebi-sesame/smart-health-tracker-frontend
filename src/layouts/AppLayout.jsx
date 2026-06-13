@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { clearToken } from '../features/auth/auth'
+import { useQuery } from '@tanstack/react-query'
+import { getProfile } from '../services/userService'
+import { getCurrentUser } from '../features/auth/auth'
 import { navigationItems } from '../shared/navigation'
 import { ThemeToggle } from '../shared/ui/ThemeToggle'
 
@@ -72,6 +75,8 @@ export function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+
+  const { data: profileData } = useQuery({ queryKey: ['profile-header'], queryFn: getProfile })
 
   function handleLogout() {
     clearToken()
@@ -163,7 +168,7 @@ export function AppLayout() {
                 type="button"
                 onClick={() => navigate('/profile')}
               >
-                <p className="text-sm font-semibold text-slate-900">Maya Ben Ali</p>
+                <p className="text-sm font-semibold text-slate-900">{profileData?.data?.first_name || profileData?.data?.name || getCurrentUser()?.email || 'Utilisateur'}</p>
                 <p className="text-xs text-slate-500">Patient account</p>
               </button>
               <motion.button

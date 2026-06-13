@@ -1,31 +1,43 @@
 import { ArrowRight, Eye, Lock, Mail, ShieldPlus } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
-import { loginWithFakeJwt } from '../features/auth/auth'
+import { login } from '../features/auth/auth'
 
 function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = location.state?.from?.pathname || '/dashboard'
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    const formData = new FormData(event.currentTarget)
+    setError(null)
+    setLoading(true)
 
-    loginWithFakeJwt({
+    const formData = new FormData(event.currentTarget)
+    const result = await login({
       email: formData.get('email'),
-      role: formData.get('email') === 'admin@smarthealth.local' ? 'admin' : 'patient',
+      password: formData.get('password'),
     })
 
-    navigate(from, { replace: true })
+    setLoading(false)
+
+    if (result.success) {
+      if (result.mfaRequired) {
+        // TODO: navigate to MFA verification page
+        return
+      }
+      navigate(from, { replace: true })
+    } else {
+      setError(result.error)
+    }
   }
 
   function handleSocialLogin(provider) {
-    loginWithFakeJwt({
-      email: `${provider.toLowerCase()}@smarthealth.local`,
-      role: 'patient',
-    })
-    navigate(from, { replace: true })
+    // Social login requires OAuth tokens - placeholder
+    setError(`${provider} login requires OAuth integration`)
   }
 
   return (

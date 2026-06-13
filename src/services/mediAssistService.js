@@ -4,7 +4,9 @@
 // and user prompts, calls the LLM and parses its JSON reply. Keeping the
 // prompt-building and the gateway call server-side means the API key never
 // reaches the browser — the frontend only ever sees the parsed result.
-const CHAT_ENDPOINT = '/mediassist/api/mediassist/chat'
+const CHAT_ENDPOINT = import.meta.env.VITE_MEDIASSIST_URL
+  ? `${import.meta.env.VITE_MEDIASSIST_URL}/api/mediassist/chat`
+  : 'http://127.0.0.1:5001/api/mediassist/chat'
 // Must stay comfortably ABOVE the backend's own gateway-call timeout
 // (mediassist_service/llm_client.py's TIMEOUT_S) — medgemma1.5 is a "thinking"
 // model whose generation routinely runs past a minute, and aborting here

@@ -181,3 +181,155 @@ def reset_password():
     conn.close()
 
     return jsonify({"message": "Password updated successfully!"})
+
+
+@users_bp.route("/profile", methods=["GET"])
+@token_required
+def get_profile():
+    """Get the current user's profile."""
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE id = %s", (internal_id,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify(publicize_user(user))
+
+
+@users_bp.route("/profile", methods=["PUT"])
+@token_required
+def update_profile():
+    """Update the current user's profile."""
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+
+    allowed_fields = ["name", "email", "phone", "date_of_birth", "gender", "address", "emergency_contact"]
+    updates = []
+    values = []
+    for field in allowed_fields:
+        if field in data:
+            updates.append(f"{field} = %s")
+            values.append(data[field])
+
+    if not updates:
+        return jsonify({"error": "No valid fields to update"}), 400
+
+    values.append(internal_id)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = %s", tuple(values))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Profile updated successfully"})
+
+
+@users_bp.route("/profile", methods=["DELETE"])
+@token_required
+def delete_profile():
+    """Delete the current user's account."""
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE id = %s", (internal_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Account deleted successfully"})
+
+
+@users_bp.route("/change-password", methods=["POST"])
+@token_required
+def change_password():
+    """Change the current user's password."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    if not current_password or not new_password:
+        return jsonify({"error": "Missing required fields: current_password, new_password"}), 400
+
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT password FROM users WHERE id = %s", (internal_id,))
+    user = cursor.fetchone()
+    if not user or not check_password_hash(user["password"], current_password):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Invalid current password"}), 401
+
+    password_hash = generate_password_hash(new_password)
+    cursor.execute("UPDATE users SET password = %s WHERE id = %s", (password_hash, internal_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Password changed successfully"})
+
+
+@users_bp.route("/profile-picture", methods=["POST"])
+@token_required
+def upload_profile_picture():
+    """Upload a profile picture for the current user."""
+    import os
+
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+
+    # Validate file type
+    allowed_extensions = {"png", "jpg", "jpeg", "gif", "webp"}
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in allowed_extensions:
+        return jsonify({"error": f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"}), 400
+
+    # Save file
+    upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads", "profile_pictures")
+    os.makedirs(upload_dir, exist_ok=True)
+    filename = f"{requester.get('uid')}.{ext}"
+    filepath = os.path.join(upload_dir, filename)
+    file.save(filepath)
+
+    # Update user record
+    picture_url = f"/uploads/profile_pictures/{filename}"
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET profile_picture = %s WHERE id = %s", (picture_url, internal_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Profile picture uploaded successfully", "url": picture_url})

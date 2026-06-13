@@ -324,3 +324,151 @@ def send_appointment_reminders():
     cursor.close()
     conn.close()
     return jsonify({"message": f"Reminders sent: {sent}"})
+
+
+@appointments_bp.route("/<uid>/cancel", methods=["POST"])
+@token_required
+def cancel_appointment(uid: str):
+    """Cancel a specific appointment with an optional reason."""
+    internal_id = decode_id(uid)
+    if internal_id is None:
+        return jsonify({"error": "Invalid appointment UID"}), 400
+
+    data = request.get_json(silent=True) or {}
+    reason = data.get("reason", "")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM appointments WHERE id = %s", (internal_id,))
+    appointment = cursor.fetchone()
+    if not appointment:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Appointment not found"}), 404
+
+    requester = g.current_user
+    user_internal_id = decode_id(requester.get("uid"))
+    if requester.get("role") != "admin" and appointment.get("user_id") != user_internal_id:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Forbidden"}), 403
+
+    cursor.execute(
+        "UPDATE appointments SET status = 'cancelled', notes = CONCAT(IFNULL(notes, ''), %s) WHERE id = %s",
+        (f"\nCancellation reason: {reason}" if reason else "", internal_id)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Appointment cancelled successfully"})
+
+
+@appointments_bp.route("/available-slots", methods=["GET"])
+@token_required
+def get_available_slots():
+    """Get available appointment slots for a doctor on a specific date."""
+    doctor_uid = request.args.get("doctorId")
+    date_str = request.args.get("date")
+    if not doctor_uid or not date_str:
+        return jsonify({"error": "Missing required parameters: doctorId, date"}), 400
+
+    doctor_id = decode_id(doctor_uid)
+    if doctor_id is None:
+        return jsonify({"error": "Invalid doctor UID"}), 400
+
+    try:
+        target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Get existing appointments for this doctor on this date
+    cursor.execute(
+        "SELECT appointment_time FROM appointments WHERE doctor_id = %s AND appointment_date = %s AND status != 'cancelled'",
+        (doctor_id, target_date)
+    )
+    booked_times = [row["appointment_time"] for row in cursor.fetchall()]
+
+    # Generate available slots (9:00-17:00, 30 min intervals)
+    all_slots = []
+    for hour in range(9, 17):
+        for minute in [0, 30]:
+            slot_time = f"{hour:02d}:{minute:02d}"
+            all_slots.append(slot_time)
+
+    available_slots = [slot for slot in all_slots if slot not in [str(t)[:5] if hasattr(t, 'seconds') else str(t)[:5] for t in booked_times]]
+
+    cursor.close()
+    conn.close()
+    return jsonify({"date": date_str, "doctor_uid": doctor_uid, "available_slots": available_slots})
+
+
+@appointments_bp.route("/<uid>/confirm", methods=["POST"])
+@token_required
+def confirm_appointment(uid: str):
+    """Confirm a scheduled appointment."""
+    internal_id = decode_id(uid)
+    if internal_id is None:
+        return jsonify({"error": "Invalid appointment UID"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM appointments WHERE id = %s", (internal_id,))
+    appointment = cursor.fetchone()
+    if not appointment:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Appointment not found"}), 404
+
+    requester = g.current_user
+    user_internal_id = decode_id(requester.get("uid"))
+    if requester.get("role") != "admin" and appointment.get("user_id") != user_internal_id:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Forbidden"}), 403
+
+    cursor.execute("UPDATE appointments SET status = 'confirmed' WHERE id = %s", (internal_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Appointment confirmed successfully"})
+
+
+@appointments_bp.route("/<uid>/reminder", methods=["POST"])
+@token_required
+def send_single_reminder(uid: str):
+    """Send a reminder for a specific appointment."""
+    internal_id = decode_id(uid)
+    if internal_id is None:
+        return jsonify({"error": "Invalid appointment UID"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM appointments WHERE id = %s", (internal_id,))
+    appointment = cursor.fetchone()
+    if not appointment:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Appointment not found"}), 404
+
+    requester = g.current_user
+    user_internal_id = decode_id(requester.get("uid"))
+    if requester.get("role") != "admin" and appointment.get("user_id") != user_internal_id:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Forbidden"}), 403
+
+    try:
+        _send_reminder_email(conn, appointment)
+        cursor.execute("UPDATE appointments SET reminder_sent = 1 WHERE id = %s", (internal_id,))
+        conn.commit()
+    except Exception as e:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Failed to send reminder"}), 500
+
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Reminder sent successfully"})

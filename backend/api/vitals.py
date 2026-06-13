@@ -62,6 +62,9 @@ ABSOLUTE_LIMITS = {
     "temperature": (30.0, 45.0),
     "oxygen_saturation": (50.0, 100.0),
     "respiratory_rate": (5, 60),
+    "weight": (20.0, 500.0),
+    "glycemia": (0.0, 50.0),
+    "weight_variation_kg": (-200.0, 200.0),
 }
 
 
@@ -93,6 +96,35 @@ def submit_vitals():
     respiratory_rate = data.get("respiratory_rate")
     notes = data.get("notes", "")
 
+    # Additional fields from frontend forms
+    age = data.get("age")
+    gender = data.get("gender") or data.get("biologicalSex")
+    height = data.get("height")
+    weight = data.get("weight")
+    glycemia = data.get("glycemia")
+    weight_variation = data.get("weightVariation") or data.get("weight_variation")
+    weight_variation_kg = data.get("weightVariationKg") or data.get("weight_variation_kg")
+    health_issues_history = data.get("health_issues_history") or data.get("chronicDiseases")
+    drug_allergies_flag = data.get("drug_allergies_flag") if data.get("drug_allergies_flag") is not None else (data.get("hasDrugAllergies") in ("Oui", "yes", "Yes", "true", True))
+    drug_allergies = data.get("drug_allergies") or data.get("drugAllergies")
+    family_health_issues = data.get("family_health_issues") or data.get("familyHistory")
+    smoking = data.get("smoking") if data.get("smoking") is not None else (data.get("tobacco") in ("Oui", "yes", "Yes", "true", True))
+    cigarettes_per_day = data.get("cigarettes_per_day") or data.get("tobaccoQuantity")
+    alcohol = data.get("alcohol") if data.get("alcohol") is not None else (data.get("alcohol") in ("Oui", "yes", "Yes", "true", True))
+    alcohol_glasses = data.get("alcohol_glasses") or data.get("alcoholQuantity")
+    current_treatment = data.get("current_treatment") if data.get("current_treatment") is not None else (data.get("hasCurrentMedications") in ("Oui", "yes", "Yes", "true", True))
+    current_treatments = data.get("current_treatments") or data.get("currentMedications")
+    complements = data.get("complements") if data.get("complements") is not None else (data.get("hasSupplements") in ("Oui", "yes", "Yes", "true", True))
+    complements_text = data.get("complements_text") or data.get("supplements")
+    observance = data.get("observance") or data.get("treatmentAdherence")
+    symptoms = data.get("symptoms") or data.get("mainSymptoms")
+    pain_intensity = data.get("pain_intensity") or data.get("painIntensity")
+    symptoms_description = data.get("symptoms_description") or data.get("description") or data.get("otherSymptoms")
+    symptoms_duration = data.get("symptoms_duration") or data.get("symptomDuration")
+    pain_location = data.get("pain_location") or data.get("painLocation")
+    triggers = data.get("triggers")
+    general_state = data.get("general_state") or data.get("generalState")
+
     if temperature is not None:
         try:
             temperature = float(temperature)
@@ -111,6 +143,54 @@ def submit_vitals():
         except (TypeError, ValueError):
             return jsonify({"error": "respiratory_rate must be numeric"}), 400
 
+    if age is not None:
+        try:
+            age = int(age)
+        except (TypeError, ValueError):
+            return jsonify({"error": "age must be numeric"}), 400
+
+    if height is not None:
+        try:
+            height = int(height)
+        except (TypeError, ValueError):
+            return jsonify({"error": "height must be numeric"}), 400
+
+    if weight is not None:
+        try:
+            weight = float(weight)
+        except (TypeError, ValueError):
+            return jsonify({"error": "weight must be numeric"}), 400
+
+    if glycemia is not None:
+        try:
+            glycemia = float(glycemia)
+        except (TypeError, ValueError):
+            return jsonify({"error": "glycemia must be numeric"}), 400
+
+    if weight_variation_kg is not None:
+        try:
+            weight_variation_kg = float(weight_variation_kg)
+        except (TypeError, ValueError):
+            return jsonify({"error": "weight_variation_kg must be numeric"}), 400
+
+    if cigarettes_per_day is not None:
+        try:
+            cigarettes_per_day = int(cigarettes_per_day)
+        except (TypeError, ValueError):
+            return jsonify({"error": "cigarettes_per_day must be numeric"}), 400
+
+    if alcohol_glasses is not None:
+        try:
+            alcohol_glasses = int(alcohol_glasses)
+        except (TypeError, ValueError):
+            return jsonify({"error": "alcohol_glasses must be numeric"}), 400
+
+    if pain_intensity is not None:
+        try:
+            pain_intensity = int(pain_intensity)
+        except (TypeError, ValueError):
+            return jsonify({"error": "pain_intensity must be numeric"}), 400
+
     # Validate absolute ranges
     def _validate_limit(name, value):
         if value is None:
@@ -126,12 +206,20 @@ def submit_vitals():
         return None
 
     for field, val in (
+        ("age", age),
         ("heart_rate", heart_rate),
         ("systolic_bp", systolic_bp),
         ("diastolic_bp", diastolic_bp),
         ("temperature", temperature),
         ("oxygen_saturation", oxygen_saturation),
         ("respiratory_rate", respiratory_rate),
+        ("weight", weight),
+        ("height", height),
+        ("glycemia", glycemia),
+        ("weight_variation_kg", weight_variation_kg),
+        ("cigarettes_per_day", cigarettes_per_day),
+        ("alcohol_glasses", alcohol_glasses),
+        ("pain_intensity", pain_intensity),
     ):
         err = _validate_limit(field, val)
         if err:
@@ -140,9 +228,12 @@ def submit_vitals():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO vitals (user_id, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())",
+        "INSERT INTO vitals (user_id, age, gender, height, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, weight, glycemia, weight_variation, weight_variation_kg, health_issues_history, drug_allergies_flag, drug_allergies, family_health_issues, smoking, cigarettes_per_day, alcohol, alcohol_glasses, current_treatment, current_treatments, complements, complements_text, observance, symptoms, pain_intensity, symptoms_description, symptoms_duration, pain_location, triggers, general_state, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())",
         (
             user_id,
+            age,
+            gender,
+            height,
             heart_rate,
             systolic_bp,
             diastolic_bp,
@@ -150,6 +241,30 @@ def submit_vitals():
             oxygen_saturation,
             respiratory_rate,
             notes,
+            weight,
+            glycemia,
+            weight_variation,
+            weight_variation_kg,
+            health_issues_history,
+            drug_allergies_flag,
+            drug_allergies,
+            family_health_issues,
+            smoking,
+            cigarettes_per_day,
+            alcohol,
+            alcohol_glasses,
+            current_treatment,
+            current_treatments,
+            complements,
+            complements_text,
+            observance,
+            symptoms,
+            pain_intensity,
+            symptoms_description,
+            symptoms_duration,
+            pain_location,
+            triggers,
+            general_state,
         ),
     )
     conn.commit()
@@ -197,7 +312,7 @@ def update_vital(uid: str):
         conn.close()
         return jsonify({"error": "Forbidden"}), 403
 
-    allowed = ["heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "notes"]
+    allowed = ["age", "gender", "height", "heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "notes", "weight", "glycemia", "weight_variation", "weight_variation_kg", "health_issues_history", "drug_allergies_flag", "drug_allergies", "family_health_issues", "smoking", "cigarettes_per_day", "alcohol", "alcohol_glasses", "current_treatment", "current_treatments", "complements", "complements_text", "observance", "symptoms", "pain_intensity", "symptoms_description", "symptoms_duration", "pain_location", "triggers", "general_state"]
     update_fields = {}
     for field in allowed:
         if field in data:
@@ -222,6 +337,20 @@ def update_vital(uid: str):
             update_fields["temperature"] = float(update_fields["temperature"])
         if "oxygen_saturation" in update_fields:
             update_fields["oxygen_saturation"] = float(update_fields["oxygen_saturation"])
+        if "weight" in update_fields:
+            update_fields["weight"] = float(update_fields["weight"])
+        if "height" in update_fields:
+            update_fields["height"] = int(update_fields["height"])
+        if "glycemia" in update_fields:
+            update_fields["glycemia"] = float(update_fields["glycemia"])
+        if "weight_variation_kg" in update_fields:
+            update_fields["weight_variation_kg"] = float(update_fields["weight_variation_kg"])
+        if "cigarettes_per_day" in update_fields:
+            update_fields["cigarettes_per_day"] = int(update_fields["cigarettes_per_day"])
+        if "alcohol_glasses" in update_fields:
+            update_fields["alcohol_glasses"] = int(update_fields["alcohol_glasses"])
+        if "pain_intensity" in update_fields:
+            update_fields["pain_intensity"] = int(update_fields["pain_intensity"])
     except (TypeError, ValueError):
         cursor.close()
         conn.close()
@@ -275,7 +404,7 @@ def vitals_evolution():
     Query params: user_uid (optional for admin), measure, from (YYYY-MM-DD), to (YYYY-MM-DD)
     """
     measure = request.args.get("measure")
-    if measure not in ("heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate"):
+    if measure not in ("heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "weight", "glycemia"):
         return jsonify({"error": "Invalid or missing measure parameter"}), 400
 
     user_uid = request.args.get("user_uid")
@@ -350,10 +479,10 @@ def export_vitals():
     if fmt == "csv":
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["recorded_at", "heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "notes"])
+        writer.writerow(["recorded_at", "heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "notes", "weight", "glycemia", "weight_variation", "weight_variation_kg"])
         for r in rows:
             writer.writerow([
-                r.get("recorded_at"), r.get("heart_rate"), r.get("systolic_bp"), r.get("diastolic_bp"), r.get("temperature"), r.get("oxygen_saturation"), r.get("respiratory_rate"), r.get("notes")
+                r.get("recorded_at"), r.get("heart_rate"), r.get("systolic_bp"), r.get("diastolic_bp"), r.get("temperature"), r.get("oxygen_saturation"), r.get("respiratory_rate"), r.get("notes"), r.get("weight"), r.get("glycemia"), r.get("weight_variation"), r.get("weight_variation_kg")
             ])
         csv_data = output.getvalue()
         output.close()
@@ -455,5 +584,34 @@ def get_vital(uid: str):
 
     if g.current_user.get("role") != "admin" and g.current_user.get("uid") != encode_id(vital["user_id"]):
         return jsonify({"error": "Forbidden"}), 403
+
+    return jsonify(publicize_vital(vital))
+
+
+@vitals_bp.route("/latest/<vital_type>", methods=["GET"])
+@token_required
+def get_latest_vital(vital_type: str):
+    """Get the most recent vital record of a specific type for the current user."""
+    allowed_types = ["heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "weight", "glycemia"]
+    if vital_type not in allowed_types:
+        return jsonify({"error": f"Invalid vital type. Allowed: {', '.join(allowed_types)}"}), 400
+
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        f"SELECT * FROM vitals WHERE user_id = %s AND {vital_type} IS NOT NULL ORDER BY created_at DESC LIMIT 1",
+        (internal_id,)
+    )
+    vital = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if vital is None:
+        return jsonify({"error": "No vital records found for this type"}), 404
 
     return jsonify(publicize_vital(vital))
