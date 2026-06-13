@@ -12,18 +12,16 @@ export async function getHealthHistory(page = 1, pageSize = 20) {
   try {
     const result = await getVitals(page, pageSize)
 
-    if (result.success && result.data?.data) {
-      // Transform vitals to display format
-      const formattedRecords = result.data.data.map((vital) =>
+    if (result.success && result.data) {
+      // Backend returns array of vitals directly
+      const vitals = Array.isArray(result.data) ? result.data : []
+      const formattedRecords = vitals.map((vital) =>
         transformVitalToDisplayFormat(vital),
       )
 
       return {
         success: true,
-        data: {
-          ...result.data,
-          data: formattedRecords,
-        },
+        data: formattedRecords,
       }
     }
 
@@ -39,53 +37,34 @@ export async function getHealthHistory(page = 1, pageSize = 20) {
 /**
  * Transform vital measurement to display format
  * Maps API vital structure to user-friendly display structure
+ * Backend vital: { uid, user_uid, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, recorded_at }
  */
 function transformVitalToDisplayFormat(vital) {
-  const displayNames = {
-    heart_rate: 'Heart Rate',
-    blood_pressure: 'Blood Pressure',
-    temperature: 'Temperature',
-    oxygen: 'Oxygen Level',
-    respiratory_rate: 'Respiratory Rate',
-    weight: 'Weight',
-  }
+  const entries = []
 
-  const units = {
-    heart_rate: 'bpm',
-    blood_pressure: 'mmHg',
-    temperature: '°C',
-    oxygen: '%',
-    respiratory_rate: 'breaths/min',
-    weight: 'kg',
+  if (vital.heart_rate != null) {
+    entries.push({ label: 'Heart Rate', value: `${vital.heart_rate}`, unit: 'bpm' })
+  }
+  if (vital.systolic_bp != null && vital.diastolic_bp != null) {
+    entries.push({ label: 'Blood Pressure', value: `${vital.systolic_bp}/${vital.diastolic_bp}`, unit: 'mmHg' })
+  }
+  if (vital.temperature != null) {
+    entries.push({ label: 'Temperature', value: `${vital.temperature.toFixed(1)}`, unit: '°C' })
+  }
+  if (vital.oxygen_saturation != null) {
+    entries.push({ label: 'Oxygen Level', value: `${vital.oxygen_saturation}`, unit: '%' })
+  }
+  if (vital.respiratory_rate != null) {
+    entries.push({ label: 'Respiratory Rate', value: `${vital.respiratory_rate}`, unit: 'breaths/min' })
   }
 
   return {
-    id: vital.id,
-    title: displayNames[vital.type] || vital.type,
-    date: vital.timestamp || vital.date,
+    id: vital.uid,
+    date: vital.recorded_at,
     type: 'Vitals',
-    value: formatVitalValue(vital),
-    unit: units[vital.type] || '',
-    originalVital: vital, // Keep original for detailed view
-  }
-}
-
-/**
- * Format vital value for display
- */
-function formatVitalValue(vital) {
-  switch (vital.type) {
-    case 'blood_pressure':
-      return `${vital.systolic}/${vital.diastolic}`
-    case 'temperature':
-      return vital.value.toFixed(1)
-    case 'heart_rate':
-    case 'oxygen':
-    case 'respiratory_rate':
-    case 'weight':
-      return vital.value.toString()
-    default:
-      return vital.value.toString()
+    entries,
+    notes: vital.notes,
+    originalVital: vital,
   }
 }
 

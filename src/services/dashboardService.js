@@ -14,28 +14,28 @@ export async function getDashboardSummary() {
   try {
     // Fetch all data in parallel
     const [vitalsRes, appointmentsRes, alertsRes] = await Promise.all([
-      getVitals(1, 100),
-      getAppointments(1, 5, 'scheduled'),
+      getVitals(),
+      getAppointments(),
       getUnreadAlertCount(),
     ])
 
+    // Backend returns arrays directly in .data
+    const vitals = Array.isArray(vitalsRes.data) ? vitalsRes.data : []
+    const appointments = Array.isArray(appointmentsRes.data) ? appointmentsRes.data : []
+    const scheduledAppointments = appointments.filter(a => a.status === 'scheduled')
+
     // Calculate wellness score client-side (0-100)
-    const wellnessScore = calculateWellnessScore(
-      vitalsRes.data?.data || [],
-    )
+    const wellnessScore = calculateWellnessScore(vitals)
 
     const stats = {
-      totalVitalsRecorded: vitalsRes.data?.pagination?.total || 0,
-      upcomingAppointments: appointmentsRes.data?.pagination?.total || 0,
+      totalVitalsRecorded: vitals.length,
+      upcomingAppointments: scheduledAppointments.length,
       pendingAlerts: alertsRes.data?.count || 0,
       wellnessScore,
     }
 
     // Generate health plan items (wellness recommendations)
-    const healthPlanItems = generateHealthPlanItems(
-      vitalsRes.data?.data || [],
-      wellnessScore,
-    )
+    const healthPlanItems = generateHealthPlanItems(vitals, wellnessScore)
 
     return { success: true, data: { stats, healthPlanItems } }
   } catch (error) {
@@ -58,9 +58,9 @@ export async function getDashboardCharts() {
       getLatestVital('temperature'),
     ])
 
-    const heartRateData = heartRateRes.data?.data || null
-    const bpData = bpRes.data?.data || null
-    const tempData = tempRes.data?.data || null
+    const heartRateData = heartRateRes.success ? heartRateRes.data : null
+    const bpData = bpRes.success ? bpRes.data : null
+    const tempData = tempRes.success ? tempRes.data : null
 
     return {
       success: true,

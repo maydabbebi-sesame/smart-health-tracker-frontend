@@ -14,8 +14,12 @@ export {
   verifyEmail,
   resendVerificationCode,
   requestMFA,
+  enableMFA,
   verifyMFA,
   logout,
   forgotPassword,
   resetPassword,
+  loginWithGoogle,
+  loginWithFacebook,
+  loginWithApple,
 } from '../../services/authService'

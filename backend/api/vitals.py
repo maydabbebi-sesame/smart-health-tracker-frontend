@@ -457,3 +457,32 @@ def get_vital(uid: str):
         return jsonify({"error": "Forbidden"}), 403
 
     return jsonify(publicize_vital(vital))
+
+
+@vitals_bp.route("/latest/<vital_type>", methods=["GET"])
+@token_required
+def get_latest_vital(vital_type: str):
+    """Get the most recent vital record of a specific type for the current user."""
+    allowed_types = ["heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate"]
+    if vital_type not in allowed_types:
+        return jsonify({"error": f"Invalid vital type. Allowed: {', '.join(allowed_types)}"}), 400
+
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        f"SELECT * FROM vitals WHERE user_id = %s AND {vital_type} IS NOT NULL ORDER BY created_at DESC LIMIT 1",
+        (internal_id,)
+    )
+    vital = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if vital is None:
+        return jsonify({"error": "No vital records found for this type"}), 404
+
+    return jsonify(publicize_vital(vital))

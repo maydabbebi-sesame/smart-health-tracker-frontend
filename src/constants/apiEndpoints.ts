@@ -8,83 +8,92 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 
 // ==================== Authentication Endpoints ====================
 export const AUTH_ENDPOINTS = {
-  LOGIN: '/auth/login',
-  REGISTER: '/auth/register',
-  VERIFY_EMAIL: '/auth/verify-email',
-  RESEND_VERIFICATION: '/auth/resend-verification-code',
-  REQUEST_MFA: '/auth/request-mfa',
-  VERIFY_MFA: '/auth/verify-mfa',
-  DISABLE_MFA: '/auth/disable-mfa',
-  FORGOT_PASSWORD: '/auth/forgot-password',
-  RESET_PASSWORD: '/auth/reset-password',
-  SOCIAL_LOGIN: '/auth/social-login',
-  LOGOUT: '/auth/logout',
-  REFRESH_TOKEN: '/auth/refresh-token',
+  LOGIN: '/api/auth/login',
+  LOGIN_GOOGLE: '/api/auth/login/google',
+  LOGIN_FACEBOOK: '/api/auth/login/facebook',
+  LOGIN_APPLE: '/api/auth/login/apple',
+  REGISTER: '/api/auth/register',
+  VERIFY_EMAIL: '/api/auth/verify-email',
+  RESEND_VERIFICATION: '/api/auth/request-verification',
+  REQUEST_MFA: '/api/auth/request-mfa',
+  ENABLE_MFA: '/api/auth/enable-mfa',
+  VERIFY_MFA: '/api/auth/verify-mfa',
+  DISABLE_MFA: '/api/auth/disable-mfa',
+  FORGOT_PASSWORD: '/api/auth/forgot-password',
+  RESET_PASSWORD: '/api/auth/reset-password',
+  SOCIAL_LOGIN: '/api/auth/social-login',
+  LOGOUT: '/api/auth/logout',
+  REFRESH_TOKEN: '/api/auth/refresh-token',
 };
 
 // ==================== User/Profile Endpoints ====================
 export const USER_ENDPOINTS = {
-  GET_PROFILE: '/users/profile',
-  UPDATE_PROFILE: '/users/profile',
-  DELETE_ACCOUNT: '/users/profile',
-  GET_USER_BY_ID: (id: string) => `/users/${id}`,
-  CHANGE_PASSWORD: '/users/password',
-  UPLOAD_PROFILE_PICTURE: '/users/profile-picture',
+  GET_PROFILE: '/api/users/profile',
+  UPDATE_PROFILE: '/api/users/profile',
+  DELETE_ACCOUNT: '/api/users/profile',
+  GET_USER_BY_ID: (id: string) => `/api/users/${id}`,
+  CHANGE_PASSWORD: '/api/users/change-password',
+  UPLOAD_PROFILE_PICTURE: '/api/users/profile-picture',
 };
 
 // ==================== Vital Signs Endpoints ====================
 export const VITAL_ENDPOINTS = {
-  RECORD_VITAL: '/vitals/record',
-  GET_VITALS: '/vitals/list',
-  GET_VITAL_BY_ID: (id: string) => `/vitals/${id}`,
-  UPDATE_VITAL: (id: string) => `/vitals/${id}`,
-  DELETE_VITAL: (id: string) => `/vitals/${id}`,
-  GET_VITAL_EVOLUTION: '/vitals/evolution',
-  EXPORT_VITALS: '/vitals/export',
-  GET_LATEST_VITAL: (type: string) => `/vitals/latest/${type}`,
+  RECORD_VITAL: '/api/vitals',
+  GET_VITALS: '/api/vitals',
+  GET_VITAL_BY_ID: (id: string) => `/api/vitals/${id}`,
+  UPDATE_VITAL: (id: string) => `/api/vitals/${id}`,
+  DELETE_VITAL: (id: string) => `/api/vitals/${id}`,
+  GET_VITAL_EVOLUTION: '/api/vitals/evolution',
+  EXPORT_VITALS: '/api/vitals/export',
+  GET_LATEST_VITAL: (type: string) => `/api/vitals/latest/${type}`,
 };
 
 // ==================== Appointments Endpoints ====================
 export const APPOINTMENT_ENDPOINTS = {
-  CREATE_APPOINTMENT: '/appointments/create',
-  GET_APPOINTMENTS: '/appointments/list',
-  GET_APPOINTMENT_BY_ID: (id: string) => `/appointments/${id}`,
-  UPDATE_APPOINTMENT: (id: string) => `/appointments/${id}`,
-  CANCEL_APPOINTMENT: (id: string) => `/appointments/${id}/cancel`,
-  GET_AVAILABLE_SLOTS: '/appointments/available-slots',
-  CONFIRM_APPOINTMENT: (id: string) => `/appointments/${id}/confirm`,
-  SEND_REMINDER: (id: string) => `/appointments/${id}/reminder`,
+  CREATE_APPOINTMENT: '/api/appointments',
+  GET_APPOINTMENTS: '/api/appointments',
+  GET_APPOINTMENT_BY_ID: (id: string) => `/api/appointments/${id}`,
+  UPDATE_APPOINTMENT: (id: string) => `/api/appointments/${id}`,
+  CANCEL_APPOINTMENT: (id: string) => `/api/appointments/${id}/cancel`,
+  DELETE_APPOINTMENT: (id: string) => `/api/appointments/${id}`,
+  GET_AVAILABLE_SLOTS: '/api/appointments/available-slots',
+  CONFIRM_APPOINTMENT: (id: string) => `/api/appointments/${id}/confirm`,
+  SEND_REMINDER: (id: string) => `/api/appointments/${id}/reminder`,
+  SEND_REMINDERS: '/api/appointments/send-reminders',
 };
 
 // ==================== Alerts Endpoints ====================
 export const ALERT_ENDPOINTS = {
-  GET_ALERTS: '/alerts/list',
-  GET_ALERT_BY_ID: (id: string) => `/alerts/${id}`,
-  MARK_AS_READ: (id: string) => `/alerts/${id}/read`,
-  MARK_AS_UNREAD: (id: string) => `/alerts/${id}/unread`,
-  ACKNOWLEDGE_ALERT: (id: string) => `/alerts/${id}/acknowledge`,
-  DELETE_ALERT: (id: string) => `/alerts/${id}`,
-  DELETE_ALL_ALERTS: '/alerts/delete-all',
-  GET_UNREAD_COUNT: '/alerts/unread-count',
+  GET_ALERTS: '/api/alerts',
+  GET_ALERT_BY_ID: (id: string) => `/api/alerts/${id}`,
+  MARK_AS_READ: (id: string) => `/api/alerts/${id}/read`,
+  MARK_AS_UNREAD: (id: string) => `/api/alerts/${id}/unread`,
+  ACKNOWLEDGE_ALERT: (id: string) => `/api/alerts/${id}/acknowledge`,
+  UPDATE_ALERT: (id: string) => `/api/alerts/${id}`,
+  DELETE_ALERT: (id: string) => `/api/alerts/${id}`,
+  DELETE_ALL_ALERTS: '/api/alerts/delete-all',
+  GET_UNREAD_COUNT: '/api/alerts/unread-count',
 };
 
 // ==================== Doctors Endpoints ====================
 export const DOCTOR_ENDPOINTS = {
-  GET_DOCTORS: '/doctors/list',
-  GET_DOCTOR_BY_ID: (id: string) => `/doctors/${id}`,
-  GET_DOCTOR_AVAILABILITY: (id: string) => `/doctors/${id}/availability`,
-  SEARCH_DOCTORS: '/doctors/search',
-  GET_DOCTOR_APPOINTMENTS: (id: string) => `/doctors/${id}/appointments`,
-  RATE_DOCTOR: (id: string) => `/doctors/${id}/rate`,
+  GET_DOCTORS: '/api/doctors',
+  GET_DOCTOR_BY_ID: (id: string) => `/api/doctors/${id}`,
+  GET_DOCTOR_AVAILABILITY: (id: string) => `/api/doctors/${id}/availability`,
+  SEARCH_DOCTORS: '/api/doctors/search',
+  GET_DOCTOR_APPOINTMENTS: (id: string) => `/api/doctors/${id}/appointments`,
+  RATE_DOCTOR: (id: string) => `/api/doctors/${id}/rate`,
+  CONFIRM_DOCTOR: (id: string) => `/api/doctors/${id}/confirm`,
+  CREATE_DOCTOR: '/api/doctors',
 };
 
 // ==================== Forms/Questionnaires Endpoints ====================
 export const FORM_ENDPOINTS = {
-  SUBMIT_FORM: '/forms/submit',
-  GET_FORMS: '/forms/list',
-  GET_FORM_BY_ID: (id: string) => `/forms/${id}`,
-  GET_FORM_HISTORY: '/forms/history',
-  EXPORT_FORMS: '/forms/export',
+  SUBMIT_FORM: '/api/forms/submit',
+  GET_FORMS: '/api/forms/list',
+  GET_FORM_BY_ID: (id: string) => `/api/forms/${id}`,
+  GET_FORM_HISTORY: '/api/forms/history',
+  EXPORT_FORMS: '/api/forms/export',
 };
 
 // ==================== AI/MediAssist Endpoints ====================
@@ -96,11 +105,11 @@ export const AI_ENDPOINTS = {
 
 // ==================== Admin Endpoints ====================
 export const ADMIN_ENDPOINTS = {
-  GET_USERS: '/admin/users',
-  GET_USER: (id: string) => `/admin/users/${id}`,
-  DELETE_USER: (id: string) => `/admin/users/${id}`,
-  GET_STATISTICS: '/admin/statistics',
-  GET_ACTIVITY_LOG: '/admin/activity-log',
+  GET_USERS: '/api/admin/users',
+  GET_USER: (id: string) => `/api/admin/users/${id}`,
+  DELETE_USER: (id: string) => `/api/admin/users/${id}`,
+  GET_STATISTICS: '/api/admin/statistics',
+  GET_ACTIVITY_LOG: '/api/admin/activity-log',
 };
 
 // ==================== Helper Functions ====================

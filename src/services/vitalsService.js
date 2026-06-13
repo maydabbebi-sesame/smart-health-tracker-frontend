@@ -4,6 +4,9 @@ import { VITAL_ENDPOINTS } from '../constants/apiEndpoints'
 /**
  * Vital Signs Service - Real API Integration
  * Handles vital measurements and health metrics
+ *
+ * Backend POST /api/vitals expects: { user_uid, heart_rate, systolic_bp, diastolic_bp, temperature?, oxygen_saturation?, respiratory_rate?, notes? }
+ * Backend GET /api/vitals returns: [ { uid, user_uid, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, recorded_at } ]
  */
 
 /**
@@ -12,15 +15,7 @@ import { VITAL_ENDPOINTS } from '../constants/apiEndpoints'
 export async function recordVital(vitalData) {
   try {
     const response = await apiClient.post(VITAL_ENDPOINTS.RECORD_VITAL, vitalData)
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to record vital',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -33,29 +28,18 @@ export async function recordVital(vitalData) {
 }
 
 /**
- * Get list of vitals with pagination
+ * Get list of vitals
+ * Backend accepts query params: user_uid (optional)
  */
-export async function getVitals(page = 1, pageSize = 20, type = null) {
+export async function getVitals(page = 1, pageSize = 20, userUid = null) {
   try {
-    const params = {
-      page,
-      pageSize,
-    }
-
-    if (type) {
-      params.type = type
+    const params = {}
+    if (userUid) {
+      params.user_uid = userUid
     }
 
     const response = await apiClient.get(VITAL_ENDPOINTS.GET_VITALS, { params })
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch vitals',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -73,15 +57,7 @@ export async function getVitals(page = 1, pageSize = 20, type = null) {
 export async function getVitalById(id) {
   try {
     const response = await apiClient.get(VITAL_ENDPOINTS.GET_VITAL_BY_ID(id))
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch vital',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -102,15 +78,7 @@ export async function updateVital(id, vitalData) {
       VITAL_ENDPOINTS.UPDATE_VITAL(id),
       vitalData,
     )
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to update vital',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -127,16 +95,8 @@ export async function updateVital(id, vitalData) {
  */
 export async function deleteVital(id) {
   try {
-    const response = await apiClient.delete(VITAL_ENDPOINTS.DELETE_VITAL(id))
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to delete vital',
-    }
+    await apiClient.delete(VITAL_ENDPOINTS.DELETE_VITAL(id))
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -150,26 +110,19 @@ export async function deleteVital(id) {
 
 /**
  * Get vital evolution/trend data
+ * Backend expects query params: measure (required), user_uid (optional), from (optional), to (optional)
  */
-export async function getVitalEvolution(type, timeRange = 'week') {
+export async function getVitalEvolution(measure, from = null, to = null, userUid = null) {
   try {
-    const params = {
-      type,
-      timeRange,
-    }
+    const params = { measure }
+    if (from) params.from = from
+    if (to) params.to = to
+    if (userUid) params.user_uid = userUid
 
     const response = await apiClient.get(VITAL_ENDPOINTS.GET_VITAL_EVOLUTION, {
       params,
     })
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch vital evolution',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -183,28 +136,20 @@ export async function getVitalEvolution(type, timeRange = 'week') {
 
 /**
  * Export vitals data
+ * Backend expects query params: format (csv|pdf), user_uid (optional), from (optional), to (optional)
  */
-export async function exportVitals(format = 'csv', dateFrom = null, dateTo = null) {
+export async function exportVitals(format = 'csv', from = null, to = null, userUid = null) {
   try {
-    const params = {
-      format,
-    }
-
-    if (dateFrom) params.dateFrom = dateFrom
-    if (dateTo) params.dateTo = dateTo
+    const params = { format }
+    if (from) params.from = from
+    if (to) params.to = to
+    if (userUid) params.user_uid = userUid
 
     const response = await apiClient.get(VITAL_ENDPOINTS.EXPORT_VITALS, {
       params,
+      responseType: 'blob',
     })
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to export vitals',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -222,15 +167,7 @@ export async function exportVitals(format = 'csv', dateFrom = null, dateTo = nul
 export async function getLatestVital(type) {
   try {
     const response = await apiClient.get(VITAL_ENDPOINTS.GET_LATEST_VITAL(type))
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch latest vital',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,

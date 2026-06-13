@@ -4,6 +4,9 @@ import { APPOINTMENT_ENDPOINTS } from '../constants/apiEndpoints'
 /**
  * Appointments Service - Real API Integration
  * Handles appointment scheduling and management
+ *
+ * Backend POST /api/appointments expects: { user_uid, doctor_uid, appointment_date, appointment_time, reason?, reminder_days? }
+ * Backend GET /api/appointments returns: [ { uid, user_uid, doctor_uid, appointment_date, appointment_time, reason, status } ]
  */
 
 /**
@@ -15,15 +18,7 @@ export async function createAppointment(appointmentData) {
       APPOINTMENT_ENDPOINTS.CREATE_APPOINTMENT,
       appointmentData,
     )
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to create appointment',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -40,27 +35,13 @@ export async function createAppointment(appointmentData) {
  */
 export async function getAppointments(page = 1, pageSize = 20, status = null) {
   try {
-    const params = {
-      page,
-      pageSize,
-    }
-
-    if (status) {
-      params.status = status
-    }
+    const params = {}
+    if (status) params.status = status
 
     const response = await apiClient.get(APPOINTMENT_ENDPOINTS.GET_APPOINTMENTS, {
       params,
     })
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch appointments',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -80,15 +61,7 @@ export async function getAppointmentById(id) {
     const response = await apiClient.get(
       APPOINTMENT_ENDPOINTS.GET_APPOINTMENT_BY_ID(id),
     )
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch appointment',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -109,15 +82,7 @@ export async function updateAppointment(id, appointmentData) {
       APPOINTMENT_ENDPOINTS.UPDATE_APPOINTMENT(id),
       appointmentData,
     )
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to update appointment',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -135,23 +100,13 @@ export async function updateAppointment(id, appointmentData) {
 export async function cancelAppointment(id, reason = null) {
   try {
     const payload = {}
-    if (reason) {
-      payload.reason = reason
-    }
+    if (reason) payload.reason = reason
 
     const response = await apiClient.post(
       APPOINTMENT_ENDPOINTS.CANCEL_APPOINTMENT(id),
       payload,
     )
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to cancel appointment',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -168,27 +123,14 @@ export async function cancelAppointment(id, reason = null) {
  */
 export async function getAvailableSlots(doctorId, date = null) {
   try {
-    const params = {
-      doctorId,
-    }
-
-    if (date) {
-      params.date = date
-    }
+    const params = { doctorId }
+    if (date) params.date = date
 
     const response = await apiClient.get(
       APPOINTMENT_ENDPOINTS.GET_AVAILABLE_SLOTS,
       { params },
     )
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch available slots',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -209,15 +151,7 @@ export async function confirmAppointment(id) {
       APPOINTMENT_ENDPOINTS.CONFIRM_APPOINTMENT(id),
       {},
     )
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to confirm appointment',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -238,15 +172,7 @@ export async function sendReminder(id) {
       APPOINTMENT_ENDPOINTS.SEND_REMINDER(id),
       {},
     )
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to send reminder',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,

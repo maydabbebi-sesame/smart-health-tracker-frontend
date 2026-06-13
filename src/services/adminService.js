@@ -12,15 +12,7 @@ import { ADMIN_ENDPOINTS } from '../constants/apiEndpoints'
 export async function getAdminStatistics() {
   try {
     const response = await apiClient.get(ADMIN_ENDPOINTS.GET_STATISTICS)
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch statistics',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -37,21 +29,8 @@ export async function getAdminStatistics() {
  */
 export async function getUsers(page = 1, pageSize = 20) {
   try {
-    const params = {
-      page,
-      pageSize,
-    }
-
-    const response = await apiClient.get(ADMIN_ENDPOINTS.GET_USERS, { params })
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch users',
-    }
+    const response = await apiClient.get(ADMIN_ENDPOINTS.GET_USERS)
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -69,15 +48,7 @@ export async function getUsers(page = 1, pageSize = 20) {
 export async function getUser(id) {
   try {
     const response = await apiClient.get(ADMIN_ENDPOINTS.GET_USER(id))
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch user',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -94,16 +65,8 @@ export async function getUser(id) {
  */
 export async function deleteUser(id) {
   try {
-    const response = await apiClient.delete(ADMIN_ENDPOINTS.DELETE_USER(id))
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to delete user',
-    }
+    await apiClient.delete(ADMIN_ENDPOINTS.DELETE_USER(id))
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -120,23 +83,8 @@ export async function deleteUser(id) {
  */
 export async function getActivityLog(page = 1, pageSize = 20) {
   try {
-    const params = {
-      page,
-      pageSize,
-    }
-
-    const response = await apiClient.get(ADMIN_ENDPOINTS.GET_ACTIVITY_LOG, {
-      params,
-    })
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch activity log',
-    }
+    const response = await apiClient.get(ADMIN_ENDPOINTS.GET_ACTIVITY_LOG)
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,

@@ -1,21 +1,34 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Lock, Mail, UserRound } from 'lucide-react'
 
-import { loginWithFakeJwt } from '../features/auth/auth'
+import { register } from '../features/auth/auth'
 
 function RegisterPage() {
   const navigate = useNavigate()
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    setError(null)
+    setLoading(true)
+
     const formData = new FormData(event.currentTarget)
+    const name = formData.get('name')
+    const email = formData.get('email')
+    const password = formData.get('password')
 
-    loginWithFakeJwt({
-      email: formData.get('email'),
-      name: formData.get('name'),
-    })
+    const result = await register(name, email, password)
 
-    navigate('/dashboard', { replace: true })
+    setLoading(false)
+
+    if (result.success) {
+      // Registration successful - redirect to login (user needs to verify email)
+      navigate('/login', { replace: true })
+    } else {
+      setError(result.error)
+    }
   }
 
   return (

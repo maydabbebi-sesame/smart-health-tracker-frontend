@@ -11,25 +11,13 @@ import { ALERT_ENDPOINTS } from '../constants/apiEndpoints'
  */
 export async function getAlerts(page = 1, pageSize = 20, unreadOnly = false) {
   try {
-    const params = {
-      page,
-      pageSize,
-    }
-
+    const params = {}
     if (unreadOnly) {
-      params.unreadOnly = true
+      params.unread_only = 'true'
     }
 
     const response = await apiClient.get(ALERT_ENDPOINTS.GET_ALERTS, { params })
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch alerts',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -47,15 +35,7 @@ export async function getAlerts(page = 1, pageSize = 20, unreadOnly = false) {
 export async function getAlertById(id) {
   try {
     const response = await apiClient.get(ALERT_ENDPOINTS.GET_ALERT_BY_ID(id))
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch alert',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -72,19 +52,8 @@ export async function getAlertById(id) {
  */
 export async function markAlertAsRead(id) {
   try {
-    const response = await apiClient.post(
-      ALERT_ENDPOINTS.MARK_AS_READ(id),
-      {},
-    )
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to mark alert as read',
-    }
+    await apiClient.post(ALERT_ENDPOINTS.MARK_AS_READ(id), {})
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -101,19 +70,8 @@ export async function markAlertAsRead(id) {
  */
 export async function markAlertAsUnread(id) {
   try {
-    const response = await apiClient.post(
-      ALERT_ENDPOINTS.MARK_AS_UNREAD(id),
-      {},
-    )
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to mark alert as unread',
-    }
+    await apiClient.post(ALERT_ENDPOINTS.MARK_AS_UNREAD(id), {})
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -130,19 +88,8 @@ export async function markAlertAsUnread(id) {
  */
 export async function acknowledgeAlert(id) {
   try {
-    const response = await apiClient.post(
-      ALERT_ENDPOINTS.ACKNOWLEDGE_ALERT(id),
-      {},
-    )
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to acknowledge alert',
-    }
+    await apiClient.post(ALERT_ENDPOINTS.ACKNOWLEDGE_ALERT(id), {})
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -159,16 +106,8 @@ export async function acknowledgeAlert(id) {
  */
 export async function deleteAlert(id) {
   try {
-    const response = await apiClient.delete(ALERT_ENDPOINTS.DELETE_ALERT(id))
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to delete alert',
-    }
+    await apiClient.delete(ALERT_ENDPOINTS.DELETE_ALERT(id))
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -185,19 +124,8 @@ export async function deleteAlert(id) {
  */
 export async function deleteAllAlerts() {
   try {
-    const response = await apiClient.post(
-      ALERT_ENDPOINTS.DELETE_ALL_ALERTS,
-      {},
-    )
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to delete all alerts',
-    }
+    await apiClient.post(ALERT_ENDPOINTS.DELETE_ALL_ALERTS, {})
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -215,15 +143,7 @@ export async function deleteAllAlerts() {
 export async function getUnreadAlertCount() {
   try {
     const response = await apiClient.get(ALERT_ENDPOINTS.GET_UNREAD_COUNT)
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch unread count',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,

@@ -60,21 +60,30 @@ export function getCurrentUser() {
 
 /**
  * Login with email and password
+ * Backend returns: { access_token, token_type, expires_in } or { mfa_required, message }
  */
-export async function login(email, password) {
+export async function login(authData) {
   try {
     const response = await apiClient.post(AUTH_ENDPOINTS.LOGIN, {
-      email,
-      password,
+      email: authData.email,
+      password: authData.password,
     })
 
-    if (response.data.success && response.data.data) {
-      const { token, user } = response.data.data
-      setAuthToken(token, user)
-      return { success: true, user }
+    const data = response.data
+
+    // MFA required flow
+    if (data.mfa_required) {
+      return { success: true, mfaRequired: true, message: data.message }
     }
 
-    return { success: false, error: response.data.error || 'Login failed' }
+    // Successful login - backend returns access_token directly
+    if (data.access_token) {
+      const user = { email: authData.email }
+      setAuthToken(data.access_token, user)
+      return { success: true, user, token: data.access_token }
+    }
+
+    return { success: false, error: 'Login failed' }
   } catch (error) {
     return {
       success: false,
@@ -85,6 +94,7 @@ export async function login(email, password) {
 
 /**
  * Register new user
+ * Backend returns: { message, uid } on 201
  */
 export async function register(name, email, password, role = 'user') {
   try {
@@ -95,13 +105,9 @@ export async function register(name, email, password, role = 'user') {
       role,
     })
 
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
     return {
-      success: false,
-      error: response.data.error || 'Registration failed',
+      success: true,
+      data: { uid: response.data.uid, message: response.data.message },
     }
   } catch (error) {
     return {
@@ -116,22 +122,17 @@ export async function register(name, email, password, role = 'user') {
 
 /**
  * Verify email with code
+ * Backend expects: { uid, code }
+ * Backend returns: { message }
  */
-export async function verifyEmail(email, code) {
+export async function verifyEmail(uid, code) {
   try {
-    const response = await apiClient.post(AUTH_ENDPOINTS.VERIFY_EMAIL, {
-      email,
+    await apiClient.post(AUTH_ENDPOINTS.VERIFY_EMAIL, {
+      uid,
       code,
     })
 
-    if (response.data.success) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Email verification failed',
-    }
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -145,22 +146,14 @@ export async function verifyEmail(email, code) {
 
 /**
  * Resend verification code to email
+ * Backend expects: { email }
+ * Backend returns: { message }
  */
 export async function resendVerificationCode(email) {
   try {
-    const response = await apiClient.post(
-      AUTH_ENDPOINTS.RESEND_VERIFICATION,
-      { email },
-    )
+    await apiClient.post(AUTH_ENDPOINTS.RESEND_VERIFICATION, { email })
 
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to resend verification code',
-    }
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -173,17 +166,17 @@ export async function resendVerificationCode(email) {
 }
 
 /**
- * Request MFA setup
+ * Enable MFA (requires current_password)
+ * Backend expects: { current_password }
+ * Backend returns: { message }
  */
-export async function requestMFA(uid) {
+export async function enableMFA(currentPassword) {
   try {
-    const response = await apiClient.post(AUTH_ENDPOINTS.REQUEST_MFA, { uid })
+    await apiClient.post(AUTH_ENDPOINTS.ENABLE_MFA, {
+      current_password: currentPassword,
+    })
 
-    if (response.data.success) {
-      return { success: true, data: response.data.data }
-    }
-
-    return { success: false, error: response.data.error || 'MFA setup failed' }
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -194,24 +187,25 @@ export async function requestMFA(uid) {
 
 /**
  * Verify MFA code
+ * Backend expects: { email, code }
+ * Backend returns: { access_token, token_type, expires_in }
  */
-export async function verifyMFA(uid, code) {
+export async function verifyMFA(email, code) {
   try {
     const response = await apiClient.post(AUTH_ENDPOINTS.VERIFY_MFA, {
-      uid,
+      email,
       code,
     })
 
-    if (response.data.success && response.data.data) {
-      const { token, user } = response.data.data
-      setAuthToken(token, user)
-      return { success: true, user }
+    const data = response.data
+
+    if (data.access_token) {
+      const user = { email }
+      setAuthToken(data.access_token, user)
+      return { success: true, user, token: data.access_token }
     }
 
-    return {
-      success: false,
-      error: response.data.error || 'MFA verification failed',
-    }
+    return { success: false, error: 'MFA verification failed' }
   } catch (error) {
     return {
       success: false,
@@ -224,31 +218,121 @@ export async function verifyMFA(uid, code) {
 }
 
 /**
- * Logout
+ * Logout - revokes token on backend
  */
-export function logout() {
+export async function logout() {
+  try {
+    await apiClient.post(AUTH_ENDPOINTS.LOGOUT)
+  } catch {
+    // Best-effort - clear local state regardless
+  }
   clearToken()
-  // Optionally call backend logout endpoint
   return { success: true }
 }
 
 /**
- * Forgot password
+ * Login with Google
+ * Backend expects: { id_token }
+ * Backend returns: { access_token, token_type, expires_in }
+ */
+export async function loginWithGoogle(idToken) {
+  try {
+    const response = await apiClient.post(AUTH_ENDPOINTS.LOGIN_GOOGLE, {
+      id_token: idToken,
+    })
+
+    const data = response.data
+    if (data.access_token) {
+      const user = { provider: 'google' }
+      setAuthToken(data.access_token, user)
+      return { success: true, user, token: data.access_token }
+    }
+
+    return { success: false, error: 'Google login failed' }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Google login failed',
+    }
+  }
+}
+
+/**
+ * Login with Facebook
+ * Backend expects: { access_token }
+ * Backend returns: { access_token, token_type, expires_in }
+ */
+export async function loginWithFacebook(accessToken) {
+  try {
+    const response = await apiClient.post(AUTH_ENDPOINTS.LOGIN_FACEBOOK, {
+      access_token: accessToken,
+    })
+
+    const data = response.data
+    if (data.access_token) {
+      const user = { provider: 'facebook' }
+      setAuthToken(data.access_token, user)
+      return { success: true, user, token: data.access_token }
+    }
+
+    return { success: false, error: 'Facebook login failed' }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Facebook login failed',
+    }
+  }
+}
+
+/**
+ * Login with Apple
+ * Backend expects: { id_token }
+ * Backend returns: { access_token, token_type, expires_in }
+ */
+export async function loginWithApple(idToken) {
+  try {
+    const response = await apiClient.post(AUTH_ENDPOINTS.LOGIN_APPLE, {
+      id_token: idToken,
+    })
+
+    const data = response.data
+    if (data.access_token) {
+      const user = { provider: 'apple' }
+      setAuthToken(data.access_token, user)
+      return { success: true, user, token: data.access_token }
+    }
+
+    return { success: false, error: 'Apple login failed' }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Apple login failed',
+    }
+  }
+}
+
+/**
+ * Request MFA setup/code
+ */
+export async function requestMFA(uid) {
+  try {
+    const response = await apiClient.post(AUTH_ENDPOINTS.REQUEST_MFA, { uid })
+    return { success: true, data: response.data }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'MFA request failed',
+    }
+  }
+}
+
+/**
+ * Forgot password - sends reset email
  */
 export async function forgotPassword(email) {
   try {
-    const response = await apiClient.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, {
-      email,
-    })
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to send reset email',
-    }
+    const response = await apiClient.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email })
+    return { success: true, message: response.data.message }
   } catch (error) {
     return {
       success: false,
@@ -261,24 +345,16 @@ export async function forgotPassword(email) {
 }
 
 /**
- * Reset password with token
+ * Reset password with code
  */
 export async function resetPassword(email, code, newPassword) {
   try {
     const response = await apiClient.post(AUTH_ENDPOINTS.RESET_PASSWORD, {
       email,
       code,
-      password: newPassword,
+      new_password: newPassword,
     })
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to reset password',
-    }
+    return { success: true, message: response.data.message }
   } catch (error) {
     return {
       success: false,

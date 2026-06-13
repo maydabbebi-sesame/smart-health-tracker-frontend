@@ -12,15 +12,7 @@ import { USER_ENDPOINTS } from '../constants/apiEndpoints'
 export async function getPatientProfile() {
   try {
     const response = await apiClient.get(USER_ENDPOINTS.GET_PROFILE)
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to fetch profile',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -38,15 +30,7 @@ export async function getPatientProfile() {
 export async function updateUserProfile(profileData) {
   try {
     const response = await apiClient.put(USER_ENDPOINTS.UPDATE_PROFILE, profileData)
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to update profile',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -63,19 +47,11 @@ export async function updateUserProfile(profileData) {
  */
 export async function changePassword(currentPassword, newPassword) {
   try {
-    const response = await apiClient.post(USER_ENDPOINTS.CHANGE_PASSWORD, {
-      currentPassword,
-      newPassword,
+    await apiClient.post(USER_ENDPOINTS.CHANGE_PASSWORD, {
+      current_password: currentPassword,
+      new_password: newPassword,
     })
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to change password',
-    }
+    return { success: true }
   } catch (error) {
     return {
       success: false,
@@ -104,15 +80,7 @@ export async function uploadProfilePicture(file) {
         },
       },
     )
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to upload profile picture',
-    }
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,
@@ -129,16 +97,8 @@ export async function uploadProfilePicture(file) {
  */
 export async function deleteAccount() {
   try {
-    const response = await apiClient.delete(USER_ENDPOINTS.DELETE_ACCOUNT)
-
-    if (response.data.success) {
-      return { success: true }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to delete account',
-    }
+    await apiClient.delete(USER_ENDPOINTS.DELETE_ACCOUNT)
+    return { success: true }
   } catch (error) {
     return {
       success: false,
