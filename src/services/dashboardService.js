@@ -14,34 +14,55 @@ export async function getDashboardSummary() {
   try {
     // Fetch all data in parallel
     const [vitalsRes, appointmentsRes, alertsRes] = await Promise.all([
-      getVitals(),
-      getAppointments(),
-      getUnreadAlertCount(),
+      getVitals().catch(err => ({ success: false, data: [], error: err })),
+      getAppointments().catch(err => ({ success: false, data: [], error: err })),
+      getUnreadAlertCount().catch(err => ({ success: false, data: { count: 0 }, error: err })),
     ])
 
-    // Backend returns arrays directly in .data
-    const vitals = Array.isArray(vitalsRes.data) ? vitalsRes.data : []
-    const appointments = Array.isArray(appointmentsRes.data) ? appointmentsRes.data : []
-    const scheduledAppointments = appointments.filter(a => a.status === 'scheduled')
+    const vitals = vitalsRes?.success === false ? null : Array.isArray(vitalsRes?.data) ? vitalsRes.data : null
+    const appointments = appointmentsRes?.success === false ? null : Array.isArray(appointmentsRes?.data) ? appointmentsRes.data : null
+    const alertsCount = alertsRes?.success === false ? null : Number(alertsRes?.data?.count ?? null)
+    const scheduledAppointments = appointments ? appointments.filter(a => a.status === 'scheduled') : null
 
-    // Calculate wellness score client-side (0-100)
-    const wellnessScore = calculateWellnessScore(vitals)
+    const wellnessScore = vitals && vitals.length > 0 ? calculateWellnessScore(vitals) : null
 
-    const stats = {
-      totalVitalsRecorded: vitals.length,
-      upcomingAppointments: scheduledAppointments.length,
-      pendingAlerts: alertsRes.data?.count || 0,
-      wellnessScore,
-    }
+    const stats = [
+      {
+        label: 'Wellness score',
+        value: wellnessScore !== null ? `${wellnessScore}%` : null,
+        icon: 'heart',
+      },
+      {
+        label: 'Symptoms logged',
+        value: vitals !== null ? String(vitals.length) : null,
+        icon: 'activity',
+      },
+      {
+        label: 'Unread alerts',
+        value: alertsCount !== null ? String(alertsCount) : null,
+        icon: 'bell',
+      },
+      {
+        label: 'Upcoming appointments',
+        value: scheduledAppointments !== null ? String(scheduledAppointments.length) : null,
+        icon: 'activity',
+      },
+    ]
 
     // Generate health plan items (wellness recommendations)
     const healthPlanItems = generateHealthPlanItems(vitals, wellnessScore)
 
-    return { success: true, data: { stats, healthPlanItems } }
+    return { stats, healthPlanItems }
   } catch (error) {
+    console.error('Error fetching dashboard summary:', error)
     return {
-      success: false,
-      error: error.message || 'Failed to fetch dashboard summary',
+      stats: [
+        { label: 'Wellness score', value: null, icon: 'heart' },
+        { label: 'Symptoms logged', value: null, icon: 'activity' },
+        { label: 'Unread alerts', value: null, icon: 'bell' },
+        { label: 'Upcoming appointments', value: null, icon: 'activity' },
+      ],
+      healthPlanItems: [],
     }
   }
 }
@@ -51,29 +72,19 @@ export async function getDashboardSummary() {
  */
 export async function getDashboardCharts() {
   try {
-    // Fetch latest vitals for charts
-    const [heartRateRes, bpRes, tempRes] = await Promise.all([
-      getLatestVital('heart_rate'),
-      getLatestVital('blood_pressure'),
-      getLatestVital('temperature'),
-    ])
-
-    const heartRateData = heartRateRes.success ? heartRateRes.data : null
-    const bpData = bpRes.success ? bpRes.data : null
-    const tempData = tempRes.success ? tempRes.data : null
-
+    // No chart defaults provided when model/backend data is not available.
+    // Replace this implementation with real backend aggregation once ready.
     return {
-      success: true,
-      data: {
-        heartRateData,
-        bpData,
-        tempData,
-      },
+      heartRateData: [],
+      weightData: [],
+      activityData: [],
     }
   } catch (error) {
+    console.error('Error fetching dashboard charts:', error)
     return {
-      success: false,
-      error: error.message || 'Failed to fetch dashboard charts',
+      heartRateData: [],
+      weightData: [],
+      activityData: [],
     }
   }
 }
@@ -81,11 +92,11 @@ export async function getDashboardCharts() {
 /**
  * Calculate wellness score based on vitals (0-100)
  * @param {Array} vitals - List of vital measurements
- * @returns {number} Wellness score 0-100
+ * @returns {number|null} Wellness score 0-100 or null when insufficient data
  */
 function calculateWellnessScore(vitals) {
   if (!vitals || vitals.length === 0) {
-    return 50 // Default neutral score
+    return null
   }
 
   // Define normal ranges for each vital
@@ -129,6 +140,10 @@ function calculateWellnessScore(vitals) {
  * @returns {Array} Array of health plan recommendations
  */
 function generateHealthPlanItems(vitals, wellnessScore) {
+  if (!vitals || vitals.length === 0 || wellnessScore === null) {
+    return []
+  }
+
   const items = []
 
   // Check if there are any vitals with concerning values

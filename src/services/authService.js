@@ -78,7 +78,9 @@ export async function login(authData) {
 
     // Successful login - backend returns access_token directly
     if (data.access_token) {
+      const userUid = data.uid || data.user?.uid || data.user_uid || data.user?.id || null
       const user = { email: authData.email }
+      if (userUid) user.uid = userUid
       setAuthToken(data.access_token, user)
       return { success: true, user, token: data.access_token }
     }
@@ -200,7 +202,9 @@ export async function verifyMFA(email, code) {
     const data = response.data
 
     if (data.access_token) {
+      const userUid = data.uid || data.user?.uid || data.user_uid || data.user?.id || null
       const user = { email }
+      if (userUid) user.uid = userUid
       setAuthToken(data.access_token, user)
       return { success: true, user, token: data.access_token }
     }
@@ -243,7 +247,9 @@ export async function loginWithGoogle(idToken) {
 
     const data = response.data
     if (data.access_token) {
+      const userUid = data.uid || data.user?.uid || data.user_uid || data.user?.id || null
       const user = { provider: 'google' }
+      if (userUid) user.uid = userUid
       setAuthToken(data.access_token, user)
       return { success: true, user, token: data.access_token }
     }
@@ -270,7 +276,9 @@ export async function loginWithFacebook(accessToken) {
 
     const data = response.data
     if (data.access_token) {
+      const userUid = data.uid || data.user?.uid || data.user_uid || data.user?.id || null
       const user = { provider: 'facebook' }
+      if (userUid) user.uid = userUid
       setAuthToken(data.access_token, user)
       return { success: true, user, token: data.access_token }
     }
@@ -297,7 +305,9 @@ export async function loginWithApple(idToken) {
 
     const data = response.data
     if (data.access_token) {
+      const userUid = data.uid || data.user?.uid || data.user_uid || data.user?.id || null
       const user = { provider: 'apple' }
+      if (userUid) user.uid = userUid
       setAuthToken(data.access_token, user)
       return { success: true, user, token: data.access_token }
     }

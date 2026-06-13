@@ -26,6 +26,9 @@ import {
 
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
 import { getDashboardCharts, getDashboardSummary } from '../services/dashboardService'
+import { getProfile } from '../services/userService'
+import { getRecommendations } from '../services/aiService'
+import { getCurrentUser } from '../features/auth/auth'
 
 const statIcons = {
   activity: Activity,
@@ -75,25 +78,50 @@ function DashboardPage() {
     queryKey: ['dashboard-charts'],
     queryFn: getDashboardCharts,
   })
+  const { data: profileData } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
+  const { data: recommendationsData } = useQuery({ queryKey: ['ai-recommendations'], queryFn: getRecommendations })
 
   if (isSummaryLoading || isChartsLoading) {
     return <LoadingSkeleton />
+  }
+
+  if (!summary || !charts) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-lg text-slate-600">Failed to load dashboard data. Please try again.</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
       <section className="grid gap-6 md:grid-cols-12">
         <div className="flex flex-col justify-center md:col-span-8">
-          <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">Bonjour Maya</h1>
+          <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">
+            Bonjour {profileData?.data?.first_name || profileData?.data?.name || getCurrentUser()?.email || 'Utilisateur'}
+          </h1>
           <p className="mt-3 flex items-center gap-2 text-base text-[#6d7a73]">
             <CalendarDays size={19} />
-            Mardi 2 Juin 2026
+            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         <article className="sht-card flex items-center justify-between p-5 md:col-span-4">
           <div>
             <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Score Sante</h2>
-            <p className="mt-1 text-sm text-[#6d7a73]">Excellente progression</p>
+            {(() => {
+              const wellnessStat = summary?.stats?.find((s) => s.label.toLowerCase().includes('wellness'))
+              const raw = wellnessStat?.value ?? null
+              const num = raw !== null ? parseInt(String(raw).replace('%', ''), 10) : null
+              let subtitle = 'Aucune donnée disponible maintenant'
+              if (num !== null) {
+                if (num >= 80) subtitle = 'Excellente progression'
+                else if (num >= 60) subtitle = 'Bonne progression'
+                else if (num >= 40) subtitle = 'Progression moyenne'
+                else subtitle = 'Progression faible'
+              }
+
+              return <p className="mt-1 text-sm text-[#6d7a73]">{subtitle}</p>
+            })()}
           </div>
           <div className="relative grid h-20 w-20 place-items-center">
             <svg className="h-full w-full -rotate-90">
@@ -110,14 +138,19 @@ function DashboardPage() {
                 strokeWidth="8"
               />
             </svg>
-            <span className="font-metric absolute text-lg font-semibold text-[#00694c]">78</span>
+            <span className="font-metric absolute text-lg font-semibold text-[#00694c]">{(() => {
+              const wellnessStat = summary?.stats?.find((s) => s.label.toLowerCase().includes('wellness'))
+              const raw = wellnessStat?.value ?? null
+              return raw !== null ? String(raw).replace('%', '') : '--'
+            })()}</span>
           </div>
         </article>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summary.stats.map((stat) => {
+        {summary.stats && summary.stats.map((stat) => {
           const StatIcon = statIcons[stat.icon]
+          const hasValue = stat.value !== null && stat.value !== undefined
 
           return (
             <article key={stat.label} className="sht-card p-5">
@@ -125,15 +158,15 @@ function DashboardPage() {
                 <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
                   <StatIcon size={23} />
                 </div>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#86f8c9]/35 px-2 py-1 text-xs font-semibold text-[#00513a]">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${hasValue ? 'bg-[#86f8c9]/35 text-[#00513a]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
                   <CheckCircle2 size={14} />
-                  Normal
+                  {hasValue ? 'Normal' : 'Indisponible'}
                 </span>
               </div>
               <div>
                 <p className="text-sm text-slate-500">{stat.label}</p>
-                <p className="font-metric mt-2 text-[28px] font-semibold leading-none text-[#171d1a] dark:text-white">
-                  {stat.value}
+                <p className={`font-metric mt-2 text-[28px] font-semibold leading-none ${hasValue ? 'text-[#171d1a]' : 'text-slate-500'}`}>
+                  {hasValue ? stat.value : 'Aucune donnée disponible maintenant'}
                 </p>
               </div>
             </article>
@@ -179,80 +212,93 @@ function DashboardPage() {
           </div>
           <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">AI Recommendation</h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
-            Les recommandations du dashboard sont frontend-only aujourd hui. Elles illustrent les donnees que le
-            backend devra fournir a partir du modele IA prive.
+            {recommendationsData?.success && recommendationsData?.data?.summary
+              ? recommendationsData.data.summary
+              : 'Les recommandations du dashboard sont propulsees par l\'IA.'}
           </p>
         </article>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
         <ChartCard subtitle="Average resting BPM over the last 7 days" title="Evolution de sante (7 jours)">
-          <ResponsiveContainer height="100%" width="100%">
-            <AreaChart data={charts.heartRateData} margin={{ left: -18, right: 8, top: 8 }}>
-              <defs>
-                <linearGradient id="heartRateGradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#14b8a6" stopOpacity={0.03} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-              <XAxis axisLine={false} dataKey="day" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
-              <YAxis
-                axisLine={false}
-                domain={[60, 90]}
-                tick={{ fill: '#64748b', fontSize: 12 }}
-                tickLine={false}
-              />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#99f6e4', strokeWidth: 2 }} />
-              <Area
-                dataKey="bpm"
-                fill="url(#heartRateGradient)"
-                name="BPM"
-                stroke="#0f766e"
-                strokeWidth={3}
-                type="monotone"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {charts.heartRateData?.length > 0 ? (
+            <ResponsiveContainer height="100%" width="100%">
+              <AreaChart data={charts.heartRateData} margin={{ left: -18, right: 8, top: 8 }}>
+                <defs>
+                  <linearGradient id="heartRateGradient" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#14b8a6" stopOpacity={0.03} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
+                <XAxis axisLine={false} dataKey="day" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
+                <YAxis
+                  axisLine={false}
+                  domain={[60, 90]}
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tickLine={false}
+                />
+                <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#99f6e4', strokeWidth: 2 }} />
+                <Area
+                  dataKey="bpm"
+                  fill="url(#heartRateGradient)"
+                  name="BPM"
+                  stroke="#0f766e"
+                  strokeWidth={3}
+                  type="monotone"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="grid h-full place-items-center text-sm text-slate-500">Aucune donnée disponible maintenant</div>
+          )}
         </ChartCard>
 
         <ChartCard subtitle="Weekly trend based on mock weigh-ins" title="Progression du poids">
-          <ResponsiveContainer height="100%" width="100%">
-            <LineChart data={charts.weightData} margin={{ left: -18, right: 8, top: 8 }}>
-              <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-              <XAxis axisLine={false} dataKey="week" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
-              <YAxis
-                axisLine={false}
-                domain={[70, 73]}
-                tick={{ fill: '#64748b', fontSize: 12 }}
-                tickLine={false}
-              />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#bae6fd', strokeWidth: 2 }} />
-              <Line
-                activeDot={{ r: 6, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 3 }}
-                dataKey="weight"
-                dot={{ r: 4, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 2 }}
-                name="Weight kg"
-                stroke="#0284c7"
-                strokeWidth={3}
-                type="monotone"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {charts.weightData?.length > 0 ? (
+            <ResponsiveContainer height="100%" width="100%">
+              <LineChart data={charts.weightData} margin={{ left: -18, right: 8, top: 8 }}>
+                <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
+                <XAxis axisLine={false} dataKey="week" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
+                <YAxis
+                  axisLine={false}
+                  domain={[70, 73]}
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tickLine={false}
+                />
+                <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#bae6fd', strokeWidth: 2 }} />
+                <Line
+                  activeDot={{ r: 6, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 3 }}
+                  dataKey="weight"
+                  dot={{ r: 4, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 2 }}
+                  name="Weight kg"
+                  stroke="#0284c7"
+                  strokeWidth={3}
+                  type="monotone"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="grid h-full place-items-center text-sm text-slate-500">Aucune donnée disponible maintenant</div>
+          )}
         </ChartCard>
       </section>
 
       <ChartCard subtitle="Mock weekly steps with sleep context" title="Activite sante hebdomadaire">
-        <ResponsiveContainer height="100%" width="100%">
-          <BarChart data={charts.activityData} margin={{ left: -18, right: 8, top: 8 }}>
-            <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-            <XAxis axisLine={false} dataKey="day" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
-            <YAxis axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
-            <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f1f5f9' }} />
-            <Bar dataKey="steps" fill="#14b8a6" name="Steps" radius={[8, 8, 0, 0]} />
-            <Bar dataKey="sleep" fill="#38bdf8" name="Sleep hrs" radius={[8, 8, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        {charts.activityData?.length > 0 ? (
+          <ResponsiveContainer height="100%" width="100%">
+            <BarChart data={charts.activityData} margin={{ left: -18, right: 8, top: 8 }}>
+              <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
+              <XAxis axisLine={false} dataKey="day" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
+              <YAxis axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f1f5f9' }} />
+              <Bar dataKey="steps" fill="#14b8a6" name="Steps" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="sleep" fill="#38bdf8" name="Sleep hrs" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="grid h-full place-items-center text-sm text-slate-500">Aucune donnée disponible maintenant</div>
+        )}
       </ChartCard>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_360px]">
@@ -262,17 +308,21 @@ function DashboardPage() {
             Prochains rendez-vous
           </h2>
           <div className="mt-4 divide-y divide-slate-100">
-            {summary.healthPlanItems.map((item, index) => (
-              <div key={item} className="flex items-center justify-between gap-4 py-3">
-                <div>
-                  <p className="font-medium text-slate-900">{item}</p>
-                  <p className="text-sm text-slate-500">Action personnelle #{index + 1}</p>
+            {summary.healthPlanItems && summary.healthPlanItems.length > 0 ? (
+              summary.healthPlanItems.map((item) => (
+                <div key={item.id || item} className="flex items-center justify-between gap-4 py-3">
+                  <div>
+                    <p className="font-medium text-slate-900">{typeof item === 'string' ? item : item.title}</p>
+                    <p className="text-sm text-slate-500">{typeof item === 'string' ? `Recommendation` : item.description}</p>
+                  </div>
+                  <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                    Planifie
+                  </span>
                 </div>
-                <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                  Planifie
-                </span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="py-3 text-sm text-slate-500">No recommendations at this time.</p>
+            )}
           </div>
         </article>
 

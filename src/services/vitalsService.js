@@ -5,8 +5,8 @@ import { VITAL_ENDPOINTS } from '../constants/apiEndpoints'
  * Vital Signs Service - Real API Integration
  * Handles vital measurements and health metrics
  *
- * Backend POST /api/vitals expects: { user_uid, heart_rate, systolic_bp, diastolic_bp, temperature?, oxygen_saturation?, respiratory_rate?, notes? }
- * Backend GET /api/vitals returns: [ { uid, user_uid, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, recorded_at } ]
+ * Backend POST /api/vitals accepts: { user_uid, age?, gender?, height?, heart_rate, systolic_bp, diastolic_bp, temperature?, oxygen_saturation?, respiratory_rate?, notes?, weight?, glycemia?, weight_variation?, weight_variation_kg?, health_issues_history?, drug_allergies_flag?, drug_allergies?, family_health_issues?, smoking?, cigarettes_per_day?, alcohol?, alcohol_glasses?, current_treatment?, current_treatments?, complements?, complements_text?, observance?, symptoms?, pain_intensity?, symptoms_description?, symptoms_duration?, pain_location?, triggers?, general_state? }
+ * Backend GET /api/vitals returns: [ { uid, user_uid, age, gender, height, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, weight, glycemia, weight_variation, weight_variation_kg, health_issues_history, drug_allergies_flag, drug_allergies, family_health_issues, smoking, cigarettes_per_day, alcohol, alcohol_glasses, current_treatment, current_treatments, complements, complements_text, observance, symptoms, pain_intensity, symptoms_description, symptoms_duration, pain_location, triggers, general_state, recorded_at } ]
  */
 
 /**
@@ -14,9 +14,12 @@ import { VITAL_ENDPOINTS } from '../constants/apiEndpoints'
  */
 export async function recordVital(vitalData) {
   try {
+    console.log('Recording vital with payload:', vitalData)
     const response = await apiClient.post(VITAL_ENDPOINTS.RECORD_VITAL, vitalData)
+    console.log('Vital recorded successfully:', response.data)
     return { success: true, data: response.data }
   } catch (error) {
+    console.error('Error recording vital:', error.response?.data || error.message)
     return {
       success: false,
       error:

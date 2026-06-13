@@ -80,7 +80,7 @@ function HistoryPage() {
             </div>
 
             <div className="grid gap-3">
-              {records.map((record) => (
+              {(records?.data || records || []).map((record) => (
                 <div
                   className="flex flex-col gap-3 rounded-lg bg-[#eff5ef] p-4 sm:flex-row sm:items-center"
                   key={record.title}

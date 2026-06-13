@@ -7,7 +7,9 @@ import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
-import { analyzeSymptoms } from '../../services/symptomService'
+import { submitSymptomAnalysis } from '../../services/symptomService'
+import { recordVital } from '../../services/vitalsService'
+import { getCurrentUser } from '../../services/authService'
 import { useMedAssistStore } from '../../store/medAssistStore'
 import { ProgressBar } from './ProgressBar'
 import { StepDeviceMeasures } from './StepDeviceMeasures'
@@ -255,7 +257,67 @@ export function SymptomForm() {
         currentMedications: formValues.currentMedications?.map((m) => m.value).filter(Boolean).join(', ') || '',
         drugAllergies: formValues.drugAllergies?.map((allergy) => allergy.value).filter(Boolean).join(', ') || '',
       }
-      await analyzeSymptoms(payload)
+      // Best-effort: if user UID and vitals provided, send a vitals record to backend
+      try {
+        const user = getCurrentUser()
+        const userUid = user?.uid || user?.id || user?.user_uid || user?.userId || null
+        const heart_rate = formValues.heartRate || formValues.heart_rate
+        const systolic_bp = formValues.bloodPressureSys || formValues.systolic_bp
+        const diastolic_bp = formValues.bloodPressureDia || formValues.diastolic_bp
+
+        if (userUid && heart_rate && systolic_bp && diastolic_bp) {
+          const vitalsPayload = {
+            user_uid: userUid,
+            age: formValues.age ? Number(formValues.age) : undefined,
+            gender: formValues.biologicalSex,
+            weight: formValues.weight ? Number(formValues.weight) : undefined,
+            height: formValues.height ? Number(formValues.height) : undefined,
+            heart_rate: Number(heart_rate),
+            systolic_bp: Number(systolic_bp),
+            diastolic_bp: Number(diastolic_bp),
+            temperature: formValues.temperature ? Number(formValues.temperature) : undefined,
+            oxygen_saturation: formValues.spo2 ? Number(formValues.spo2) : undefined,
+            weight_variation_kg: formValues.weightVariationKg ? Number(formValues.weightVariationKg) : undefined,
+            weight_variation: formValues.weightVariation || undefined,
+            health_issues_history: Array.isArray(formValues.chronicDiseases) ? formValues.chronicDiseases.join(', ') : formValues.chronicDiseases,
+            drug_allergies_flag: formValues.hasDrugAllergies === 'Oui',
+            drug_allergies: formValues.drugAllergies?.map((allergy) => allergy.value).filter(Boolean).join(', ') || undefined,
+            family_health_issues: Array.isArray(formValues.familyHistory) ? formValues.familyHistory.join(', ') : formValues.familyHistory,
+            smoking: formValues.tobacco === 'Oui',
+            cigarettes_per_day: formValues.tobaccoQuantity ? Number(formValues.tobaccoQuantity) : undefined,
+            alcohol: formValues.alcohol === 'Oui',
+            alcohol_glasses: formValues.alcoholQuantity ? Number(formValues.alcoholQuantity) : undefined,
+            current_treatment: formValues.hasCurrentMedications === 'Oui',
+            current_treatments: formValues.currentMedications?.map((m) => m.value).filter(Boolean).join(', ') || undefined,
+            complements: formValues.hasSupplements === 'Oui',
+            complements_text: formValues.supplements || undefined,
+            observance: formValues.treatmentAdherence || undefined,
+            symptoms: Array.isArray(formValues.symptoms) ? formValues.symptoms.join(', ') : formValues.symptoms,
+            pain_intensity: formValues.painIntensity ? Number(formValues.painIntensity) : undefined,
+            symptoms_description: formValues.description || formValues.otherSymptoms || undefined,
+            symptoms_duration: formValues.symptomDuration || undefined,
+            pain_location: Array.isArray(formValues.painLocation) ? formValues.painLocation.join(', ') : formValues.painLocation,
+            triggers: Array.isArray(formValues.triggers) ? formValues.triggers.join(', ') : formValues.triggers,
+            general_state: formValues.generalState || undefined,
+            notes: formValues.notes || undefined,
+          }
+
+          // Filter out undefined values before sending
+          const cleanPayload = Object.fromEntries(
+            Object.entries(vitalsPayload).filter(([, value]) => value !== undefined)
+          )
+
+          console.log('Submitting vitals:', cleanPayload)
+
+          // fire-and-forget; do not block main submission on vitals failures
+          recordVital(cleanPayload).catch((err) => {
+            console.error('Failed to record vitals:', err)
+          })
+        }
+      } catch (err) {
+        // swallow vitals errors to avoid breaking the main flow
+      }
+      await submitSymptomAnalysis(payload)
       toast.success('Indicateurs sauvegardés — MediAssist analyse vos données...')
       // Reset chat session BEFORE navigate so MediAssistChat always mounts
       // with isLoading = true, even when the same form data is resubmitted.

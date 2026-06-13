@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient'
-import { FORM_ENDPOINTS } from '../constants/apiEndpoints'
+import { FORM_ENDPOINTS, VITAL_ENDPOINTS } from '../constants/apiEndpoints'
 
 /**
  * Forms/Questionnaires Service - Real API Integration
@@ -16,7 +16,7 @@ export async function submitForm(formType, answers) {
       answers,
     }
 
-    const response = await apiClient.post(FORM_ENDPOINTS.SUBMIT_FORM, payload)
+    const response = await apiClient.post(VITAL_ENDPOINTS.RECORD_VITAL, payload)
 
     if (response.data.success && response.data.data) {
       return { success: true, data: response.data.data }

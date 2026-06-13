@@ -14,7 +14,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { getPatientProfile } from '../services/profileService'
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
@@ -50,22 +50,35 @@ function ProfilePage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [profilePhoto, setProfilePhoto] = useState('')
   const [editableProfile, setEditableProfile] = useState({
-    name: 'Maya Ben Ali',
-    email: 'maya@smarthealth.local',
-    location: 'Tunis, Tunisia',
-    phone: '+216 22 000 000',
+    name: '',
+    email: '',
+    location: '',
+    phone: '',
   })
   const { data: profile, isLoading } = useQuery({
     queryKey: ['patient-profile'],
     queryFn: getPatientProfile,
   })
 
+  useEffect(() => {
+    if (profile && profile.data) {
+      const p = profile.data
+      setEditableProfile((current) => ({
+        ...current,
+        name: p.first_name || p.name || current.name,
+        email: p.email || current.email,
+        location: p.location || p.city || current.location,
+        phone: p.phone || current.phone,
+      }))
+    }
+  }, [profile])
+
   if (isLoading) {
     return <LoadingSkeleton />
   }
 
-  const profileStatus = profile.profileStatus
-  const healthProfileStatus = profile.healthProfileStatus
+  const profileStatus = profile?.profileStatus
+  const healthProfileStatus = profile?.healthProfileStatus
 
   function handlePhotoChange(event) {
     const file = event.target.files?.[0]
@@ -83,6 +96,13 @@ function ProfilePage() {
       [field]: value,
     }))
   }
+
+  const details = (profile && profile.data) ? [
+    { label: 'Age', value: profile.data.age ? `${profile.data.age} ans` : 'N/R' },
+    { label: 'Poids', value: profile.data.weight ? `${profile.data.weight} kg` : 'N/R' },
+    { label: 'Taille', value: profile.data.height ? `${(Number(profile.data.height) / 100).toFixed(2)} m` : 'N/R' },
+    { label: 'Groupe sanguin', value: profile.data.blood_group || 'N/R' },
+  ] : healthDetails
 
   return (
     <div className="space-y-8">
@@ -219,7 +239,7 @@ function ProfilePage() {
           {activeTab === 'information' && (
             <div className="space-y-6">
               <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {healthDetails.map((item) => (
+                {details.map((item) => (
                   <article className="sht-card p-5" key={item.label}>
                     <p className="text-sm text-[#6d7a73]">{item.label}</p>
                     <p className="font-metric mt-2 text-2xl font-semibold text-[#171d1a] dark:text-white">
