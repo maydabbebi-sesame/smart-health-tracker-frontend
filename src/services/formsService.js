@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient'
-import { FORM_ENDPOINTS, VITAL_ENDPOINTS } from '../constants/apiEndpoints'
+import { FORM_ENDPOINTS } from '../constants/apiEndpoints'
+import { getCurrentUser } from './authService'
 
 /**
  * Forms/Questionnaires Service - Real API Integration
@@ -11,21 +12,17 @@ import { FORM_ENDPOINTS, VITAL_ENDPOINTS } from '../constants/apiEndpoints'
  */
 export async function submitForm(formType, answers) {
   try {
+    const user = getCurrentUser()
+    const userUid = user?.uid || null
+
     const payload = {
-      formType,
+      user_uid: userUid,
+      questionnaire_name: formType,
       answers,
     }
 
-    const response = await apiClient.post(VITAL_ENDPOINTS.RECORD_VITAL, payload)
-
-    if (response.data.success && response.data.data) {
-      return { success: true, data: response.data.data }
-    }
-
-    return {
-      success: false,
-      error: response.data.error || 'Failed to submit form',
-    }
+    const response = await apiClient.post(FORM_ENDPOINTS.SUBMIT_FORM, payload)
+    return { success: true, data: response.data }
   } catch (error) {
     return {
       success: false,

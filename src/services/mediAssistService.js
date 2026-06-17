@@ -13,7 +13,7 @@ const CHAT_ENDPOINT = import.meta.env.VITE_MEDIASSIST_URL
 // before the backend's call returns means the turn never gets logged either.
 const TIMEOUT_MS = 520_000
 
-export async function sendMediAssistMessage({ patientData, history, userText, signal }) {
+export async function sendMediAssistMessage({ patientData, history, userText, userUid, sessionId, signal }) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
@@ -21,7 +21,7 @@ export async function sendMediAssistMessage({ patientData, history, userText, si
     const resp = await fetch(CHAT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ patientData, history, userText }),
+      body: JSON.stringify({ patientData, history, userText, userUid, sessionId }),
       signal: signal || controller.signal,
     })
 

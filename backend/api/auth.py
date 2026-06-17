@@ -308,9 +308,10 @@ def login():
         return jsonify({"mfa_required": True, "message": "MFA code sent"}), 200
 
     token = create_access_token(user["id"], user["role"])
+    uid = encode_id(user["id"])
     cursor.close()
     conn.close()
-    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS})
+    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS, "uid": uid})
 
 
 @auth_bp.route("/login/google", methods=["POST"])
@@ -550,9 +551,10 @@ def verify_mfa():
     cursor.execute("UPDATE users SET mfa_code = NULL, mfa_expiry = NULL WHERE id = %s", (user["id"],))
     conn.commit()
     token = create_access_token(user["id"], user["role"])
+    uid = encode_id(user["id"])
     cursor.close()
     conn.close()
-    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS})
+    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS, "uid": uid})
 
 
 @auth_bp.route("/enable-mfa", methods=["POST"])

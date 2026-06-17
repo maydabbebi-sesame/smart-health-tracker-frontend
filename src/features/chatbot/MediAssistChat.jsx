@@ -2,6 +2,7 @@ import { AlertTriangle, BrainCircuit, CheckCircle2, ListChecks, Loader2, Send, S
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
+import { getCurrentUser } from '../../services/authService'
 import { sendMediAssistMessage } from '../../services/mediAssistService'
 import { useMedAssistStore } from '../../store/medAssistStore'
 
@@ -112,13 +113,24 @@ function AnalysisCard({ parsed }) {
 
 // ── Chat bubble ───────────────────────────────────────────────────────────────
 function AssistantBubble({ content }) {
+  // Split on double newlines for paragraphs, single newlines for line breaks
+  const paragraphs = (content || '').split(/\n\n+/)
   return (
     <div className="flex items-start gap-3">
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#00694c] text-white shadow">
         <BrainCircuit size={18} />
       </div>
-      <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[#dee4de] bg-white px-4 py-3 text-sm leading-6 text-[#3d4943] shadow-sm">
-        {content}
+      <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[#dee4de] bg-white px-4 py-3 text-sm leading-6 text-[#3d4943] shadow-sm space-y-2">
+        {paragraphs.map((para, i) => (
+          <p key={i}>
+            {para.split('\n').map((line, j, arr) => (
+              <span key={j}>
+                {line}
+                {j < arr.length - 1 && <br />}
+              </span>
+            ))}
+          </p>
+        ))}
       </div>
     </div>
   )
@@ -208,8 +220,11 @@ export function MediAssistChat({ patientData }) {
   const messages = useMedAssistStore((s) => s.chatMessages)
   const setMessages = useMedAssistStore((s) => s.setChatMessages)
   const chatSessionKey = useMedAssistStore((s) => s.chatSessionKey)
+  const chatSessionId = useMedAssistStore((s) => s.chatSessionId)
   const startChatSession = useMedAssistStore((s) => s.startChatSession)
   const appendChatHistory = useMedAssistStore((s) => s.appendChatHistory)
+
+  const userUid = getCurrentUser()?.uid || null
 
   const [input, setInput] = useState('')
   const bottomRef = useRef(null)
@@ -262,7 +277,15 @@ export function MediAssistChat({ patientData }) {
     // second concurrent analysis into the same conversation. The component
     // ref above only protects this one instance; the store call is the part
     // that's atomic across all of them.
-    if (!startChatSession(sessionKey)) return
+    if (!startChatSession(sessionKey)) {
+      // StrictMode double-invoke: another mount already claimed this session
+      // and its API call is in flight. Our isLoading is stuck at true (init
+      // value) because we won't make a request — clear it so we don't show
+      // ThinkingBubble forever. Store updates from the real call will re-render
+      // this instance with the messages when they arrive.
+      setIsLoading(false)
+      return
+    }
 
     const ownQuestion = patientData?.description?.trim()
     sendToLLM(ownQuestion || 'Analyse mes données et donne-moi tes recommandations.', true, Boolean(ownQuestion))
@@ -300,6 +323,8 @@ export function MediAssistChat({ patientData }) {
         patientData,
         history: useMedAssistStore.getState().chatHistory,
         userText,
+        userUid,
+        sessionId: useMedAssistStore.getState().chatSessionId,
       })
 
       if (isStale()) return

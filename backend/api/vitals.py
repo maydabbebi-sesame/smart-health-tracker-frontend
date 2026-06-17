@@ -72,7 +72,7 @@ ABSOLUTE_LIMITS = {
 @token_required
 def submit_vitals():
     """Submit health vital constants for a user."""
-    required_fields = ["user_uid", "heart_rate", "systolic_bp", "diastolic_bp"]
+    required_fields = ["user_uid"]
     data, error = validate_json_fields(required_fields)
     if error:
         return error
@@ -85,9 +85,9 @@ def submit_vitals():
         return jsonify({"error": "Forbidden"}), 403
 
     try:
-        heart_rate = int(data["heart_rate"])
-        systolic_bp = int(data["systolic_bp"])
-        diastolic_bp = int(data["diastolic_bp"])
+        heart_rate = int(data["heart_rate"]) if data.get("heart_rate") is not None else None
+        systolic_bp = int(data["systolic_bp"]) if data.get("systolic_bp") is not None else None
+        diastolic_bp = int(data["diastolic_bp"]) if data.get("diastolic_bp") is not None else None
     except (TypeError, ValueError):
         return jsonify({"error": "Vital fields must be numeric"}), 400
 
@@ -124,6 +124,11 @@ def submit_vitals():
     pain_location = data.get("pain_location") or data.get("painLocation")
     triggers = data.get("triggers")
     general_state = data.get("general_state") or data.get("generalState")
+    pregnancy_status = data.get("pregnancy_status") or data.get("pregnancyStatus")
+    physical_activity = data.get("physical_activity") or data.get("physicalActivity")
+    diet = data.get("diet")
+    sleep_quality = data.get("sleep_quality") or data.get("sleepQuality")
+    stress_level = data.get("stress_level") if data.get("stress_level") is not None else data.get("stressLevel")
 
     if temperature is not None:
         try:
@@ -191,6 +196,12 @@ def submit_vitals():
         except (TypeError, ValueError):
             return jsonify({"error": "pain_intensity must be numeric"}), 400
 
+    if stress_level is not None:
+        try:
+            stress_level = int(stress_level)
+        except (TypeError, ValueError):
+            return jsonify({"error": "stress_level must be numeric"}), 400
+
     # Validate absolute ranges
     def _validate_limit(name, value):
         if value is None:
@@ -228,7 +239,7 @@ def submit_vitals():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO vitals (user_id, age, gender, height, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, weight, glycemia, weight_variation, weight_variation_kg, health_issues_history, drug_allergies_flag, drug_allergies, family_health_issues, smoking, cigarettes_per_day, alcohol, alcohol_glasses, current_treatment, current_treatments, complements, complements_text, observance, symptoms, pain_intensity, symptoms_description, symptoms_duration, pain_location, triggers, general_state, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())",
+        "INSERT INTO vitals (user_id, age, gender, height, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, weight, glycemia, weight_variation, weight_variation_kg, health_issues_history, drug_allergies_flag, drug_allergies, family_health_issues, smoking, cigarettes_per_day, alcohol, alcohol_glasses, current_treatment, current_treatments, complements, complements_text, observance, symptoms, pain_intensity, symptoms_description, symptoms_duration, pain_location, triggers, general_state, pregnancy_status, physical_activity, diet, sleep_quality, stress_level, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())",
         (
             user_id,
             age,
@@ -265,6 +276,11 @@ def submit_vitals():
             pain_location,
             triggers,
             general_state,
+            pregnancy_status,
+            physical_activity,
+            diet,
+            sleep_quality,
+            stress_level,
         ),
     )
     conn.commit()
@@ -312,7 +328,7 @@ def update_vital(uid: str):
         conn.close()
         return jsonify({"error": "Forbidden"}), 403
 
-    allowed = ["age", "gender", "height", "heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "notes", "weight", "glycemia", "weight_variation", "weight_variation_kg", "health_issues_history", "drug_allergies_flag", "drug_allergies", "family_health_issues", "smoking", "cigarettes_per_day", "alcohol", "alcohol_glasses", "current_treatment", "current_treatments", "complements", "complements_text", "observance", "symptoms", "pain_intensity", "symptoms_description", "symptoms_duration", "pain_location", "triggers", "general_state"]
+    allowed = ["age", "gender", "height", "heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "notes", "weight", "glycemia", "weight_variation", "weight_variation_kg", "health_issues_history", "drug_allergies_flag", "drug_allergies", "family_health_issues", "smoking", "cigarettes_per_day", "alcohol", "alcohol_glasses", "current_treatment", "current_treatments", "complements", "complements_text", "observance", "symptoms", "pain_intensity", "symptoms_description", "symptoms_duration", "pain_location", "triggers", "general_state", "pregnancy_status", "physical_activity", "diet", "sleep_quality", "stress_level"]
     update_fields = {}
     for field in allowed:
         if field in data:

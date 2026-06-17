@@ -61,6 +61,7 @@ export const useMedAssistStore = create(
       chatMessages: [],
       chatHistory: [],
       chatSessionKey: null,
+      chatSessionId: null,
 
       // Returns whether this call actually claimed a *new* session (true) or
       // found the session already current (false) and left state untouched.
@@ -77,6 +78,9 @@ export const useMedAssistStore = create(
             chatMessages: [],
             chatHistory: [],
             chatSessionKey: sessionKey,
+            // Unique ID per consultation — backend uses (user_uid, sessionId) to
+            // scope history so a new form submission never inherits past turns.
+            chatSessionId: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
             recommendations: [],
             alerts: [],
           }

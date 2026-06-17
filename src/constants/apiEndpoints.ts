@@ -89,7 +89,7 @@ export const DOCTOR_ENDPOINTS = {
 
 // ==================== Forms/Questionnaires Endpoints ====================
 export const FORM_ENDPOINTS = {
-  SUBMIT_FORM: '/api/forms/submit',
+  SUBMIT_FORM: '/api/forms',
   GET_FORMS: '/api/forms/list',
   GET_FORM_BY_ID: (id: string) => `/api/forms/${id}`,
   GET_FORM_HISTORY: '/api/forms/history',
