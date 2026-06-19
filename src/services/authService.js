@@ -109,15 +109,20 @@ export async function register(name, email, password, role = 'user') {
 
     return {
       success: true,
-      data: { uid: response.data.uid, message: response.data.message },
+      data: {
+        uid: response.data.uid,
+        message: response.data.message,
+        verificationCode: response.data.verification_code,
+        devNote: response.data.dev_note,
+      },
     }
   } catch (error) {
+    const details = error.response?.data?.details
+    const message = error.response?.data?.error || error.message || 'Registration failed'
+
     return {
       success: false,
-      error:
-        error.response?.data?.error ||
-        error.message ||
-        'Registration failed',
+      error: details ? `${message}: ${details}` : message,
     }
   }
 }
@@ -153,9 +158,15 @@ export async function verifyEmail(uid, code) {
  */
 export async function resendVerificationCode(email) {
   try {
-    await apiClient.post(AUTH_ENDPOINTS.RESEND_VERIFICATION, { email })
+    const response = await apiClient.post(AUTH_ENDPOINTS.RESEND_VERIFICATION, { email })
 
-    return { success: true }
+    return {
+      success: true,
+      data: {
+        verificationCode: response.data.verification_code,
+        devNote: response.data.dev_note,
+      },
+    }
   } catch (error) {
     return {
       success: false,

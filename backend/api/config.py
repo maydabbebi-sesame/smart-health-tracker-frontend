@@ -25,9 +25,26 @@ FACEBOOK_APP_SECRET = os.getenv("FACEBOOK_APP_SECRET", "")
 APPLE_CLIENT_ID = os.getenv("APPLE_CLIENT_ID", "")
 
 # SMTP email settings (configure via environment variables)
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.example.com")
+SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "your-smtp-user@example.com")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "supersecret")
+SMTP_USER = os.getenv("SMTP_USER", "").strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM = os.getenv("SMTP_FROM", "noreply@smarthealth.local")
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "True").lower() in ("1", "true", "yes")
+
+_PLACEHOLDER_SMTP_HOSTS = {"", "smtp.example.com", "localhost", "127.0.0.1"}
+_smtp_enabled_env = os.getenv("SMTP_ENABLED", "").lower()
+if _smtp_enabled_env in ("1", "true", "yes"):
+    SMTP_ENABLED = True
+elif _smtp_enabled_env in ("0", "false", "no"):
+    SMTP_ENABLED = False
+else:
+    SMTP_ENABLED = SMTP_HOST not in _PLACEHOLDER_SMTP_HOSTS and bool(SMTP_USER)
+
+_email_dev_env = os.getenv("EMAIL_DEV_MODE", "").lower()
+if _email_dev_env in ("1", "true", "yes"):
+    EMAIL_DEV_MODE = True
+elif _email_dev_env in ("0", "false", "no"):
+    EMAIL_DEV_MODE = False
+else:
+    EMAIL_DEV_MODE = not SMTP_ENABLED

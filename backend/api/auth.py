@@ -23,6 +23,7 @@ from config import (
     FACEBOOK_APP_ID,
     FACEBOOK_APP_SECRET,
     APPLE_CLIENT_ID,
+    EMAIL_DEV_MODE,
 )
 from config import MAX_FAILED_LOGIN_ATTEMPTS, LOCKOUT_SECONDS, VERIFICATION_CODE_EXPIRY_SECONDS, MFA_CODE_EXPIRY_SECONDS
 from database import get_db_connection
@@ -427,14 +428,18 @@ def register():
         return jsonify({"error": "Unable to register user", "details": str(exc)}), 400
 
     # send verification email (best-effort)
-    try:
-        send_verification_email(email, encode_id(user_id), verification_code)
-    except Exception:
-        pass
+    email_sent = send_verification_email(email, encode_id(user_id), verification_code)
 
     cursor.close()
     conn.close()
-    return jsonify({"message": "User registered successfully; verify email to activate account", "uid": encode_id(user_id)}), 201
+    response = {
+        "message": "User registered successfully; verify email to activate account",
+        "uid": encode_id(user_id),
+    }
+    if EMAIL_DEV_MODE and not email_sent:
+        response["verification_code"] = verification_code
+        response["dev_note"] = "SMTP not configured; use verification_code for local testing"
+    return jsonify(response), 201
 
 @auth_bp.route("/verify-email", methods=["POST"])
 def verify_email():
@@ -503,14 +508,14 @@ def request_verification():
     verification_expiry = datetime.utcnow() + timedelta(seconds=VERIFICATION_CODE_EXPIRY_SECONDS)
     cursor.execute("UPDATE users SET verification_code = %s, verification_expiry = %s WHERE id = %s", (verification_code, verification_expiry, user["id"]))
     conn.commit()
-    # send email (best-effort)
-    try:
-        send_verification_email(email, encode_id(user["id"]), verification_code)
-    except Exception:
-        pass
+    email_sent = send_verification_email(email, encode_id(user["id"]), verification_code)
     cursor.close()
     conn.close()
-    return jsonify({"message": "Verification code generated and sent"}), 200
+    response = {"message": "Verification code generated and sent"}
+    if EMAIL_DEV_MODE and not email_sent:
+        response["verification_code"] = verification_code
+        response["dev_note"] = "SMTP not configured; use verification_code for local testing"
+    return jsonify(response), 200
 
 @auth_bp.route("/verify-mfa", methods=["POST"])
 def verify_mfa():

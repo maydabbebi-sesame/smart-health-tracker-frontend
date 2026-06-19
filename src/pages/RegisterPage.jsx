@@ -24,8 +24,15 @@ function RegisterPage() {
     setLoading(false)
 
     if (result.success) {
-      // Registration successful - redirect to login (user needs to verify email)
-      navigate('/login', { replace: true })
+      navigate('/verify-email', {
+        replace: true,
+        state: {
+          uid: result.data.uid,
+          email,
+          verificationCode: result.data.verificationCode,
+          devNote: result.data.devNote,
+        },
+      })
     } else {
       setError(result.error)
     }
@@ -47,8 +54,9 @@ function RegisterPage() {
             <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
               className="w-full rounded-lg border border-[#bccac1] bg-[#eff5ef] py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
-              defaultValue="Maya Ben Ali"
+              defaultValue=""
               name="name"
+              required
               type="text"
             />
           </div>
@@ -60,8 +68,9 @@ function RegisterPage() {
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
               className="w-full rounded-lg border border-[#bccac1] bg-[#eff5ef] py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
-              defaultValue="maya@smarthealth.local"
+              defaultValue=""
               name="email"
+              required
               type="email"
             />
           </div>
@@ -74,17 +83,24 @@ function RegisterPage() {
             <input
               className="w-full rounded-lg border border-[#bccac1] bg-[#eff5ef] py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
               defaultValue="password"
+              minLength={6}
               name="password"
+              required
               type="password"
             />
           </div>
         </label>
 
+        {error ? (
+          <p className="rounded-lg border border-[#ffdad6] bg-[#fff5f4] px-3 py-2 text-sm text-[#7e2a27]">{error}</p>
+        ) : null}
+
         <button
-          className="w-full rounded-lg bg-[#00694c] px-4 py-3 text-sm font-bold text-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:bg-[#008560]"
+          className="w-full rounded-lg bg-[#00694c] px-4 py-3 text-sm font-bold text-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:bg-[#008560] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={loading}
           type="submit"
         >
-          Creer mon compte
+          {loading ? 'Creation du compte...' : 'Creer mon compte'}
         </button>
       </form>
 
