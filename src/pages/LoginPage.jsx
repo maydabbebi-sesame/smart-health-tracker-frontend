@@ -66,7 +66,7 @@ function LoginPage() {
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
               className="w-full rounded-lg border border-[#bccac1] bg-[#eff5ef] py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
-              defaultValue="maya@smarthealth.local"
+              defaultValue=""
               name="email"
               type="email"
             />
@@ -79,7 +79,7 @@ function LoginPage() {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
               className="w-full rounded-lg border border-[#bccac1] bg-[#eff5ef] py-3 pl-10 pr-10 text-sm outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
-              defaultValue="password"
+              defaultValue=""
               name="password"
               type="password"
             />
