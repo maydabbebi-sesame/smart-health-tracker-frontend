@@ -15,6 +15,7 @@ const LoginPage = lazy(() => import('../../pages/LoginPage'))
 const DoctorAgentPage = lazy(() => import('../../pages/DoctorAgentPage'))
 const ProfilePage = lazy(() => import('../../pages/ProfilePage'))
 const RegisterPage = lazy(() => import('../../pages/RegisterPage'))
+const VerifyEmailPage = lazy(() => import('../../pages/VerifyEmailPage'))
 const SettingsPage = lazy(() => import('../../pages/SettingsPage'))
 const SymptomsPage = lazy(() => import('../../pages/Symptoms/Symptoms'))
 
@@ -41,6 +42,10 @@ const router = createBrowserRouter([
       {
         path: '/register',
         element: withSuspense(<RegisterPage />),
+      },
+      {
+        path: '/verify-email',
+        element: withSuspense(<VerifyEmailPage />),
       },
     ],
   },

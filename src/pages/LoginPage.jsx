@@ -8,6 +8,7 @@ function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = location.state?.from?.pathname || '/dashboard'
+  const successMessage = location.state?.message
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -51,6 +52,12 @@ function LoginPage() {
           Accedez a votre tableau de bord sante securise.
         </p>
       </div>
+
+      {successMessage ? (
+        <p className="mb-4 rounded-lg border border-[#d2e4ff] bg-[#eff5ef] px-3 py-2 text-sm text-[#3d4943]">
+          {successMessage}
+        </p>
+      ) : null}
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block">
@@ -99,6 +106,10 @@ function LoginPage() {
             Mot de passe oublie ?
           </button>
         </div>
+
+        {error ? (
+          <p className="rounded-lg border border-[#ffdad6] bg-[#fff5f4] px-3 py-2 text-sm text-[#7e2a27]">{error}</p>
+        ) : null}
 
         <button
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#00694c] px-4 py-3 text-sm font-bold text-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:bg-[#008560]"
