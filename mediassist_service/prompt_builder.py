@@ -3,6 +3,8 @@ prompt_builder.py — builds the MediAssist system and user prompts from the
 patient's submitted data (profile, measures, symptoms, lifestyle).
 """
 
+import json
+
 
 def calc_imc(weight, height):
     try:
@@ -243,6 +245,14 @@ pas redonné à chaque message. Distingue deux types de message utilisateur :
   justifie ; sinon laisse ces champs vides ([]) pour ne pas répéter ce qui a
   déjà été communiqué.
 
+  INTERDICTION ABSOLUE pour une question de suivi : ne recopie JAMAIS, même
+  partiellement ou reformulé, le texte de l'"analyse" d'un tour précédent. Le
+  patient l'a déjà lu — le répéter est une erreur critique. Le champ "analyse"
+  d'une question de suivi doit être uniquement composé de la réponse NOUVELLE
+  et SPÉCIFIQUE à la question posée (ex : pour "donne-moi un style de vie à
+  suivre", donne des conseils concrets de sommeil/activité/alimentation/stress
+  adaptés au profil — pas un résumé clinique).
+
 ### [9] FORMAT DE RÉPONSE — RAPPEL FINAL ###
 
 Rappel des règles critiques :
@@ -277,6 +287,15 @@ Explique ce que les mesures signifient ensemble, les risques que leur combinaiso
 le lien entre les symptômes et les antécédents. Minimum 3 phrases complètes.
 Une analyse vide, répétitive ou rédigée à la 3ème personne est une erreur critique.
 
+Mise en forme du champ "analyse" (lu par un patient sur une appli mobile, pas un
+rapport médical) — reproduis EXACTEMENT le style de l'exemple "analyse" donné
+dans la structure JSON en [9] :
+- Découpe le texte en plusieurs paragraphes courts séparés par UNE LIGNE VIDE
+  (\n\n) — jamais un seul bloc de texte continu.
+- Mets en gras avec des doubles astérisques (**ainsi**) les valeurs mesurées,
+  les termes médicaux importants et les risques clés, pour qu'ils ressortent
+  visuellement.
+
 Chaque recommandation DOIT remplir le champ "detail" (actions concrètes et précises,
 au moins 1 phrase) ET le champ "pourquoi" (lien direct entre l'action et les données
 spécifiques du patient : valeur mesurée, symptôme ou antécédent concerné).
@@ -301,7 +320,7 @@ Structure JSON obligatoire :
     }
   ],
   "resume_situation": "...",
-  "analyse": "Raisonnement clinique ici — interprétation, risques, liens entre données.",
+  "analyse": "Votre **tension artérielle (148/92 mmHg)** et votre **IMC de 31.6** forment ensemble un facteur de risque cardiovasculaire significatif.\n\nVos vertiges peuvent être liés à une **hypotension orthostatique**, favorisée par votre sommeil de mauvaise qualité.\n\nCette combinaison justifie une consultation rapide pour ajuster votre suivi.",
   "recommandations": [
     {
       "titre": "...",
@@ -358,3 +377,56 @@ def build_user_message(patient_data, user_question, is_followup=False):
 
     question = user_question or "Analyse mes données et donne-moi tes recommandations."
     return USER_PROMPT_TEMPLATE.replace("{message_utilisateur}", question)
+
+
+# ── Doctor Agent decision ────────────────────────────────────────────────────
+# Unlike the main MediAssist chat above, this doesn't reason over raw patient
+# data — it takes the *already distilled* clinical signals MediAssist itself
+# produced earlier (alerts, recommendations, orientation) and just decides
+# whether the Doctor Agent should proactively offer to find a doctor right
+# now, with what urgency/specialty, and what the robot should say. That's why
+# it's routed to a lighter general-purpose model (see mediassist_service/app.py)
+# instead of medgemma1.5.
+DOCTOR_AGENT_SYSTEM_PROMPT = """Tu es le module de décision du "Doctor Agent" d'une application de suivi santé.
+
+On te donne un résumé déjà produit par un assistant médical IA (alertes,
+recommandations, orientation) pour un patient. Ta seule tâche : décider si le
+Doctor Agent doit, maintenant, proposer proactivement de chercher un médecin
+pour ce patient — et si oui, avec quelle spécialité et quel message court.
+
+Ne refais PAS d'analyse médicale, ne réinterprète pas les données brutes :
+base-toi uniquement sur le résumé fourni.
+
+Réponds STRICTEMENT en JSON, sans aucun texte avant/après, selon ce schéma :
+{
+  "shouldRecommend": true,
+  "urgency": "normale",
+  "specialty": "Cardiologue",
+  "message": "Phrase courte (1-2 phrases), au patient, à la première personne du Doctor Agent, expliquant pourquoi il propose un médecin."
+}
+
+Règles :
+- "urgency" : une valeur parmi "normale", "moderee", "elevee", "critique".
+- "specialty" : nom de spécialité médicale en français (ex: "Médecin généraliste", "Cardiologue"), ou null si aucune spécialité particulière ne se dégage.
+- "shouldRecommend" doit être false si le résumé ne contient aucune alerte ni orientation justifiant une consultation (ex: orientation "automedication" et aucune alerte sévère) — dans ce cas "message" explique brièvement que tout va bien.
+- "message" ne doit jamais répéter mot pour mot le contenu brut du résumé : reformule, synthétise."""
+
+DOCTOR_AGENT_USER_TEMPLATE = """Résumé MediAssist pour ce patient :
+
+Alertes : {alertes_json}
+
+Recommandations : {recommandations_json}
+
+Orientation : {orientation_json}"""
+
+
+def build_doctor_agent_messages(alerts, recommendations, orientation):
+    user_content = DOCTOR_AGENT_USER_TEMPLATE.format(
+        alertes_json=json.dumps(alerts or [], ensure_ascii=False),
+        recommandations_json=json.dumps(recommendations or [], ensure_ascii=False),
+        orientation_json=json.dumps(orientation or {}, ensure_ascii=False),
+    )
+    return [
+        {"role": "system", "content": DOCTOR_AGENT_SYSTEM_PROMPT},
+        {"role": "user", "content": user_content},
+    ]

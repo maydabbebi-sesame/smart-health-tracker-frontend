@@ -9,10 +9,11 @@ import { DOCTOR_ENDPOINTS } from '../constants/apiEndpoints'
 /**
  * Get list of all doctors
  */
-export async function getDoctors(page = 1, pageSize = 20, specialization = null) {
+export async function getDoctors(page = 1, pageSize = 20, specialization = null, location = null) {
   try {
     const params = {}
     if (specialization) params.specialization = specialization
+    if (location) params.location = location
 
     const response = await apiClient.get(DOCTOR_ENDPOINTS.GET_DOCTORS, { params })
     return { success: true, data: response.data }
@@ -23,6 +24,28 @@ export async function getDoctors(page = 1, pageSize = 20, specialization = null)
         error.response?.data?.error ||
         error.message ||
         'Failed to fetch doctors',
+    }
+  }
+}
+
+/**
+ * Doctor Agent: search platform doctors + the scraped med.tn directory +
+ * Google Places, combined, around a patient-given address.
+ */
+export async function searchNearbyDoctors(address, specialization = null) {
+  try {
+    const params = { address }
+    if (specialization) params.specialization = specialization
+
+    const response = await apiClient.get(DOCTOR_ENDPOINTS.SEARCH_NEARBY, { params })
+    return { success: true, data: response.data }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to search nearby doctors',
     }
   }
 }

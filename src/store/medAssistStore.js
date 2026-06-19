@@ -37,6 +37,11 @@ export const useMedAssistStore = create(
       recommendations: [],
       alerts: [],
 
+      // Last orientation suggested by MediAssist ({ niveau, specialite, raison,
+      // delai }) — drives the Doctor Agent page's "should I suggest a doctor?"
+      // heuristic without re-parsing the chat history.
+      lastOrientation: null,
+
       // Last submitted symptom-form payload — persisted so the AI Recommendations
       // page (and its chat) survives navigating away and back via the sidebar,
       // which doesn't carry React Router's location.state.
@@ -50,7 +55,7 @@ export const useMedAssistStore = create(
       // analysis state so a fresh form run always triggers a new analysis,
       // even when the patient data hasn't changed.
       resetSession() {
-        set({ chatMessages: [], chatHistory: [], chatSessionKey: null, recommendations: [], alerts: [] })
+        set({ chatMessages: [], chatHistory: [], chatSessionKey: null, recommendations: [], alerts: [], lastOrientation: null })
       },
 
       // Chat conversation — persisted so leaving the AI Recommendations page
@@ -83,6 +88,7 @@ export const useMedAssistStore = create(
             chatSessionId: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
             recommendations: [],
             alerts: [],
+            lastOrientation: null,
           }
         })
         return claimed
@@ -149,6 +155,7 @@ export const useMedAssistStore = create(
           return {
             recommendations: [...newRecommendations, ...state.recommendations],
             alerts: [...newAlerts, ...state.alerts],
+            lastOrientation: parsed.orientation || state.lastOrientation,
           }
         })
       },

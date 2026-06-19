@@ -373,7 +373,7 @@ export function SymptomForm() {
         {isSubmitting && (
           <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#d2e4ff] bg-[#d2e4ff] p-4 text-sm font-medium text-[#004880]">
             <Loader2 className="animate-spin" size={18} />
-            Analyse des symptomes...
+            Enregistrement de vos données...
           </div>
         )}
 
@@ -406,7 +406,7 @@ export function SymptomForm() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
-                  Analyse
+                  Enregistrement...
                 </>
               ) : (
                 <>

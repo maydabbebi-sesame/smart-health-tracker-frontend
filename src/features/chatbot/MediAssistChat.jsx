@@ -29,6 +29,32 @@ const QUICK_SUGGESTIONS = [
   { label: 'Exercices doux', prompt: 'Quels exercices physiques doux me recommandes-tu vu mon état actuel ?' },
 ]
 
+// ── Formatted text rendering ──────────────────────────────────────────────────
+// The model is asked to format "analyse" as short paragraphs (blank-line
+// separated) with **bold** markdown for key terms/values — render both here
+// so the same helper applies in the chat bubble and the initial analysis card.
+function renderBoldSegments(line) {
+  return line.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : <span key={i}>{part}</span>,
+  )
+}
+
+function FormattedText({ content, className }) {
+  const paragraphs = (content || '').split(/\n\n+/)
+  return paragraphs.map((para, i) => (
+    <p className={className} key={i}>
+      {para.split('\n').map((line, j, arr) => (
+        <span key={j}>
+          {renderBoldSegments(line)}
+          {j < arr.length - 1 && <br />}
+        </span>
+      ))}
+    </p>
+  ))
+}
+
 // ── Structured analysis card (first message) ─────────────────────────────────
 // Note: the "recommandations" parsed from the LLM's JSON response are rendered
 // as cards on the AI Recommendations page (left panel), not duplicated here —
@@ -77,7 +103,9 @@ function AnalysisCard({ parsed }) {
 
         {/* Analyse */}
         {parsed.urgence !== 'critique' && parsed.analyse && (
-          <p className="text-sm leading-6 text-[#3d4943]">{parsed.analyse}</p>
+          <div className="space-y-2 text-sm leading-6 text-[#3d4943]">
+            <FormattedText content={parsed.analyse} />
+          </div>
         )}
 
         {/* Pointer vers le panneau de recommandations */}
@@ -113,24 +141,13 @@ function AnalysisCard({ parsed }) {
 
 // ── Chat bubble ───────────────────────────────────────────────────────────────
 function AssistantBubble({ content }) {
-  // Split on double newlines for paragraphs, single newlines for line breaks
-  const paragraphs = (content || '').split(/\n\n+/)
   return (
     <div className="flex items-start gap-3">
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#00694c] text-white shadow">
         <BrainCircuit size={18} />
       </div>
       <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[#dee4de] bg-white px-4 py-3 text-sm leading-6 text-[#3d4943] shadow-sm space-y-2">
-        {paragraphs.map((para, i) => (
-          <p key={i}>
-            {para.split('\n').map((line, j, arr) => (
-              <span key={j}>
-                {line}
-                {j < arr.length - 1 && <br />}
-              </span>
-            ))}
-          </p>
-        ))}
+        <FormattedText content={content} />
       </div>
     </div>
   )
@@ -264,27 +281,36 @@ export function MediAssistChat({ patientData }) {
   // the generic prompt, and show it as their message in the conversation.
   // Skipped entirely when resuming an existing conversation for this patient.
   useEffect(() => {
-    if (hasInitializedRef.current) return
+    if (hasInitializedRef.current) {
+      // StrictMode double-mount: mount #1 already started the API call. Stay in
+      // loading state (ThinkingBubble visible) and subscribe to the store so we
+      // clear the loader the instant mount #1's response lands.
+      if (!hasPersistedMessages) {
+        const unsub = useMedAssistStore.subscribe((state) => {
+          if (state.chatMessages.length > 0 || state.chatSessionKey !== sessionKey) {
+            setIsLoading(false)
+            unsub()
+          }
+        })
+        return unsub
+      }
+      return
+    }
     hasInitializedRef.current = true
 
     if (hasPersistedMessages) {
       return // resume the persisted conversation as-is
     }
 
-    // startChatSession reports whether IT actually claimed the session — if
-    // another mount already did (a near-simultaneous race: StrictMode's
-    // double-invoke, a lazy/Suspense replay...), back off instead of firing a
-    // second concurrent analysis into the same conversation. The component
-    // ref above only protects this one instance; the store call is the part
-    // that's atomic across all of them.
     if (!startChatSession(sessionKey)) {
-      // StrictMode double-invoke: another mount already claimed this session
-      // and its API call is in flight. Our isLoading is stuck at true (init
-      // value) because we won't make a request — clear it so we don't show
-      // ThinkingBubble forever. Store updates from the real call will re-render
-      // this instance with the messages when they arrive.
-      setIsLoading(false)
-      return
+      // Another mount claimed the session (edge case outside StrictMode).
+      const unsub = useMedAssistStore.subscribe((state) => {
+        if (state.chatMessages.length > 0 || state.chatSessionKey !== sessionKey) {
+          setIsLoading(false)
+          unsub()
+        }
+      })
+      return unsub
     }
 
     const ownQuestion = patientData?.description?.trim()
@@ -319,13 +345,19 @@ export function MediAssistChat({ patientData }) {
     })
 
     try {
-      const { userContent, assistantContent, parsed } = await sendMediAssistMessage({
-        patientData,
-        history: useMedAssistStore.getState().chatHistory,
-        userText,
-        userUid,
-        sessionId: useMedAssistStore.getState().chatSessionId,
-      })
+      // Enforce a minimum visible loading time so the ThinkingBubble is always
+      // perceptible — without this a fast error response (e.g. empty content
+      // from the model) dismisses the loader before the user even sees it.
+      const [{ userContent, assistantContent, parsed }] = await Promise.all([
+        sendMediAssistMessage({
+          patientData,
+          history: useMedAssistStore.getState().chatHistory,
+          userText,
+          userUid,
+          sessionId: useMedAssistStore.getState().chatSessionId,
+        }),
+        new Promise((r) => setTimeout(r, 1500)),
+      ])
 
       if (isStale()) return
 
@@ -346,11 +378,12 @@ export function MediAssistChat({ patientData }) {
     } catch (err) {
       if (isStale()) return
 
+      const errText = err.message || "Une erreur est survenue. Vérifiez la connexion au serveur d'analyse."
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          text: err.message || "Une erreur est survenue. Vérifiez la connexion au serveur d'analyse.",
+          text: errText,
           parsed: null,
           isInitial: false,
         },

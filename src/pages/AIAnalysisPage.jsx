@@ -14,7 +14,7 @@ import {
   Pill,
   Sparkles,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { MediAssistChat } from '../features/chatbot/MediAssistChat'
@@ -34,6 +34,21 @@ const URGENCE_LABELS = {
   moderee:  'Modérée',
   elevee:   'Élevée',
   critique: 'Critique',
+}
+
+// Highest severity/priority first — items prepended across separate analysis
+// turns are otherwise only sorted *within* each turn's own batch (the model
+// is asked to sort each batch, but a later low-priority turn would still
+// land above an earlier high-priority one without this).
+const PRIORITE_ORDER = { haute: 0, moyenne: 1, basse: 2 }
+const URGENCE_ORDER = { critique: 0, elevee: 1, moderee: 2, normale: 3 }
+
+function byPrioriteDesc(a, b) {
+  return (PRIORITE_ORDER[a.priorite] ?? 99) - (PRIORITE_ORDER[b.priorite] ?? 99)
+}
+
+function byUrgenceDesc(a, b) {
+  return (URGENCE_ORDER[a.urgence] ?? 99) - (URGENCE_ORDER[b.urgence] ?? 99)
 }
 
 // Static lookup table — keeps icon components declared at module scope
@@ -227,8 +242,10 @@ function AIAnalysisPage() {
   const navigate = useNavigate()
   const storedPatientData = useMedAssistStore((s) => s.patientData)
   const patientData = location.state?.patientData ?? storedPatientData
-  const recommendations = useMedAssistStore((s) => s.recommendations)
-  const alerts = useMedAssistStore((s) => s.alerts)
+  const storeRecommendations = useMedAssistStore((s) => s.recommendations)
+  const storeAlerts = useMedAssistStore((s) => s.alerts)
+  const recommendations = useMemo(() => [...storeRecommendations].sort(byPrioriteDesc), [storeRecommendations])
+  const alerts = useMemo(() => [...storeAlerts].sort(byUrgenceDesc), [storeAlerts])
   const [alertsOpen, setAlertsOpen] = useState(true)
   const [recsOpen, setRecsOpen] = useState(true)
 
@@ -277,7 +294,14 @@ function AIAnalysisPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_minmax(360px,420px)]">
-        <section aria-label="Analyse" className="space-y-6">
+        {/* On narrow viewports the grid collapses to a single column and
+            stacks children in DOM order — without this, the chat (and its
+            "MediAssist is thinking" loader) would land below the Analyse
+            section, off-screen until the patient scrolls past an empty
+            "Recommandations (0)" placeholder. order-* keeps the live
+            feedback first on mobile while leaving the lg+ side-by-side
+            layout untouched. */}
+        <section aria-label="Analyse" className="order-2 space-y-6 lg:order-none">
           {alerts.length > 0 && (
             <div className="space-y-3">
               <button
@@ -327,7 +351,9 @@ function AIAnalysisPage() {
             gets a fresh chat session (and remounts the component so its
             mount effect runs again), while returning to the same analysis
             keeps the same instance and resumes the persisted conversation. */}
-        <MediAssistChat key={JSON.stringify(patientData)} patientData={patientData} />
+        <div className="order-1 lg:order-none">
+          <MediAssistChat key={JSON.stringify(patientData)} patientData={patientData} />
+        </div>
       </div>
     </div>
   )

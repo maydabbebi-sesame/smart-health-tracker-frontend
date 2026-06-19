@@ -18,9 +18,21 @@ import json as _json
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from llm_client import FALLBACK_RESPONSE, call_model, parse_response
-from prompt_builder import build_system_prompt, build_user_message
+from llm_client import FALLBACK_RESPONSE, call_model
+from prompt_builder import build_doctor_agent_messages, build_system_prompt, build_user_message
 from turn_logger import log_turn
+
+# Lighter general-purpose model for the Doctor Agent's recommend-or-not
+# decision — it reasons over signals MediAssist already distilled, not raw
+# patient data, so it doesn't need medgemma1.5's long medical "thinking" chain.
+DOCTOR_AGENT_MODEL = "gemma4:26b"
+
+DOCTOR_AGENT_FALLBACK = {
+    "shouldRecommend": False,
+    "urgency": "normale",
+    "specialty": None,
+    "message": "Je n'ai pas pu analyser ta situation pour l'instant, mais tu peux chercher un médecin manuellement si besoin.",
+}
 
 # ── DB setup ──────────────────────────────────────────────────────────────────
 # Load credentials from the sibling backend/.env if dotenv is available,
@@ -140,23 +152,57 @@ def chat():
         {"role": "user", "content": user_content},
     ]
 
-    raw, error = call_model(messages)
-    parsed = parse_response(raw)
+    raw, parsed, error = call_model(messages)
     log_turn(messages, raw, parsed)
 
-    # Persist this turn so the next request picks it up from DB automatically.
-    # Store the parsed JSON (not the raw thinking output) as the assistant's
-    # history entry — sending thousands of <unused94>thought tokens back to the
-    # model on every follow-up would waste the context window and confuse it.
-    if user_uid and session_id:
-        clean_assistant = _json.dumps(parsed, ensure_ascii=False) if parsed else (raw or "")
+    # Only persist when the model actually produced a usable response.
+    if user_uid and session_id and parsed:
+        clean_assistant = _json.dumps(parsed, ensure_ascii=False)
         _save_turn(user_uid, session_id, user_content, clean_assistant)
 
+    # If call_model reported an error (empty content after retries, timeout…),
+    # surface it to the frontend so the chat shows an actionable message instead
+    # of the generic "indisponible" fallback.
+    effective_parsed = parsed if parsed is not None else FALLBACK_RESPONSE
+    if error and parsed is None:
+        effective_parsed = {**FALLBACK_RESPONSE, "analyse": error}
+
     return jsonify({
-        "userContent":     user_content,
+        "userContent":      user_content,
         "assistantContent": raw or "",
-        "parsed":          parsed if parsed is not None else FALLBACK_RESPONSE,
-        "error":           error,
+        "parsed":           effective_parsed,
+        "error":            error,
+    })
+
+
+@app.post("/api/mediassist/doctor-agent")
+def doctor_agent_decision():
+    """Decide whether the Doctor Agent should proactively offer to find a
+    doctor for this patient right now, based on signals MediAssist already
+    produced (alerts/recommendations/orientation) — see prompt_builder.py's
+    build_doctor_agent_messages for why this doesn't re-run a full medical
+    analysis.
+
+    POST body: { alerts: [...], recommendations: [...], orientation: {...} }
+    Response: { shouldRecommend, urgency, specialty, message, error? }
+    """
+    body = request.get_json(silent=True) or {}
+    messages = build_doctor_agent_messages(
+        body.get("alerts"), body.get("recommendations"), body.get("orientation"),
+    )
+
+    raw, parsed, error = call_model(messages, model=DOCTOR_AGENT_MODEL)
+    log_turn(messages, raw, parsed)
+
+    if parsed is None:
+        return jsonify({**DOCTOR_AGENT_FALLBACK, "error": error})
+
+    return jsonify({
+        "shouldRecommend": bool(parsed.get("shouldRecommend")),
+        "urgency": parsed.get("urgency") or "normale",
+        "specialty": parsed.get("specialty"),
+        "message": parsed.get("message") or DOCTOR_AGENT_FALLBACK["message"],
+        "error": None,
     })
 
 

@@ -1,11 +1,27 @@
+import re
+
 from flask import Blueprint, jsonify, request, g
 from database import get_db_connection
 from validators import validate_json_fields, get_request_data
 from security import decode_id, encode_id, publicize_doctor
 from auth import token_required, roles_required
 from email_utils import send_email
+from osm_places import geocode_address, search_nearby_doctors
 
 doctors_bp = Blueprint("doctors", __name__, url_prefix="/api/doctors")
+
+# The Doctor Agent's AI decision naturally says "Médecin généraliste" (full,
+# conversational French), but med.tn/platform doctors are stored under just
+# the bare specialty ("Généraliste") — a LIKE '%Médecin généraliste%' can
+# never match a shorter stored value that doesn't contain "Médecin" at all.
+# Strip the generic role prefix before using the specialty as a LIKE filter.
+_GENERIC_SPECIALTY_PREFIX_RE = re.compile(r"^(médecin|docteur|dr\.?)\s+", re.IGNORECASE)
+
+
+def _specialty_filter_text(specialization):
+    if not specialization:
+        return specialization
+    return _GENERIC_SPECIALTY_PREFIX_RE.sub("", specialization).strip()
 
 
 @doctors_bp.route("", methods=["GET"])
@@ -37,6 +53,84 @@ def get_doctors():
     cursor.close()
     conn.close()
     return jsonify([publicize_doctor(doc) for doc in doctors])
+
+
+@doctors_bp.route("/nearby", methods=["GET"])
+def get_doctors_nearby():
+    """Doctor Agent search: combine platform doctors, the scraped med.tn
+    directory and a live Google Places lookup around a patient-given address.
+
+    GET /api/doctors/nearby?address=<texte>&specialization=<texte>
+    Response: { platform: [...], external: [...], osm: [...], warning?: str }
+    """
+    address = request.args.get("address", "").strip()
+    specialization = request.args.get("specialization", "").strip()
+    specialty_filter_text = _specialty_filter_text(specialization)
+
+    # Resolve the patient's free-text input to a canonical city name first —
+    # stored addresses ("Mornag Ben arous Tunisie") rarely contain whatever
+    # extra words the patient typed ("Ben Arous Centre"), so matching against
+    # the raw input made the LIKE filters below fail for anything but an
+    # exact city name. Falls back to the raw text if geocoding fails.
+    coords = geocode_address(address) if address else None
+    location_filter_text = coords[2] if coords else address
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    platform_query = "SELECT * FROM doctors"
+    platform_filters, platform_params = [], []
+    if specialty_filter_text:
+        platform_filters.append("specialization LIKE %s")
+        platform_params.append(f"%{specialty_filter_text}%")
+    if location_filter_text:
+        platform_filters.append("location LIKE %s")
+        platform_params.append(f"%{location_filter_text}%")
+    if platform_filters:
+        platform_query += " WHERE " + " AND ".join(platform_filters)
+    cursor.execute(platform_query, tuple(platform_params))
+    platform_doctors = [publicize_doctor(doc) for doc in cursor.fetchall()]
+
+    external_query = "SELECT * FROM external_doctors"
+    external_filters, external_params = [], []
+    if specialty_filter_text:
+        external_filters.append("specialization LIKE %s")
+        external_params.append(f"%{specialty_filter_text}%")
+    if location_filter_text:
+        external_filters.append("location LIKE %s")
+        external_params.append(f"%{location_filter_text}%")
+    if external_filters:
+        external_query += " WHERE " + " AND ".join(external_filters)
+    cursor.execute(external_query, tuple(external_params))
+    external_doctors = [
+        {
+            "source": doc["source"],
+            "name": doc["name"],
+            "specialization": doc["specialization"],
+            "location": doc["location"],
+            "sourceUrl": doc["source_url"],
+            "phone": doc.get("phone"),
+            "lat": float(doc["lat"]) if doc.get("lat") is not None else None,
+            "lng": float(doc["lng"]) if doc.get("lng") is not None else None,
+        }
+        for doc in cursor.fetchall()
+    ]
+
+    cursor.close()
+    conn.close()
+
+    response = {"platform": platform_doctors, "external": external_doctors, "osm": []}
+
+    if not address:
+        return jsonify(response)
+
+    if not coords:
+        response["warning"] = "Adresse non reconnue, résultats sans tri par distance."
+        return jsonify(response)
+
+    lat, lng, _city = coords
+    response["osm"] = search_nearby_doctors(lat, lng, keyword=specialty_filter_text or None)
+    return jsonify(response)
 
 
 @doctors_bp.route("/<uid>", methods=["GET"])

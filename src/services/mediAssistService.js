@@ -4,14 +4,19 @@
 // and user prompts, calls the LLM and parses its JSON reply. Keeping the
 // prompt-building and the gateway call server-side means the API key never
 // reaches the browser — the frontend only ever sees the parsed result.
-const CHAT_ENDPOINT = import.meta.env.VITE_MEDIASSIST_URL
-  ? `${import.meta.env.VITE_MEDIASSIST_URL}/api/mediassist/chat`
-  : 'http://127.0.0.1:5001/api/mediassist/chat'
+const MEDIASSIST_BASE_URL = import.meta.env.VITE_MEDIASSIST_URL || 'http://127.0.0.1:5001'
+const CHAT_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/chat`
+const DOCTOR_AGENT_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/doctor-agent`
 // Must stay comfortably ABOVE the backend's own gateway-call timeout
 // (mediassist_service/llm_client.py's TIMEOUT_S) — medgemma1.5 is a "thinking"
 // model whose generation routinely runs past a minute, and aborting here
 // before the backend's call returns means the turn never gets logged either.
 const TIMEOUT_MS = 520_000
+// The doctor-agent decision uses a lighter general-purpose model reasoning
+// over already-distilled signals (see mediassist_service/app.py), so it
+// should resolve much faster than a full MediAssist analysis — but still
+// give it a generous budget since LLM latency varies.
+const DOCTOR_AGENT_TIMEOUT_MS = 120_000
 
 export async function sendMediAssistMessage({ patientData, history, userText, userUid, sessionId, signal }) {
   const controller = new AbortController()
@@ -34,6 +39,35 @@ export async function sendMediAssistMessage({ patientData, history, userText, us
   } catch (err) {
     if (err.name === 'AbortError') throw new Error("L'analyse a dépassé le délai imparti. Réessayez.", { cause: err })
     throw err
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+// Asks the Doctor Agent's decision endpoint whether to proactively offer to
+// find a doctor right now, given signals MediAssist already produced (alerts,
+// recommendations, orientation) — see mediassist_service/app.py's
+// doctor_agent_decision route. Never throws on a backend/LLM failure: the
+// caller falls back to its own local heuristic instead, so a gateway outage
+// never blocks the Doctor Agent page.
+export async function getDoctorAgentDecision({ alerts, recommendations, orientation }) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), DOCTOR_AGENT_TIMEOUT_MS)
+
+  try {
+    const resp = await fetch(DOCTOR_AGENT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alerts, recommendations, orientation }),
+      signal: controller.signal,
+    })
+
+    if (!resp.ok) throw new Error(`Erreur du service Doctor Agent : ${resp.status}`)
+
+    const decision = await resp.json()
+    return { success: true, decision }
+  } catch (err) {
+    return { success: false, error: err.message || 'Le service Doctor Agent est indisponible.' }
   } finally {
     clearTimeout(timeoutId)
   }

@@ -12,7 +12,7 @@ const AIAnalysisPage = lazy(() => import('../../pages/AIAnalysisPage'))
 const DashboardPage = lazy(() => import('../../pages/DashboardPage'))
 const HistoryPage = lazy(() => import('../../pages/HistoryPage'))
 const LoginPage = lazy(() => import('../../pages/LoginPage'))
-const NotificationsPage = lazy(() => import('../../pages/NotificationsPage'))
+const DoctorAgentPage = lazy(() => import('../../pages/DoctorAgentPage'))
 const ProfilePage = lazy(() => import('../../pages/ProfilePage'))
 const RegisterPage = lazy(() => import('../../pages/RegisterPage'))
 const SettingsPage = lazy(() => import('../../pages/SettingsPage'))
@@ -72,7 +72,7 @@ const router = createBrowserRouter([
           },
           {
             path: '/notifications',
-            element: withSuspense(<NotificationsPage />),
+            element: withSuspense(<DoctorAgentPage />),
           },
           {
             path: '/profile',
