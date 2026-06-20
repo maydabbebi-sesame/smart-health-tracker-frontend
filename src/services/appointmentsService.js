@@ -33,10 +33,11 @@ export async function createAppointment(appointmentData) {
 /**
  * Get user's appointments
  */
-export async function getAppointments(page = 1, pageSize = 20, status = null) {
+export async function getAppointments(page = 1, pageSize = 20, status = null, userUid = null) {
   try {
     const params = {}
     if (status) params.status = status
+    if (userUid) params.user_uid = userUid
 
     const response = await apiClient.get(APPOINTMENT_ENDPOINTS.GET_APPOINTMENTS, {
       params,
