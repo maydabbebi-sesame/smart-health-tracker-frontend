@@ -41,9 +41,9 @@ function RegisterPage() {
   return (
     <div className="w-full max-w-md">
       <div className="mb-8">
-        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Creer un compte</h2>
+        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Créer un compte</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Demarrez avec un compte demo securise pour explorer le tableau de bord.
+          Démarrez avec un compte démo sécurisé pour explorer le tableau de bord.
         </p>
       </div>
 
@@ -100,7 +100,7 @@ function RegisterPage() {
           disabled={loading}
           type="submit"
         >
-          {loading ? 'Creation du compte...' : 'Creer mon compte'}
+          {loading ? 'Création du compte...' : 'Creer mon compte'}
         </button>
       </form>
 

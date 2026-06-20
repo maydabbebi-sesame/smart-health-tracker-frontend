@@ -27,22 +27,22 @@ const healthDetails = [
 ]
 
 const medicalHistory = [
-  { title: 'Asthme leger', date: 'Diagnostique en 2018', status: 'Stable' },
+  { title: 'Asthme léger', date: 'Diagnostiqué en 2018', status: 'Stable' },
   { title: 'Migraine chronique', date: 'Suivi depuis 2021', status: 'Surveillance' },
   { title: 'Allergie pollen', date: 'Declaree en 2019', status: 'Active' },
 ]
 
 const vaccinations = [
   { name: 'COVID-19', date: 'Mars 2025', status: 'A jour' },
-  { name: 'Grippe saisonniere', date: 'Octobre 2025', status: 'A renouveler' },
+  { name: 'Grippe saisonnière', date: 'Octobre 2025', status: 'À renouveler' },
   { name: 'Tetanos', date: 'Juillet 2022', status: 'A jour' },
 ]
 
 const tabs = [
   { id: 'information', label: 'Informations' },
-  { id: 'history', label: 'Medecine historique' },
+  { id: 'history', label: 'Médecine historique' },
   { id: 'vaccinations', label: 'Vaccinations' },
-  { id: 'preferences', label: 'Preferences' },
+  { id: 'preferences', label: 'Préférences' },
 ]
 
 function ProfilePage() {
@@ -109,7 +109,7 @@ function ProfilePage() {
       <div>
         <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">Mon Profil</h1>
         <p className="mt-2 text-base leading-7 text-[#3d4943]">
-          Gerez vos informations de sante et vos preferences de suivi.
+          Gérez vos informations de santé et vos préférences de suivi.
         </p>
       </div>
 
@@ -138,10 +138,10 @@ function ProfilePage() {
           ) : (
             <h2 className="mt-5 text-2xl font-semibold text-[#171d1a] dark:text-white">{editableProfile.name}</h2>
           )}
-          <p className="mt-1 text-sm text-[#6d7a73]">Compte patient verifie</p>
+          <p className="mt-1 text-sm text-[#6d7a73]">Compte patient vérifié</p>
 
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            {['Patient/User', 'Profil complet', 'Acces securise'].map((tag) => (
+            {['Patient/Utilisateur', 'Profil complet', 'Accès sécurisé'].map((tag) => (
               <span className="rounded-full bg-[#eff5ef] px-3 py-1 text-xs font-semibold text-[#00694c]" key={tag}>
                 {tag}
               </span>
@@ -252,8 +252,8 @@ function ProfilePage() {
               <section className="grid gap-4 md:grid-cols-3">
                 {[
                   { label: 'Profil', value: profileStatus, icon: ShieldCheck },
-                  { label: 'Sante', value: healthProfileStatus, icon: HeartPulse },
-                  { label: 'Activite', value: 'Suivi hebdomadaire actif', icon: Activity },
+                  { label: 'Santé', value: healthProfileStatus, icon: HeartPulse },
+                  { label: 'Activité', value: 'Suivi hebdomadaire actif', icon: Activity },
                 ].map((item) => (
                   <article className="sht-card p-5" key={item.label}>
                     <div className="grid h-11 w-11 place-items-center rounded-lg bg-[#86f8c9]/35 text-[#00694c]">
@@ -288,7 +288,7 @@ function ProfilePage() {
             <article className="sht-card p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Medecine historique</h2>
+                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Médecine historique</h2>
                   <p className="mt-1 text-sm text-[#6d7a73]">
                     Pathologies, allergies et suivis importants pour contextualiser les futures analyses IA.
                   </p>
@@ -345,10 +345,10 @@ function ProfilePage() {
           {activeTab === 'preferences' && (
             <section className="grid gap-4 md:grid-cols-2">
               {[
-                { title: 'Notifications', text: 'Alertes IA, rappels de suivi et syntheses hebdomadaires actives.' },
-                { title: 'Confidentialite', text: 'Donnees patient mockees cote front, contrat backend documente.' },
-                { title: 'Theme', text: 'Preference de theme persistante via Zustand.' },
-                { title: 'Langue', text: 'Interface de demo preparee en francais fonctionnel.' },
+                { title: 'Notifications', text: 'Alertes IA, rappels de suivi et synthèses hebdomadaires actives.' },
+                { title: 'Confidentialité', text: 'Données patient simulées côté front, contrat backend documenté.' },
+                { title: 'Thème', text: 'Préférence de thème persistante via Zustand.' },
+                { title: 'Langue', text: 'Interface de démo préparée en français fonctionnel.' },
               ].map((item) => (
                 <article className="sht-card p-5" key={item.title}>
                   <h2 className="font-semibold text-[#171d1a] dark:text-white">{item.title}</h2>

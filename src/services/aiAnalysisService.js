@@ -25,7 +25,7 @@ export async function analyzeSymptoms(symptomData) {
 
     return {
       success: false,
-      error: response.data.error || 'Failed to analyze symptoms',
+      error: response.data.error || 'Impossible d\'analyser les symptômes',
     }
   } catch (error) {
     return {
@@ -33,7 +33,7 @@ export async function analyzeSymptoms(symptomData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to analyze symptoms',
+        'Impossible d\'analyser les symptômes',
     }
   }
 }
@@ -53,7 +53,7 @@ export async function getLatestAIAnalysis() {
   } catch (error) {
     return {
       success: false,
-      error: error.message || 'Failed to fetch latest analysis',
+      error: error.message || 'Impossible de récupérer la dernière analyse',
     }
   }
 }
@@ -77,7 +77,7 @@ export async function getRecommendations(healthData) {
 
     return {
       success: false,
-      error: response.data.error || 'Failed to get recommendations',
+      error: response.data.error || 'Impossible d\'obtenir des recommandations',
     }
   } catch (error) {
     return {
@@ -85,7 +85,7 @@ export async function getRecommendations(healthData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to get recommendations',
+        'Impossible d\'obtenir des recommandations',
     }
   }
 }

@@ -23,14 +23,14 @@ function SidebarContent({ onNavigate }) {
         <div>
           <p className="text-sm font-bold text-[#171d1a] dark:text-white">SmartHealth</p>
           <p className="text-xs font-semibold uppercase tracking-wider text-[#00694c] dark:text-teal-300">
-            Precision Care
+            Soins de Précision
           </p>
         </div>
       </div>
 
       <div className="px-6 py-6">
-        <h2 className="text-lg font-black text-slate-950 dark:text-white">Health Hub</h2>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#6d7a73]">Personal wellness</p>
+        <h2 className="text-lg font-black text-slate-950 dark:text-white">Espace Santé</h2>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#6d7a73]">Bien-être personnel</p>
       </div>
 
       <nav className="flex-1 space-y-1 px-2">
@@ -57,13 +57,13 @@ function SidebarContent({ onNavigate }) {
 
       <div className="mt-auto p-5">
         <div className="rounded-xl bg-[#008560] p-4 text-white shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-          <p className="text-xs font-bold uppercase tracking-wider">Pro Plan</p>
-          <p className="mt-2 text-sm leading-6">Accedez a des analyses sante avancees.</p>
+          <p className="text-xs font-bold uppercase tracking-wider">Forfait Pro</p>
+          <p className="mt-2 text-sm leading-6">Accédez à des analyses santé avancées.</p>
           <button
             className="mt-4 w-full rounded-lg bg-white px-4 py-2 text-sm font-bold text-[#00694c]"
             type="button"
           >
-            Ameliorer
+            Améliorer
           </button>
         </div>
       </div>
@@ -98,7 +98,7 @@ export function AppLayout() {
             initial={{ opacity: 0 }}
           >
             <button
-              aria-label="Close navigation"
+              aria-label="Fermer la navigation"
               className="absolute inset-0 bg-slate-950/40"
               type="button"
               onClick={() => setIsSidebarOpen(false)}
@@ -111,7 +111,7 @@ export function AppLayout() {
               transition={{ duration: 0.24, ease: 'easeOut' }}
             >
               <button
-                aria-label="Close navigation"
+                aria-label="Fermer la navigation"
                 className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
                 type="button"
                 onClick={() => setIsSidebarOpen(false)}
@@ -129,7 +129,7 @@ export function AppLayout() {
           <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <motion.button
-                aria-label="Open navigation"
+                aria-label="Ouvrir la navigation"
                 className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 text-slate-700 lg:hidden"
                 type="button"
                 whileHover={{ scale: 1.03 }}
@@ -140,7 +140,7 @@ export function AppLayout() {
               </motion.button>
               <div className="hidden w-[min(42vw,520px)] items-center gap-2 rounded-lg border border-transparent bg-[#eff5ef] px-4 py-2 text-sm text-[#6d7a73] md:flex">
                 <Search size={17} />
-                Rechercher des donnees...
+                Rechercher des données...
               </div>
             </div>
 
@@ -156,7 +156,7 @@ export function AppLayout() {
                 <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#ba1a1a]" />
               </button>
               <button
-                aria-label="Ouvrir les parametres"
+                aria-label="Ouvrir les paramètres"
                 className="grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-[#eff5ef] hover:text-[#00694c] focus:outline-none focus:ring-2 focus:ring-[#00694c]/30"
                 type="button"
                 onClick={() => navigate('/settings')}
@@ -169,7 +169,7 @@ export function AppLayout() {
                 onClick={() => navigate('/profile')}
               >
                 <p className="text-sm font-semibold text-slate-900">{profileData?.data?.first_name || profileData?.data?.name || getCurrentUser()?.email || 'Utilisateur'}</p>
-                <p className="text-xs text-slate-500">Patient account</p>
+                <p className="text-xs text-slate-500">Compte patient</p>
               </button>
               <motion.button
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00694c]/30"
@@ -178,7 +178,7 @@ export function AppLayout() {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleLogout}
               >
-                Logout
+                Déconnexion
               </motion.button>
             </div>
           </div>

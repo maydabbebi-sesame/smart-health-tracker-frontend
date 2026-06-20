@@ -86,7 +86,7 @@ function DashboardPage() {
   if (!summary || !charts) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-lg text-slate-600">Failed to load dashboard data. Please try again.</p>
+        <p className="text-lg text-slate-600">Impossible de charger les données du tableau de bord. Veuillez réessayer.</p>
       </div>
     )
   }
@@ -105,7 +105,7 @@ function DashboardPage() {
         </div>
         <article className="sht-card flex items-center justify-between p-5 md:col-span-4">
           <div>
-            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Score Sante</h2>
+            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Score Santé</h2>
             {(() => {
               const wellnessStat = summary?.stats?.find((s) => s.label.toLowerCase().includes('wellness'))
               const raw = wellnessStat?.value ?? null
@@ -209,7 +209,7 @@ function DashboardPage() {
               <div>
                 <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Aucune alerte active</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
-                  Aucune alerte non lue n'a ete detectee sur vos donnees recentes.
+                  Aucune alerte non lue n'a été détectée sur vos données récentes.
                 </p>
               </div>
             </div>
@@ -230,7 +230,7 @@ function DashboardPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <ChartCard subtitle="Frequence cardiaque mesuree (donnees reelles)" title="Evolution du rythme cardiaque">
+        <ChartCard subtitle="Fréquence cardiaque mesurée (données réelles)" title="Évolution du rythme cardiaque">
           {charts.heartRateData?.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <AreaChart data={charts.heartRateData} margin={{ left: -18, right: 8, top: 8 }}>
@@ -259,7 +259,7 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard subtitle="Poids mesure (donnees reelles)" title="Progression du poids">
+        <ChartCard subtitle="Poids mesuré (données réelles)" title="Progression du poids">
           {charts.weightData?.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={charts.weightData} margin={{ left: -18, right: 8, top: 8 }}>
@@ -295,18 +295,18 @@ function DashboardPage() {
               summary.upcomingAppointments.map((appointment) => (
                 <div key={appointment.uid} className="flex items-center justify-between gap-4 py-3">
                   <div>
-                    <p className="font-medium text-slate-900">{appointment.reason || 'Rendez-vous medical'}</p>
+                    <p className="font-medium text-slate-900">{appointment.reason || 'Rendez-vous médical'}</p>
                     <p className="text-sm text-slate-500">
                       {new Date(appointment.appointment_date).toLocaleDateString('fr-FR', {
                         weekday: 'long',
                         day: 'numeric',
                         month: 'long',
                       })}{' '}
-                      a {appointment.appointment_time?.slice(0, 5)}
+                      à {appointment.appointment_time?.slice(0, 5)}
                     </p>
                   </div>
                   <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                    {appointment.status === 'confirmed' ? 'Confirme' : 'Planifie'}
+                    {appointment.status === 'confirmed' ? 'Confirmé' : 'Planifié'}
                   </span>
                 </div>
               ))

@@ -25,7 +25,7 @@ export async function createAppointment(appointmentData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to create appointment',
+        'Impossible de créer le rendez-vous',
     }
   }
 }
@@ -49,7 +49,7 @@ export async function getAppointments(page = 1, pageSize = 20, status = null, us
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch appointments',
+        'Impossible de récupérer les rendez-vous',
     }
   }
 }
@@ -69,7 +69,7 @@ export async function getAppointmentById(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch appointment',
+        'Impossible de récupérer le rendez-vous',
     }
   }
 }
@@ -90,7 +90,7 @@ export async function updateAppointment(id, appointmentData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to update appointment',
+        'Impossible de mettre à jour le rendez-vous',
     }
   }
 }
@@ -114,7 +114,7 @@ export async function cancelAppointment(id, reason = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to cancel appointment',
+        'Impossible d\'annuler le rendez-vous',
     }
   }
 }
@@ -138,7 +138,7 @@ export async function getAvailableSlots(doctorId, date = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch available slots',
+        'Impossible de récupérer les créneaux disponibles',
     }
   }
 }
@@ -159,7 +159,7 @@ export async function confirmAppointment(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to confirm appointment',
+        'Impossible de confirmer le rendez-vous',
     }
   }
 }
@@ -180,7 +180,7 @@ export async function sendReminder(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to send reminder',
+        'Impossible d\'envoyer le rappel',
     }
   }
 }

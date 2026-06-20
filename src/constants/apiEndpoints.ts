@@ -46,6 +46,7 @@ export const VITAL_ENDPOINTS = {
   GET_VITAL_EVOLUTION: '/api/vitals/evolution',
   EXPORT_VITALS: '/api/vitals/export',
   GET_LATEST_VITAL: (type: string) => `/api/vitals/latest/${type}`,
+  EXPORT_ANALYSIS_PDF: '/api/vitals/analysis-pdf',
 };
 
 // ==================== Appointments Endpoints ====================

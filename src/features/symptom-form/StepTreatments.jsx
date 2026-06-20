@@ -46,7 +46,7 @@ export function StepTreatments({ control, errors, register, values }) {
       {values.hasCurrentMedications === 'Oui' && (
         <div className="mt-5">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-            Nom + dose + frequence
+            Nom + dose + fréquence
           </span>
           <div className="mt-3 space-y-2">
             {fields.map((field, index) => (

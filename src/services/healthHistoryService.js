@@ -7,10 +7,11 @@ import { getVitals } from './vitalsService'
 
 /**
  * Get health history records (vitals with display formatting)
+ * @param {string|null} period - 'week' | 'month' | '3months', restricts results to that window
  */
-export async function getHealthHistory(page = 1, pageSize = 20) {
+export async function getHealthHistory(page = 1, pageSize = 20, period = null) {
   try {
-    const result = await getVitals(page, pageSize)
+    const result = await getVitals(page, pageSize, null, period)
 
     if (result.success && result.data) {
       // Backend returns array of vitals directly
@@ -29,9 +30,25 @@ export async function getHealthHistory(page = 1, pageSize = 20) {
   } catch (error) {
     return {
       success: false,
-      error: error.message || 'Failed to fetch health history',
+      error: error.message || 'Impossible de récupérer l\'historique de santé',
     }
   }
+}
+
+/**
+ * Build a sortable 'YYYY-MM-DD' key from the backend's recorded_at.
+ * Flask serializes datetimes as RFC1123 strings (e.g. "Thu, 18 Jun 2026
+ * 14:20:12 GMT") which `new Date(...)` parses correctly, but naive string
+ * slicing does not.
+ */
+function toDateKey(value) {
+  if (!value) return 'Date inconnue'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return 'Date inconnue'
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 /**
@@ -43,29 +60,70 @@ function transformVitalToDisplayFormat(vital) {
   const entries = []
 
   if (vital.heart_rate != null) {
-    entries.push({ label: 'Heart Rate', value: `${vital.heart_rate}`, unit: 'bpm' })
+    entries.push({ label: 'Fréquence cardiaque', value: `${vital.heart_rate}`, unit: 'bpm' })
   }
   if (vital.systolic_bp != null && vital.diastolic_bp != null) {
-    entries.push({ label: 'Blood Pressure', value: `${vital.systolic_bp}/${vital.diastolic_bp}`, unit: 'mmHg' })
+    entries.push({ label: 'Tension artérielle', value: `${vital.systolic_bp}/${vital.diastolic_bp}`, unit: 'mmHg' })
   }
   if (vital.temperature != null) {
-    entries.push({ label: 'Temperature', value: `${vital.temperature.toFixed(1)}`, unit: '°C' })
+    entries.push({ label: 'Température', value: `${vital.temperature.toFixed(1)}`, unit: '°C' })
   }
   if (vital.oxygen_saturation != null) {
-    entries.push({ label: 'Oxygen Level', value: `${vital.oxygen_saturation}`, unit: '%' })
+    entries.push({ label: 'Saturation en oxygène', value: `${vital.oxygen_saturation}`, unit: '%' })
   }
   if (vital.respiratory_rate != null) {
-    entries.push({ label: 'Respiratory Rate', value: `${vital.respiratory_rate}`, unit: 'breaths/min' })
+    entries.push({ label: 'Fréquence respiratoire', value: `${vital.respiratory_rate}`, unit: 'resp/min' })
+  }
+  if (vital.glycemia != null) {
+    entries.push({ label: 'Glycémie', value: `${vital.glycemia}`, unit: 'g/L' })
+  }
+  if (vital.weight != null) {
+    entries.push({ label: 'Poids', value: `${vital.weight}`, unit: 'kg' })
+  }
+  if (vital.symptoms) {
+    entries.push({ label: 'Symptômes', value: vital.symptoms, unit: '' })
+  }
+  if (vital.pain_intensity != null) {
+    entries.push({ label: 'Intensité douleur', value: `${vital.pain_intensity}`, unit: '/10' })
+  }
+  if (vital.pain_location) {
+    entries.push({ label: 'Localisation douleur', value: vital.pain_location, unit: '' })
+  }
+  if (vital.health_issues_history) {
+    entries.push({ label: 'Antécédents', value: vital.health_issues_history, unit: '' })
+  }
+  if (vital.drug_allergies) {
+    entries.push({ label: 'Allergies', value: vital.drug_allergies, unit: '' })
+  }
+  if (vital.family_health_issues) {
+    entries.push({ label: 'Antécédents familiaux', value: vital.family_health_issues, unit: '' })
   }
 
   return {
     id: vital.uid,
     date: vital.recorded_at,
+    dateKey: toDateKey(vital.recorded_at),
     type: 'Vitals',
     entries,
     notes: vital.notes,
     originalVital: vital,
   }
+}
+
+/**
+ * Group display-formatted records by calendar day for the history page's
+ * date containers. Most recent day first.
+ */
+export function groupRecordsByDate(records) {
+  const byDate = new Map()
+  for (const record of records || []) {
+    const key = record.dateKey || 'Date inconnue'
+    if (!byDate.has(key)) byDate.set(key, [])
+    byDate.get(key).push(record)
+  }
+  return Array.from(byDate.entries())
+    .map(([date, dateRecords]) => ({ date, records: dateRecords }))
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
 /**

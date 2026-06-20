@@ -82,7 +82,7 @@ export function StepDeviceMeasures({ errors, register, values }) {
       <div className="grid gap-5 md:grid-cols-2">
         <NumberField error={errors.bloodPressureSys} label="Tension systolique" name="bloodPressureSys" placeholder="Ex: 120" register={register} />
         <NumberField error={errors.bloodPressureDia} label="Tension diastolique" name="bloodPressureDia" placeholder="Ex: 80" register={register} />
-        <NumberField error={errors.heartRate} label="Frequence cardiaque" name="heartRate" placeholder="bpm" register={register} />
+        <NumberField error={errors.heartRate} label="Fréquence cardiaque" name="heartRate" placeholder="bpm" register={register} />
         <NumberField error={errors.spo2} label="Saturation O2" name="spo2" placeholder="%" register={register} />
         <NumberField error={errors.temperature} label="Temperature corporelle" name="temperature" placeholder="Ex: 37.4" register={register} step="0.1" />
         {hasDiabetes && (

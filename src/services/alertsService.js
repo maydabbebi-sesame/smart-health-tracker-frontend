@@ -24,7 +24,7 @@ export async function getAlerts(page = 1, pageSize = 20, unreadOnly = false) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch alerts',
+        'Impossible de récupérer les alertes',
     }
   }
 }
@@ -42,7 +42,7 @@ export async function getAlertById(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch alert',
+        'Impossible de récupérer l\'alerte',
     }
   }
 }
@@ -60,7 +60,7 @@ export async function markAlertAsRead(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to mark alert as read',
+        'Impossible de marquer l\'alerte comme lue',
     }
   }
 }
@@ -78,7 +78,7 @@ export async function markAlertAsUnread(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to mark alert as unread',
+        'Impossible de marquer l\'alerte comme non lue',
     }
   }
 }
@@ -96,7 +96,7 @@ export async function acknowledgeAlert(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to acknowledge alert',
+        'Impossible de confirmer l\'alerte',
     }
   }
 }
@@ -114,7 +114,7 @@ export async function deleteAlert(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to delete alert',
+        'Impossible de supprimer l\'alerte',
     }
   }
 }
@@ -132,7 +132,7 @@ export async function deleteAllAlerts() {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to delete all alerts',
+        'Impossible de supprimer toutes les alertes',
     }
   }
 }
@@ -150,7 +150,7 @@ export async function getUnreadAlertCount() {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch unread count',
+        'Impossible de récupérer le nombre d\'alertes non lues',
     }
   }
 }

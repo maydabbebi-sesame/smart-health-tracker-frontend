@@ -49,7 +49,7 @@ function LoginPage() {
         </div>
         <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Connexion</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Accedez a votre tableau de bord sante securise.
+          Accédez à votre tableau de bord santé sécurisé.
         </p>
       </div>
 
@@ -103,7 +103,7 @@ function LoginPage() {
             Se souvenir de moi
           </label>
           <button className="font-semibold text-[#00694c] hover:text-[#008560]" type="button">
-            Mot de passe oublie ?
+            Mot de passe oublié ?
           </button>
         </div>
 
@@ -143,19 +143,19 @@ function LoginPage() {
       </div>
 
       <div className="mt-4 rounded-lg border border-[#d2e4ff] bg-[#eff5ef] p-3 text-xs leading-5 text-[#3d4943]">
-        Google et Apple sont proposes pour reduire la friction utilisateur et preparer une authentification OAuth
-        securisee cote backend. Dans ce MVP, le clic simule une connexion patient.
+        Google et Apple sont proposés pour réduire la friction utilisateur et préparer une authentification OAuth
+        sécurisée côté backend. Dans ce MVP, le clic simule une connexion patient.
       </div>
 
       <p className="mt-6 text-center text-sm text-[#3d4943]">
         Nouveau sur SmartHealth ?{' '}
         <Link className="font-semibold text-[#00694c] hover:text-[#008560]" to="/register">
-          Creer un compte
+          Créer un compte
         </Link>
       </p>
 
       <p className="mt-5 text-center text-xs leading-5 text-[#6d7a73]">
-        En vous connectant, vous acceptez les conditions d'utilisation et la politique de confidentialite de Smart
+        En vous connectant, vous acceptez les conditions d'utilisation et la politique de confidentialité de Smart
         Health Tracker.
       </p>
     </div>

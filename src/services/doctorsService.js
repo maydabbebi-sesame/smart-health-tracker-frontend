@@ -23,7 +23,7 @@ export async function getDoctors(page = 1, pageSize = 20, specialization = null,
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch doctors',
+        'Impossible de récupérer les médecins',
     }
   }
 }
@@ -45,7 +45,7 @@ export async function searchNearbyDoctors(address, specialization = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to search nearby doctors',
+        'Impossible de rechercher des médecins à proximité',
     }
   }
 }
@@ -63,7 +63,7 @@ export async function getDoctorById(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch doctor',
+        'Impossible de récupérer le médecin',
     }
   }
 }
@@ -83,7 +83,7 @@ export async function getDoctorAvailability(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch doctor availability',
+        'Impossible de récupérer les disponibilités du médecin',
     }
   }
 }
@@ -105,7 +105,7 @@ export async function searchDoctors(query, page = 1, pageSize = 20) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to search doctors',
+        'Impossible de rechercher des médecins',
     }
   }
 }
@@ -125,7 +125,7 @@ export async function getDoctorAppointments(id, page = 1, pageSize = 20) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch doctor appointments',
+        'Impossible de récupérer les rendez-vous du médecin',
     }
   }
 }
@@ -149,7 +149,7 @@ export async function rateDoctor(id, rating, review = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to rate doctor',
+        'Impossible de noter le médecin',
     }
   }
 }
