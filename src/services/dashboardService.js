@@ -2,6 +2,9 @@ import { getVitals, getVitalEvolution } from './vitalsService'
 import { getAppointments } from './appointmentsService'
 import { getAlerts, getUnreadAlertCount } from './alertsService'
 import { getCurrentUser } from './authService'
+import { useLocaleStore } from '../store/localeStore'
+
+const LOCALE_TAGS = { fr: 'fr-FR', en: 'en-US' }
 
 /**
  * Dashboard Service
@@ -41,22 +44,26 @@ export async function getDashboardSummary() {
 
     const stats = [
       {
-        label: 'Wellness score',
+        key: 'wellnessScore',
+        label: 'Score de bien-être',
         value: wellnessScore !== null ? `${wellnessScore}%` : null,
         icon: 'heart',
       },
       {
-        label: 'Symptoms logged',
+        key: 'symptomsLogged',
+        label: 'Symptômes enregistrés',
         value: vitals !== null ? String(vitals.length) : null,
         icon: 'activity',
       },
       {
-        label: 'Unread alerts',
+        key: 'unreadAlerts',
+        label: 'Alertes non lues',
         value: alertsCount !== null ? String(alertsCount) : null,
         icon: 'bell',
       },
       {
-        label: 'Upcoming appointments',
+        key: 'upcomingAppointments',
+        label: 'Rendez-vous à venir',
         value: upcomingAppointments !== null ? String(upcomingAppointments.length) : null,
         icon: 'activity',
       },
@@ -71,10 +78,10 @@ export async function getDashboardSummary() {
     console.error('Error fetching dashboard summary:', error)
     return {
       stats: [
-        { label: 'Wellness score', value: null, icon: 'heart' },
-        { label: 'Symptoms logged', value: null, icon: 'activity' },
-        { label: 'Unread alerts', value: null, icon: 'bell' },
-        { label: 'Upcoming appointments', value: null, icon: 'activity' },
+        { key: 'wellnessScore', label: 'Score de bien-être', value: null, icon: 'heart' },
+        { key: 'symptomsLogged', label: 'Symptômes enregistrés', value: null, icon: 'activity' },
+        { key: 'unreadAlerts', label: 'Alertes non lues', value: null, icon: 'bell' },
+        { key: 'upcomingAppointments', label: 'Rendez-vous à venir', value: null, icon: 'activity' },
       ],
       recentAlert: null,
       upcomingAppointments: [],
@@ -129,7 +136,8 @@ function formatShortDate(value) {
   if (Number.isNaN(date.getTime())) {
     return String(value)
   }
-  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+  const localeTag = LOCALE_TAGS[useLocaleStore.getState().locale] || LOCALE_TAGS.fr
+  return date.toLocaleDateString(localeTag, { day: '2-digit', month: '2-digit' })
 }
 
 /**

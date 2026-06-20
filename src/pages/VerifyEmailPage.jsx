@@ -3,8 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Mail, ShieldCheck } from 'lucide-react'
 
 import { resendVerificationCode, verifyEmail } from '../features/auth/auth'
+import { useTranslation } from '../i18n/useTranslation'
 
 function VerifyEmailPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const uid = location.state?.uid
@@ -21,7 +23,7 @@ function VerifyEmailPage() {
     setError(null)
 
     if (!uid) {
-      setError('Session invalide. Veuillez vous inscrire a nouveau.')
+      setError(t('verifyEmail.errors.invalidSession', 'Session invalide. Veuillez vous inscrire a nouveau.'))
       return
     }
 
@@ -32,7 +34,7 @@ function VerifyEmailPage() {
     if (result.success) {
       navigate('/login', {
         replace: true,
-        state: { message: 'Email verifie. Vous pouvez vous connecter.' },
+        state: { message: t('verifyEmail.success.emailVerified', 'Email verifie. Vous pouvez vous connecter.') },
       })
     } else {
       setError(result.error)
@@ -41,7 +43,7 @@ function VerifyEmailPage() {
 
   async function handleResend() {
     if (!email) {
-      setError('Adresse e-mail manquante. Veuillez vous inscrire a nouveau.')
+      setError(t('verifyEmail.errors.missingEmail', 'Adresse e-mail manquante. Veuillez vous inscrire a nouveau.'))
       return
     }
 
@@ -68,19 +70,19 @@ function VerifyEmailPage() {
         <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-[#00694c] text-white">
           <ShieldCheck size={22} />
         </div>
-        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Verifier votre e-mail</h2>
+        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">{t('verifyEmail.title', 'Verifier votre e-mail')}</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
           {email
-            ? `Un code de verification a ete envoye a ${email}. Saisissez-le ci-dessous pour activer votre compte.`
-            : 'Saisissez le code de verification recu par e-mail pour activer votre compte.'}
+            ? t('verifyEmail.subtitleWithEmail', 'Un code de verification a ete envoye a {{email}}. Saisissez-le ci-dessous pour activer votre compte.', { email })
+            : t('verifyEmail.subtitleNoEmail', 'Saisissez le code de verification recu par e-mail pour activer votre compte.')}
         </p>
       </div>
 
       {devCode ? (
         <div className="mb-4 rounded-lg border border-[#d2e4ff] bg-[#eff5ef] px-3 py-3 text-sm text-[#3d4943]">
-          <p className="font-semibold text-[#171d1a]">Mode developpement</p>
+          <p className="font-semibold text-[#171d1a]">{t('verifyEmail.devMode.title', 'Mode developpement')}</p>
           <p className="mt-1">
-            {devNote || "SMTP n'est pas configure. Utilisez ce code pour verifier votre compte :"}
+            {devNote || t('verifyEmail.devMode.note', "SMTP n'est pas configure. Utilisez ce code pour verifier votre compte :")}
           </p>
           <p className="mt-2 font-mono text-lg font-bold tracking-widest text-[#00694c]">{devCode}</p>
         </div>
@@ -88,7 +90,7 @@ function VerifyEmailPage() {
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Code de verification</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">{t('verifyEmail.form.codeLabel', 'Code de verification')}</span>
           <div className="relative mt-2">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
@@ -111,7 +113,7 @@ function VerifyEmailPage() {
 
         {resent ? (
           <p className="rounded-lg border border-[#d2e4ff] bg-[#eff5ef] px-3 py-2 text-sm text-[#3d4943]">
-            Un nouveau code a ete envoye.
+            {t('verifyEmail.resentNotice', 'Un nouveau code a ete envoye.')}
           </p>
         ) : null}
 
@@ -120,7 +122,7 @@ function VerifyEmailPage() {
           disabled={loading}
           type="submit"
         >
-          {loading ? 'Verification...' : 'Verifier mon e-mail'}
+          {loading ? t('verifyEmail.form.submitting', 'Verification...') : t('verifyEmail.form.submit', 'Verifier mon e-mail')}
         </button>
       </form>
 
@@ -130,12 +132,12 @@ function VerifyEmailPage() {
         onClick={handleResend}
         type="button"
       >
-        Renvoyer le code
+        {t('verifyEmail.resendButton', 'Renvoyer le code')}
       </button>
 
       <p className="mt-6 text-center text-sm text-[#3d4943]">
         <Link className="font-semibold text-[#00694c] hover:text-[#008560]" to="/register">
-          Retour a l&apos;inscription
+          {t('verifyEmail.backToRegister', "Retour a l'inscription")}
         </Link>
       </p>
     </div>

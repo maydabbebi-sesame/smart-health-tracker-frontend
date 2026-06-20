@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
+import { useTranslation } from '../../i18n/useTranslation'
 import { getCurrentUser } from '../../services/authService'
 import { submitSymptomAnalysis } from '../../services/symptomService'
 import { recordVital } from '../../services/vitalsService'
@@ -19,14 +20,34 @@ import { StepPersonalInfo } from './StepPersonalInfo'
 import { StepSymptoms } from './StepSymptoms'
 import { StepTreatments } from './StepTreatments'
 
-const steps = [
-  { title: 'Données personnelles', description: 'Contexte permanent pour les modèles LLM.' },
-  { title: "Mesures d'appareils", description: 'Données optionnelles mesurées à domicile.' },
-  { title: 'Antécédents médicaux', description: 'Historique patient et facteurs de risque.' },
-  { title: 'Traitements', description: 'Médicaments, compléments et observance.' },
-  { title: 'Symptômes actuels', description: "Point d'entrée principal de la consultation." },
-  { title: 'Mode de vie & submit', description: 'Habitudes quotidiennes et validation finale.' },
-]
+function useSteps(t) {
+  return [
+    {
+      title: t('symptomForm.form.step.personalInfo.title', 'Données personnelles'),
+      description: t('symptomForm.form.step.personalInfo.description', 'Contexte permanent pour les modèles LLM.'),
+    },
+    {
+      title: t('symptomForm.form.step.deviceMeasures.title', "Mesures d'appareils"),
+      description: t('symptomForm.form.step.deviceMeasures.description', 'Données optionnelles mesurées à domicile.'),
+    },
+    {
+      title: t('symptomForm.form.step.medicalHistory.title', 'Antécédents médicaux'),
+      description: t('symptomForm.form.step.medicalHistory.description', 'Historique patient et facteurs de risque.'),
+    },
+    {
+      title: t('symptomForm.form.step.treatments.title', 'Traitements'),
+      description: t('symptomForm.form.step.treatments.description', 'Médicaments, compléments et observance.'),
+    },
+    {
+      title: t('symptomForm.form.step.symptoms.title', 'Symptômes actuels'),
+      description: t('symptomForm.form.step.symptoms.description', "Point d'entrée principal de la consultation."),
+    },
+    {
+      title: t('symptomForm.form.step.lifestyleReview.title', 'Mode de vie & submit'),
+      description: t('symptomForm.form.step.lifestyleReview.description', 'Habitudes quotidiennes et validation finale.'),
+    },
+  ]
+}
 
 const stepFields = [
   ['age', 'biologicalSex', 'weight', 'height', 'pregnancyStatus'],
@@ -54,121 +75,134 @@ const optionalNumber = z.preprocess((value) => {
   return Number(value)
 }, z.number().optional())
 
-const schema = z.object({
-  age: z.coerce.number({ error: 'Age requis.' }).int('Age entier requis.').min(1, 'Age invalide.').max(120, 'Age invalide.'),
-  biologicalSex: z.string().min(1, 'Selectionnez le sexe biologique.'),
-  weight: z.coerce.number({ error: 'Poids requis.' }).min(20, 'Poids invalide.').max(350, 'Poids invalide.'),
-  height: z.coerce.number({ error: 'Taille requise.' }).int('Taille entiere requise.').min(80, 'Taille invalide.').max(240, 'Taille invalide.'),
-  pregnancyStatus: z.string().optional(),
-  bloodPressureSys: optionalNumber,
-  bloodPressureDia: optionalNumber,
-  heartRate: optionalNumber,
-  spo2: optionalNumber,
-  temperature: optionalNumber,
-  glycemia: optionalNumber,
-  weightVariation: z.string().optional(),
-  weightVariationKg: optionalNumber,
-  chronicDiseases: z.array(z.string()).min(1, 'Selectionnez au moins une maladie chronique.'),
-  hasDrugAllergies: z.string().min(1, 'Indiquez si le patient a des allergies.'),
-  drugAllergies: z.array(z.object({ value: z.string().trim() })).optional(),
-  familyHistory: z.array(z.string()).optional(),
-  tobacco: z.string().min(1, 'Indiquez la consommation de tabac.'),
-  tobaccoQuantity: z.string().trim().optional(),
-  alcohol: z.string().min(1, 'Indiquez la consommation d alcool.'),
-  alcoholQuantity: z.string().trim().optional(),
-  hasCurrentMedications: z.string().min(1, 'Indiquez si un traitement est en cours.'),
-  currentMedications: z.array(z.object({ value: z.string().trim() })).optional(),
-  hasSupplements: z.string().optional(),
-  supplements: z.string().trim().optional(),
-  treatmentAdherence: z.string().optional(),
-  symptoms: z.array(z.string()).min(1, 'Selectionnez au moins un symptome.'),
-  otherSymptoms: z.string().trim().optional(),
-  painIntensity: z.coerce.number().min(0).max(10).optional(),
-  symptomDuration: z.string().optional(),
-  painLocation: z.array(z.string()).optional(),
-  triggers: z.array(z.string()).optional(),
-  generalState: z.string().optional(),
-  physicalActivity: z.string().optional(),
-  diet: z.array(z.string()).optional(),
-  sleepQuality: z.string().optional(),
-  stressLevel: z.coerce.number().min(1).max(5).optional(),
-  description: z.string().trim().max(600, 'Limitez la description a 600 caracteres.').optional(),
-  consent: z.boolean().refine(Boolean, 'Consentement requis avant l analyse.'),
-}).superRefine((values, ctx) => {
-  if (values.biologicalSex === 'F' && !values.pregnancyStatus) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Indiquez le statut de grossesse.',
-      path: ['pregnancyStatus'],
-    })
-  }
+function buildSchema(t) {
+  return z.object({
+    age: z.coerce
+      .number({ error: t('symptomForm.form.validation.ageRequired', 'Age requis.') })
+      .int(t('symptomForm.form.validation.ageInteger', 'Age entier requis.'))
+      .min(1, t('symptomForm.form.validation.ageInvalid', 'Age invalide.'))
+      .max(120, t('symptomForm.form.validation.ageInvalid', 'Age invalide.')),
+    biologicalSex: z.string().min(1, t('symptomForm.form.validation.biologicalSexRequired', 'Selectionnez le sexe biologique.')),
+    weight: z.coerce
+      .number({ error: t('symptomForm.form.validation.weightRequired', 'Poids requis.') })
+      .min(20, t('symptomForm.form.validation.weightInvalid', 'Poids invalide.'))
+      .max(350, t('symptomForm.form.validation.weightInvalid', 'Poids invalide.')),
+    height: z.coerce
+      .number({ error: t('symptomForm.form.validation.heightRequired', 'Taille requise.') })
+      .int(t('symptomForm.form.validation.heightInteger', 'Taille entiere requise.'))
+      .min(80, t('symptomForm.form.validation.heightInvalid', 'Taille invalide.'))
+      .max(240, t('symptomForm.form.validation.heightInvalid', 'Taille invalide.')),
+    pregnancyStatus: z.string().optional(),
+    bloodPressureSys: optionalNumber,
+    bloodPressureDia: optionalNumber,
+    heartRate: optionalNumber,
+    spo2: optionalNumber,
+    temperature: optionalNumber,
+    glycemia: optionalNumber,
+    weightVariation: z.string().optional(),
+    weightVariationKg: optionalNumber,
+    chronicDiseases: z.array(z.string()).min(1, t('symptomForm.form.validation.chronicDiseasesRequired', 'Selectionnez au moins une maladie chronique.')),
+    hasDrugAllergies: z.string().min(1, t('symptomForm.form.validation.drugAllergiesRequired', 'Indiquez si le patient a des allergies.')),
+    drugAllergies: z.array(z.object({ value: z.string().trim() })).optional(),
+    familyHistory: z.array(z.string()).optional(),
+    tobacco: z.string().min(1, t('symptomForm.form.validation.tobaccoRequired', 'Indiquez la consommation de tabac.')),
+    tobaccoQuantity: z.string().trim().optional(),
+    alcohol: z.string().min(1, t('symptomForm.form.validation.alcoholRequired', 'Indiquez la consommation d alcool.')),
+    alcoholQuantity: z.string().trim().optional(),
+    hasCurrentMedications: z.string().min(1, t('symptomForm.form.validation.currentMedicationsRequired', 'Indiquez si un traitement est en cours.')),
+    currentMedications: z.array(z.object({ value: z.string().trim() })).optional(),
+    hasSupplements: z.string().optional(),
+    supplements: z.string().trim().optional(),
+    treatmentAdherence: z.string().optional(),
+    symptoms: z.array(z.string()).min(1, t('symptomForm.form.validation.symptomsRequired', 'Selectionnez au moins un symptome.')),
+    otherSymptoms: z.string().trim().optional(),
+    painIntensity: z.coerce.number().min(0).max(10).optional(),
+    symptomDuration: z.string().optional(),
+    painLocation: z.array(z.string()).optional(),
+    triggers: z.array(z.string()).optional(),
+    generalState: z.string().optional(),
+    physicalActivity: z.string().optional(),
+    diet: z.array(z.string()).optional(),
+    sleepQuality: z.string().optional(),
+    stressLevel: z.coerce.number().min(1).max(5).optional(),
+    description: z.string().trim().max(600, t('symptomForm.form.validation.descriptionMaxLength', 'Limitez la description a 600 caracteres.')).optional(),
+    consent: z.boolean().refine(Boolean, t('symptomForm.form.validation.consentRequired', 'Consentement requis avant l analyse.')),
+  }).superRefine((values, ctx) => {
+    if (values.biologicalSex === 'F' && !values.pregnancyStatus) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.pregnancyStatusRequired', 'Indiquez le statut de grossesse.'),
+        path: ['pregnancyStatus'],
+      })
+    }
 
-  if (values.hasDrugAllergies === 'Oui' && (!values.drugAllergies || values.drugAllergies.every((allergy) => !allergy.value?.trim()))) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Precisez au moins une allergie medicamenteuse.',
-      path: ['drugAllergies'],
-    })
-  }
+    if (values.hasDrugAllergies === 'Oui' && (!values.drugAllergies || values.drugAllergies.every((allergy) => !allergy.value?.trim()))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.drugAllergiesDetailRequired', 'Precisez au moins une allergie medicamenteuse.'),
+        path: ['drugAllergies'],
+      })
+    }
 
-  if (values.hasCurrentMedications === 'Oui' && (!values.currentMedications || values.currentMedications.every((m) => !m.value?.trim()))) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Precisez au moins un medicament.',
-      path: ['currentMedications'],
-    })
-  }
+    if (values.hasCurrentMedications === 'Oui' && (!values.currentMedications || values.currentMedications.every((m) => !m.value?.trim()))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.currentMedicationsDetailRequired', 'Precisez au moins un medicament.'),
+        path: ['currentMedications'],
+      })
+    }
 
-  if (values.tobacco === 'Oui' && !values.tobaccoQuantity) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Precisez la quantite de tabac.',
-      path: ['tobaccoQuantity'],
-    })
-  }
+    if (values.tobacco === 'Oui' && !values.tobaccoQuantity) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.tobaccoQuantityRequired', 'Precisez la quantite de tabac.'),
+        path: ['tobaccoQuantity'],
+      })
+    }
 
-  if (values.alcohol === 'Oui' && !values.alcoholQuantity) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Précisez la fréquence de consommation d'alcool.",
-      path: ['alcoholQuantity'],
-    })
-  }
+    if (values.alcohol === 'Oui' && !values.alcoholQuantity) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.alcoholQuantityRequired', "Précisez la fréquence de consommation d'alcool."),
+        path: ['alcoholQuantity'],
+      })
+    }
 
-  if (values.hasSupplements === 'Oui' && !values.supplements) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Précisez les compléments ou plantes utilisés.',
-      path: ['supplements'],
-    })
-  }
+    if (values.hasSupplements === 'Oui' && !values.supplements) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.supplementsDetailRequired', 'Précisez les compléments ou plantes utilisés.'),
+        path: ['supplements'],
+      })
+    }
 
-  if (values.symptoms?.length && !values.symptomDuration) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Indiquez la duree des symptomes.',
-      path: ['symptomDuration'],
-    })
-  }
+    if (values.symptoms?.length && !values.symptomDuration) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.symptomDurationRequired', 'Indiquez la duree des symptomes.'),
+        path: ['symptomDuration'],
+      })
+    }
 
-  if ((values.weightVariation === 'Prise' || values.weightVariation === 'Perte') && values.weightVariationKg === undefined) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Indiquez le nombre de kilos pris ou perdus.',
-      path: ['weightVariationKg'],
-    })
-  }
+    if ((values.weightVariation === 'Prise' || values.weightVariation === 'Perte') && values.weightVariationKg === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.weightVariationKgRequired', 'Indiquez le nombre de kilos pris ou perdus.'),
+        path: ['weightVariationKg'],
+      })
+    }
 
-  const hasPainSymptom = values.symptoms?.some((symptom) => symptom.toLowerCase().includes('douleur'))
+    const hasPainSymptom = values.symptoms?.some((symptom) => symptom.toLowerCase().includes('douleur'))
 
-  if (hasPainSymptom && (values.painIntensity === undefined || values.painIntensity === null)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Indiquez l intensite de la douleur.',
-      path: ['painIntensity'],
-    })
-  }
-})
+    if (hasPainSymptom && (values.painIntensity === undefined || values.painIntensity === null)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: t('symptomForm.form.validation.painIntensityRequired', 'Indiquez l intensite de la douleur.'),
+        path: ['painIntensity'],
+      })
+    }
+  })
+}
 
 const defaultValues = {
   age: '',
@@ -213,11 +247,14 @@ const defaultValues = {
 }
 
 export function SymptomForm() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const setPatientData = useMedAssistStore((s) => s.setPatientData)
   const resetSession = useMedAssistStore((s) => s.resetSession)
   const [currentStep, setCurrentStep] = useState(0)
   const [submitError, setSubmitError] = useState('')
+  const steps = useSteps(t)
+  const schema = buildSchema(t)
 
   const {
     control,
@@ -304,26 +341,27 @@ export function SymptomForm() {
       }
 
       await submitSymptomAnalysis(payload)
-      toast.success('Indicateurs sauvegardés — MediAssist analyse vos données...')
+      toast.success(t('symptomForm.form.toast.submitSuccess', 'Indicateurs sauvegardés — MediAssist analyse vos données...'))
       // Reset chat session BEFORE navigate so MediAssistChat always mounts
       // with isLoading = true, even when the same form data is resubmitted.
       resetSession()
       setPatientData(payload)
       navigate('/ai-analysis', { state: { patientData: payload } })
     } catch (error) {
-      setSubmitError(error.message || 'Une erreur est survenue.')
-      toast.error('Une erreur est survenue.')
+      setSubmitError(error.message || t('symptomForm.form.toast.submitError', 'Une erreur est survenue.'))
+      toast.error(t('symptomForm.form.toast.submitError', 'Une erreur est survenue.'))
     }
   }
 
   return (
     <section className="w-full">
       <div className="mb-5 rounded-xl border border-[#d2e4ff] bg-[#eff5ef] p-4">
-        <p className="text-sm font-semibold text-[#00694c]">Information importante</p>
+        <p className="text-sm font-semibold text-[#00694c]">{t('symptomForm.form.importantInfoTitle', 'Information importante')}</p>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Les données saisies dans ce formulaire seront stockées dans notre base de données et fournies à un modèle IA
-          privé pour générer une analyse personnalisée. Cette démo reste limitée au frontend, mais le flux prépare le futur
-          contrat backend.
+          {t(
+            'symptomForm.form.importantInfoText',
+            'Les données saisies dans ce formulaire seront stockées dans notre base de données et fournies à un modèle IA privé pour générer une analyse personnalisée. Cette démo reste limitée au frontend, mais le flux prépare le futur contrat backend.',
+          )}
         </p>
       </div>
 
@@ -366,14 +404,14 @@ export function SymptomForm() {
         {submitError && (
           <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#ffdad6] bg-[#ffdad6] p-4 text-sm font-medium text-[#93000a]">
             <AlertTriangle size={18} />
-            {submitError || 'Something went wrong'}
+            {submitError || t('symptomForm.form.genericErrorFallback', 'Something went wrong')}
           </div>
         )}
 
         {isSubmitting && (
           <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#d2e4ff] bg-[#d2e4ff] p-4 text-sm font-medium text-[#004880]">
             <Loader2 className="animate-spin" size={18} />
-            Enregistrement de vos données...
+            {t('symptomForm.form.savingData', 'Enregistrement de vos données...')}
           </div>
         )}
 
@@ -385,7 +423,7 @@ export function SymptomForm() {
             onClick={goPrevious}
           >
             {currentStep > 0 && <ChevronLeft size={18} />}
-            Retour
+            {t('symptomForm.form.backButton', 'Retour')}
           </button>
 
           {currentStep < steps.length - 1 ? (
@@ -394,7 +432,9 @@ export function SymptomForm() {
               type="button"
               onClick={goNext}
             >
-              {currentStep === 0 ? 'Continuer' : 'Suivant'}
+              {currentStep === 0
+                ? t('symptomForm.form.continueButton', 'Continuer')
+                : t('symptomForm.form.nextButton', 'Suivant')}
               <ChevronRight size={18} />
             </button>
           ) : (
@@ -406,12 +446,12 @@ export function SymptomForm() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
-                  Enregistrement...
+                  {t('symptomForm.form.savingButton', 'Enregistrement...')}
                 </>
               ) : (
                 <>
                   <Send size={18} />
-                  Lancer l analyse
+                  {t('symptomForm.form.launchAnalysisButton', 'Lancer l analyse')}
                 </>
               )}
             </button>

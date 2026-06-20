@@ -1,5 +1,7 @@
 import { AlertCircle } from 'lucide-react'
 
+import { useTranslation } from '../../i18n/useTranslation'
+
 function FieldError({ message }) {
   if (!message) {
     return null
@@ -14,23 +16,33 @@ function FieldError({ message }) {
 }
 
 export function StepDescription({ description = '', errors, register }) {
+  const { t } = useTranslation()
+
   return (
     <div>
       <div className="mb-8">
         <h2 className="text-2xl font-semibold leading-tight text-[#171d1a] dark:text-white">
-          Description additionnelle
+          {t('symptomForm.stepDescription.title', 'Description additionnelle')}
         </h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Ajoutez le contexte utile : debut, intensite, facteurs declenchants ou elements rassurants.
+          {t(
+            'symptomForm.stepDescription.subtitle',
+            'Ajoutez le contexte utile : debut, intensite, facteurs declenchants ou elements rassurants.',
+          )}
         </p>
       </div>
 
       <label className="block">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Notes libres</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+          {t('symptomForm.stepDescription.notesLabel', 'Notes libres')}
+        </span>
         <textarea
           className="mt-2 min-h-44 w-full resize-y rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
           maxLength={600}
-          placeholder="Decrivez le debut des symptomes, ce qui les aggrave ou les soulage, et le contexte utile..."
+          placeholder={t(
+            'symptomForm.stepDescription.notesPlaceholder',
+            'Decrivez le debut des symptomes, ce qui les aggrave ou les soulage, et le contexte utile...',
+          )}
           {...register('description')}
         />
       </label>

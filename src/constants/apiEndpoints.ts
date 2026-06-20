@@ -105,6 +105,11 @@ export const AI_ENDPOINTS = {
   GET_RECOMMENDATIONS: '/mediassist/api/mediassist/recommendations',
 };
 
+// ==================== Translations Endpoints ====================
+export const TRANSLATION_ENDPOINTS = {
+  GET_TRANSLATIONS: (locale: string) => `/api/translations/${locale}`,
+};
+
 // ==================== Admin Endpoints ====================
 export const ADMIN_ENDPOINTS = {
   GET_USERS: '/api/admin/users',
@@ -135,6 +140,7 @@ export const getAllEndpoints = () => ({
   doctors: DOCTOR_ENDPOINTS,
   forms: FORM_ENDPOINTS,
   ai: AI_ENDPOINTS,
+  translations: TRANSLATION_ENDPOINTS,
   admin: ADMIN_ENDPOINTS,
 });
 
