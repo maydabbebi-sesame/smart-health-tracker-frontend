@@ -1,7 +1,12 @@
 import { LayoutDashboard, ShieldPlus } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { useTranslation } from '../i18n/useTranslation'
+import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher'
+
 export function AdminLayout() {
+  const { t } = useTranslation()
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-white/10 bg-slate-900">
@@ -11,17 +16,20 @@ export function AdminLayout() {
               <ShieldPlus size={21} />
             </div>
             <div>
-              <p className="text-sm font-semibold">Administration Smart Health</p>
-              <p className="text-xs text-slate-400">Opérations système</p>
+              <p className="text-sm font-semibold">{t('adminLayout.title', 'Administration Smart Health')}</p>
+              <p className="text-xs text-slate-400">{t('adminLayout.subtitle', 'Opérations système')}</p>
             </div>
           </div>
-          <NavLink
-            className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/15"
-            to="/dashboard"
-          >
-            <LayoutDashboard size={17} />
-            Application utilisateur
-          </NavLink>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <NavLink
+              className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/15"
+              to="/dashboard"
+            >
+              <LayoutDashboard size={17} />
+              {t('adminLayout.userAppLink', 'Application utilisateur')}
+            </NavLink>
+          </div>
         </div>
       </header>
 

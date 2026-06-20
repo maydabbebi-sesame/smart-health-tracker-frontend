@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Lock, Mail, UserRound } from 'lucide-react'
 
 import { register } from '../features/auth/auth'
+import { useTranslation } from '../i18n/useTranslation'
 
 function RegisterPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -41,15 +43,17 @@ function RegisterPage() {
   return (
     <div className="w-full max-w-md">
       <div className="mb-8">
-        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Créer un compte</h2>
+        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">{t('register.title', 'Créer un compte')}</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Démarrez avec un compte démo sécurisé pour explorer le tableau de bord.
+          {t('register.subtitle', 'Démarrez avec un compte démo sécurisé pour explorer le tableau de bord.')}
         </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Nom complet</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+            {t('register.nameLabel', 'Nom complet')}
+          </span>
           <div className="relative mt-2">
             <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
@@ -63,7 +67,9 @@ function RegisterPage() {
         </label>
 
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Adresse e-mail</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+            {t('register.emailLabel', 'Adresse e-mail')}
+          </span>
           <div className="relative mt-2">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
@@ -77,7 +83,9 @@ function RegisterPage() {
         </label>
 
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Mot de passe</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+            {t('register.passwordLabel', 'Mot de passe')}
+          </span>
           <div className="relative mt-2">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
@@ -100,14 +108,14 @@ function RegisterPage() {
           disabled={loading}
           type="submit"
         >
-          {loading ? 'Création du compte...' : 'Creer mon compte'}
+          {loading ? t('register.submitting', 'Création du compte...') : t('register.submit', 'Créer mon compte')}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-[#3d4943]">
-        Deja inscrit ?{' '}
+        {t('register.alreadyRegistered', 'Déjà inscrit ?')}{' '}
         <Link className="font-semibold text-[#00694c] hover:text-[#008560]" to="/login">
-          Se connecter
+          {t('register.login', 'Se connecter')}
         </Link>
       </p>
     </div>

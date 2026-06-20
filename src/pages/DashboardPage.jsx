@@ -27,6 +27,7 @@ import { getDashboardCharts, getDashboardSummary } from '../services/dashboardSe
 import { getProfile } from '../services/userService'
 import { getRecommendations } from '../services/aiService'
 import { getCurrentUser } from '../features/auth/auth'
+import { useTranslation } from '../i18n/useTranslation'
 
 const statIcons = {
   activity: Activity,
@@ -68,12 +69,13 @@ function ChartCard({ children, subtitle, title }) {
 }
 
 function DashboardPage() {
+  const { t, localeTag } = useTranslation()
   const { data: summary, isLoading: isSummaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: getDashboardSummary,
   })
   const { data: charts, isLoading: isChartsLoading } = useQuery({
-    queryKey: ['dashboard-charts'],
+    queryKey: ['dashboard-charts', localeTag],
     queryFn: getDashboardCharts,
   })
   const { data: profileData } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
@@ -86,9 +88,22 @@ function DashboardPage() {
   if (!summary || !charts) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-lg text-slate-600">Impossible de charger les données du tableau de bord. Veuillez réessayer.</p>
+        <p className="text-lg text-slate-600">
+          {t('dashboard.loadError', 'Impossible de charger les données du tableau de bord. Veuillez réessayer.')}
+        </p>
       </div>
     )
+  }
+
+  const wellnessStat = summary?.stats?.find((s) => s.key === 'wellnessScore')
+  const wellnessRaw = wellnessStat?.value ?? null
+  const wellnessNum = wellnessRaw !== null ? parseInt(String(wellnessRaw).replace('%', ''), 10) : null
+  let wellnessSubtitle = t('dashboard.noData', 'Aucune donnée disponible maintenant')
+  if (wellnessNum !== null) {
+    if (wellnessNum >= 80) wellnessSubtitle = t('dashboard.wellness.excellent', 'Excellente progression')
+    else if (wellnessNum >= 60) wellnessSubtitle = t('dashboard.wellness.good', 'Bonne progression')
+    else if (wellnessNum >= 40) wellnessSubtitle = t('dashboard.wellness.average', 'Progression moyenne')
+    else wellnessSubtitle = t('dashboard.wellness.low', 'Progression faible')
   }
 
   return (
@@ -96,30 +111,23 @@ function DashboardPage() {
       <section className="grid gap-6 md:grid-cols-12">
         <div className="flex flex-col justify-center md:col-span-8">
           <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">
-            Bonjour {profileData?.data?.first_name || profileData?.data?.name || getCurrentUser()?.email || 'Utilisateur'}
+            {t('dashboard.greeting', 'Bonjour {{name}}', {
+              name:
+                profileData?.data?.first_name ||
+                profileData?.data?.name ||
+                getCurrentUser()?.email ||
+                t('dashboard.defaultUser', 'Utilisateur'),
+            })}
           </h1>
           <p className="mt-3 flex items-center gap-2 text-base text-[#6d7a73]">
             <CalendarDays size={19} />
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date().toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         <article className="sht-card flex items-center justify-between p-5 md:col-span-4">
           <div>
-            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Score Santé</h2>
-            {(() => {
-              const wellnessStat = summary?.stats?.find((s) => s.label.toLowerCase().includes('wellness'))
-              const raw = wellnessStat?.value ?? null
-              const num = raw !== null ? parseInt(String(raw).replace('%', ''), 10) : null
-              let subtitle = 'Aucune donnée disponible maintenant'
-              if (num !== null) {
-                if (num >= 80) subtitle = 'Excellente progression'
-                else if (num >= 60) subtitle = 'Bonne progression'
-                else if (num >= 40) subtitle = 'Progression moyenne'
-                else subtitle = 'Progression faible'
-              }
-
-              return <p className="mt-1 text-sm text-[#6d7a73]">{subtitle}</p>
-            })()}
+            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">{t('dashboard.healthScore', 'Score Santé')}</h2>
+            <p className="mt-1 text-sm text-[#6d7a73]">{wellnessSubtitle}</p>
           </div>
           <div className="relative grid h-20 w-20 place-items-center">
             <svg className="h-full w-full -rotate-90">
@@ -136,11 +144,9 @@ function DashboardPage() {
                 strokeWidth="8"
               />
             </svg>
-            <span className="font-metric absolute text-lg font-semibold text-[#00694c]">{(() => {
-              const wellnessStat = summary?.stats?.find((s) => s.label.toLowerCase().includes('wellness'))
-              const raw = wellnessStat?.value ?? null
-              return raw !== null ? String(raw).replace('%', '') : '--'
-            })()}</span>
+            <span className="font-metric absolute text-lg font-semibold text-[#00694c]">
+              {wellnessRaw !== null ? String(wellnessRaw).replace('%', '') : '--'}
+            </span>
           </div>
         </article>
       </section>
@@ -151,20 +157,20 @@ function DashboardPage() {
           const hasValue = stat.value !== null && stat.value !== undefined
 
           return (
-            <article key={stat.label} className="sht-card p-5">
+            <article key={stat.key || stat.label} className="sht-card p-5">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
                   <StatIcon size={23} />
                 </div>
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${hasValue ? 'bg-[#86f8c9]/35 text-[#00513a]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
                   <CheckCircle2 size={14} />
-                  {hasValue ? 'Normal' : 'Indisponible'}
+                  {hasValue ? t('dashboard.statusNormal', 'Normal') : t('dashboard.statusUnavailable', 'Indisponible')}
                 </span>
               </div>
               <div>
-                <p className="text-sm text-slate-500">{stat.label}</p>
+                <p className="text-sm text-slate-500">{t(`dashboard.stats.${stat.key}`, stat.label)}</p>
                 <p className={`font-metric mt-2 text-[28px] font-semibold leading-none ${hasValue ? 'text-[#171d1a]' : 'text-slate-500'}`}>
-                  {hasValue ? stat.value : 'Aucune donnée disponible maintenant'}
+                  {hasValue ? stat.value : t('dashboard.noData', 'Aucune donnée disponible maintenant')}
                 </p>
               </div>
             </article>
@@ -183,7 +189,7 @@ function DashboardPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded bg-[#ba1a1a] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
-                      Alerte non lue
+                      {t('dashboard.alert.unread', 'Alerte non lue')}
                     </span>
                     <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">{summary.recentAlert.title}</h2>
                   </div>
@@ -191,12 +197,12 @@ function DashboardPage() {
                 </div>
               </div>
               <span className="text-xs font-medium text-[#6d7a73]">
-                {summary.recentAlert.created_at ? new Date(summary.recentAlert.created_at).toLocaleString('fr-FR') : ''}
+                {summary.recentAlert.created_at ? new Date(summary.recentAlert.created_at).toLocaleString(localeTag) : ''}
               </span>
             </div>
             <div className="flex flex-wrap gap-3 border-t border-[#bccac1]/30 px-5 py-4">
               <a className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white" href="/notifications">
-                Voir les alertes
+                {t('dashboard.alert.viewAll', 'Voir les alertes')}
               </a>
             </div>
           </article>
@@ -207,9 +213,11 @@ function DashboardPage() {
                 <CheckCircle2 size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Aucune alerte active</h2>
+                <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">
+                  {t('dashboard.alert.noneTitle', 'Aucune alerte active')}
+                </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
-                  Aucune alerte non lue n'a été détectée sur vos données récentes.
+                  {t('dashboard.alert.noneText', "Aucune alerte non lue n'a été détectée sur vos données récentes.")}
                 </p>
               </div>
             </div>
@@ -220,17 +228,20 @@ function DashboardPage() {
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
             <BrainCircuit size={21} />
           </div>
-          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">Recommandation IA</h2>
+          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">{t('dashboard.aiRecommendation.title', 'Recommandation IA')}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
             {recommendationsData?.success && recommendationsData?.data?.summary
               ? recommendationsData.data.summary
-              : 'Aucune donnée disponible maintenant'}
+              : t('dashboard.noData', 'Aucune donnée disponible maintenant')}
           </p>
         </article>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <ChartCard subtitle="Fréquence cardiaque mesurée (données réelles)" title="Évolution du rythme cardiaque">
+        <ChartCard
+          subtitle={t('dashboard.charts.heartRate.subtitle', 'Fréquence cardiaque mesurée (données réelles)')}
+          title={t('dashboard.charts.heartRate.title', 'Évolution du rythme cardiaque')}
+        >
           {charts.heartRateData?.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <AreaChart data={charts.heartRateData} margin={{ left: -18, right: 8, top: 8 }}>
@@ -255,11 +266,14 @@ function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="grid h-full place-items-center text-sm text-slate-500">Aucune donnée disponible maintenant</div>
+            <div className="grid h-full place-items-center text-sm text-slate-500">{t('dashboard.noData', 'Aucune donnée disponible maintenant')}</div>
           )}
         </ChartCard>
 
-        <ChartCard subtitle="Poids mesuré (données réelles)" title="Progression du poids">
+        <ChartCard
+          subtitle={t('dashboard.charts.weight.subtitle', 'Poids mesuré (données réelles)')}
+          title={t('dashboard.charts.weight.title', 'Progression du poids')}
+        >
           {charts.weightData?.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={charts.weightData} margin={{ left: -18, right: 8, top: 8 }}>
@@ -279,7 +293,7 @@ function DashboardPage() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="grid h-full place-items-center text-sm text-slate-500">Aucune donnée disponible maintenant</div>
+            <div className="grid h-full place-items-center text-sm text-slate-500">{t('dashboard.noData', 'Aucune donnée disponible maintenant')}</div>
           )}
         </ChartCard>
       </section>
@@ -288,30 +302,34 @@ function DashboardPage() {
         <article className="sht-card p-5">
           <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-950">
             <CalendarCheck className="text-[#00694c]" size={22} />
-            Prochains rendez-vous
+            {t('dashboard.appointments.title', 'Prochains rendez-vous')}
           </h2>
           <div className="mt-4 divide-y divide-slate-100">
             {summary.upcomingAppointments && summary.upcomingAppointments.length > 0 ? (
               summary.upcomingAppointments.map((appointment) => (
                 <div key={appointment.uid} className="flex items-center justify-between gap-4 py-3">
                   <div>
-                    <p className="font-medium text-slate-900">{appointment.reason || 'Rendez-vous médical'}</p>
+                    <p className="font-medium text-slate-900">
+                      {appointment.reason || t('dashboard.appointments.defaultReason', 'Rendez-vous médical')}
+                    </p>
                     <p className="text-sm text-slate-500">
-                      {new Date(appointment.appointment_date).toLocaleDateString('fr-FR', {
+                      {new Date(appointment.appointment_date).toLocaleDateString(localeTag, {
                         weekday: 'long',
                         day: 'numeric',
                         month: 'long',
                       })}{' '}
-                      à {appointment.appointment_time?.slice(0, 5)}
+                      {t('dashboard.appointments.at', 'à')} {appointment.appointment_time?.slice(0, 5)}
                     </p>
                   </div>
                   <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                    {appointment.status === 'confirmed' ? 'Confirmé' : 'Planifié'}
+                    {appointment.status === 'confirmed'
+                      ? t('dashboard.appointments.confirmed', 'Confirmé')
+                      : t('dashboard.appointments.scheduled', 'Planifié')}
                   </span>
                 </div>
               ))
             ) : (
-              <p className="py-3 text-sm text-slate-500">Aucune donnée disponible maintenant</p>
+              <p className="py-3 text-sm text-slate-500">{t('dashboard.noData', 'Aucune donnée disponible maintenant')}</p>
             )}
           </div>
         </article>

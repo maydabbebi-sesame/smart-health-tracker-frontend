@@ -1,13 +1,19 @@
 import { motion } from 'framer-motion'
 
+import { useTranslation } from '../../i18n/useTranslation'
+
 export function ProgressBar({ currentStep, steps }) {
+  const { t } = useTranslation()
   const progress = ((currentStep + 1) / steps.length) * 100
 
   return (
     <nav className="mb-8 w-full">
       <div className="mb-4 flex items-center justify-between gap-4 px-2">
         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#00694c]">
-          Etape {currentStep + 1} sur {steps.length}
+          {t('symptomForm.progressBar.stepCounter', 'Etape {{current}} sur {{total}}', {
+            current: currentStep + 1,
+            total: steps.length,
+          })}
         </span>
         <span className="text-right text-xs font-medium text-[#6d7a73]">{steps[currentStep].title}</span>
       </div>

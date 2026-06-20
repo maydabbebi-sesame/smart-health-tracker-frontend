@@ -23,12 +23,7 @@ import { getHealthHistory, groupRecordsByDate } from '../services/healthHistoryS
 import { exportTrendAnalysisPdf } from '../services/vitalsService'
 import { getTrendsAnalysis } from '../services/mediAssistService'
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
-
-const PERIOD_OPTIONS = [
-  { value: 'week', label: 'Semaine' },
-  { value: 'month', label: 'Mois' },
-  { value: '3months', label: '3 mois' },
-]
+import { useTranslation } from '../i18n/useTranslation'
 
 // Fully static Tailwind class strings (no template-literal colors) so the
 // JIT scanner picks every one of them up.
@@ -43,54 +38,57 @@ const CHIP_STYLES = {
   pain_intensity: 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300',
 }
 
-function buildVitalChips(vital) {
+function buildVitalChips(vital, t) {
   const chips = []
   if (vital.heart_rate != null) {
-    chips.push({ key: 'heart_rate', icon: HeartPulse, label: 'Fréquence cardiaque', value: vital.heart_rate, unit: 'bpm', style: CHIP_STYLES.heart_rate })
+    chips.push({ key: 'heart_rate', icon: HeartPulse, label: t('history.vitals.heartRate', 'Fréquence cardiaque'), value: vital.heart_rate, unit: 'bpm', style: CHIP_STYLES.heart_rate })
   }
   if (vital.systolic_bp != null && vital.diastolic_bp != null) {
-    chips.push({ key: 'bp', icon: Gauge, label: 'Tension artérielle', value: `${vital.systolic_bp}/${vital.diastolic_bp}`, unit: 'mmHg', style: CHIP_STYLES.bp })
+    chips.push({ key: 'bp', icon: Gauge, label: t('history.vitals.bloodPressure', 'Tension artérielle'), value: `${vital.systolic_bp}/${vital.diastolic_bp}`, unit: 'mmHg', style: CHIP_STYLES.bp })
   }
   if (vital.temperature != null) {
-    chips.push({ key: 'temperature', icon: Thermometer, label: 'Température', value: vital.temperature, unit: '°C', style: CHIP_STYLES.temperature })
+    chips.push({ key: 'temperature', icon: Thermometer, label: t('history.vitals.temperature', 'Température'), value: vital.temperature, unit: '°C', style: CHIP_STYLES.temperature })
   }
   if (vital.oxygen_saturation != null) {
-    chips.push({ key: 'oxygen_saturation', icon: Droplet, label: 'Saturation O2', value: vital.oxygen_saturation, unit: '%', style: CHIP_STYLES.oxygen_saturation })
+    chips.push({ key: 'oxygen_saturation', icon: Droplet, label: t('history.vitals.oxygenSaturation', 'Saturation O2'), value: vital.oxygen_saturation, unit: '%', style: CHIP_STYLES.oxygen_saturation })
   }
   if (vital.respiratory_rate != null) {
-    chips.push({ key: 'respiratory_rate', icon: Wind, label: 'Fréquence respiratoire', value: vital.respiratory_rate, unit: '/min', style: CHIP_STYLES.respiratory_rate })
+    chips.push({ key: 'respiratory_rate', icon: Wind, label: t('history.vitals.respiratoryRate', 'Fréquence respiratoire'), value: vital.respiratory_rate, unit: '/min', style: CHIP_STYLES.respiratory_rate })
   }
   if (vital.glycemia != null) {
-    chips.push({ key: 'glycemia', icon: Droplets, label: 'Glycémie', value: vital.glycemia, unit: 'g/L', style: CHIP_STYLES.glycemia })
+    chips.push({ key: 'glycemia', icon: Droplets, label: t('history.vitals.glycemia', 'Glycémie'), value: vital.glycemia, unit: 'g/L', style: CHIP_STYLES.glycemia })
   }
   if (vital.weight != null) {
-    chips.push({ key: 'weight', icon: Scale, label: 'Poids', value: vital.weight, unit: 'kg', style: CHIP_STYLES.weight })
+    chips.push({ key: 'weight', icon: Scale, label: t('history.vitals.weight', 'Poids'), value: vital.weight, unit: 'kg', style: CHIP_STYLES.weight })
   }
   if (vital.pain_intensity != null) {
-    chips.push({ key: 'pain_intensity', icon: AlertCircle, label: 'Intensité douleur', value: vital.pain_intensity, unit: '/10', style: CHIP_STYLES.pain_intensity })
+    chips.push({ key: 'pain_intensity', icon: AlertCircle, label: t('history.vitals.painIntensity', 'Intensité douleur'), value: vital.pain_intensity, unit: '/10', style: CHIP_STYLES.pain_intensity })
   }
   return chips
 }
 
-const NARRATIVE_FIELDS = [
-  { key: 'symptoms', label: 'Symptômes', icon: Stethoscope, style: 'bg-teal-50 text-teal-800 dark:bg-teal-500/10 dark:text-teal-200' },
-  { key: 'pain_location', label: 'Localisation de la douleur', icon: AlertCircle, style: 'bg-red-50 text-red-800 dark:bg-red-500/10 dark:text-red-200' },
-  { key: 'health_issues_history', label: 'Antécédents médicaux', icon: FileText, style: 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-200' },
-  { key: 'drug_allergies', label: 'Allergies', icon: ShieldAlert, style: 'bg-[#ffdad6] text-[#93000a] dark:bg-red-500/15 dark:text-red-200' },
-  { key: 'family_health_issues', label: 'Antécédents familiaux', icon: Users, style: 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-200' },
-  { key: 'notes', label: 'Notes', icon: FileText, style: 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-200' },
-]
+function getNarrativeFields(t) {
+  return [
+    { key: 'symptoms', label: t('history.narrative.symptoms', 'Symptômes'), icon: Stethoscope, style: 'bg-teal-50 text-teal-800 dark:bg-teal-500/10 dark:text-teal-200' },
+    { key: 'pain_location', label: t('history.narrative.painLocation', 'Localisation de la douleur'), icon: AlertCircle, style: 'bg-red-50 text-red-800 dark:bg-red-500/10 dark:text-red-200' },
+    { key: 'health_issues_history', label: t('history.narrative.medicalHistory', 'Antécédents médicaux'), icon: FileText, style: 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-200' },
+    { key: 'drug_allergies', label: t('history.narrative.allergies', 'Allergies'), icon: ShieldAlert, style: 'bg-[#ffdad6] text-[#93000a] dark:bg-red-500/15 dark:text-red-200' },
+    { key: 'family_health_issues', label: t('history.narrative.familyHistory', 'Antécédents familiaux'), icon: Users, style: 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-200' },
+    { key: 'notes', label: t('history.narrative.notes', 'Notes'), icon: FileText, style: 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-200' },
+  ]
+}
 
-function formatDateHeading(dateKey) {
-  if (!dateKey || dateKey === 'Date inconnue') return 'Date inconnue'
+function formatDateHeading(dateKey, t, localeTag) {
+  const unknownDateLabel = t('history.unknownDate', 'Date inconnue')
+  if (!dateKey || dateKey === 'Date inconnue') return unknownDateLabel
   const date = new Date(`${dateKey}T00:00:00`)
   if (Number.isNaN(date.getTime())) return dateKey
-  const label = date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const label = date.toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-function buildAnalysisFilename(period) {
-  const label = PERIOD_OPTIONS.find((option) => option.value === period)?.label || period
+function buildAnalysisFilename(period, periodOptions) {
+  const label = periodOptions.find((option) => option.value === period)?.label || period
   const slug = label.trim().replace(/\s+/g, '-')
   const today = new Date()
   const day = String(today.getDate()).padStart(2, '0')
@@ -111,6 +109,14 @@ function downloadBlob(blob, filename) {
 }
 
 function HistoryPage() {
+  const { t, localeTag } = useTranslation()
+  const PERIOD_OPTIONS = [
+    { value: 'week', label: t('history.filters.weekOption', 'Semaine') },
+    { value: 'month', label: t('history.filters.monthOption', 'Mois') },
+    { value: '3months', label: t('history.filters.threeMonthsOption', '3 mois') },
+  ]
+  const NARRATIVE_FIELDS = getNarrativeFields(t)
+
   const [period, setPeriod] = useState('week')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState(null)
@@ -141,7 +147,7 @@ function HistoryPage() {
         return
       }
 
-      downloadBlob(pdfResult.data, buildAnalysisFilename(period))
+      downloadBlob(pdfResult.data, buildAnalysisFilename(period, PERIOD_OPTIONS))
     } finally {
       setIsAnalyzing(false)
     }
@@ -155,10 +161,10 @@ function HistoryPage() {
     <div className="space-y-6">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#00694c] via-[#00875f] to-[#0077b6] p-7 text-white shadow-lg shadow-[#00694c]/20">
         <HeartPulse className="absolute -right-4 -top-4 h-40 w-40 text-white/10" strokeWidth={1.5} />
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Suivi sante</p>
-        <h1 className="mt-2 text-[32px] font-bold leading-tight">Historique médical</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">{t('history.banner.eyebrow', 'Suivi sante')}</p>
+        <h1 className="mt-2 text-[32px] font-bold leading-tight">{t('history.banner.title', 'Historique médical')}</h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-white/85">
-          Retrouvez ici toutes les données que vous avez transmises via vos formulaires de suivi, organisées jour par jour.
+          {t('history.banner.subtitle', 'Retrouvez ici toutes les données que vous avez transmises via vos formulaires de suivi, organisées jour par jour.')}
         </p>
       </div>
 
@@ -188,7 +194,7 @@ function HistoryPage() {
             type="button"
           >
             {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-            {isAnalyzing ? 'Analyse en cours...' : 'Analyser mes tendances'}
+            {isAnalyzing ? t('history.analyze.inProgress', 'Analyse en cours...') : t('history.analyze.button', 'Analyser mes tendances')}
           </button>
           {analysisError && <p className="text-sm text-[#ba1a1a]">{analysisError}</p>}
         </div>
@@ -199,7 +205,7 @@ function HistoryPage() {
           <div className="grid h-16 w-16 place-items-center rounded-full bg-red-50 text-[#ba1a1a]">
             <AlertCircle size={28} />
           </div>
-          <p className="font-semibold text-[#171d1a] dark:text-white">Impossible de charger l'historique</p>
+          <p className="font-semibold text-[#171d1a] dark:text-white">{t('history.error.title', "Impossible de charger l'historique")}</p>
           <p className="max-w-md text-sm text-[#ba1a1a]">{historyError}</p>
         </section>
       ) : dateGroups.length === 0 ? (
@@ -207,9 +213,9 @@ function HistoryPage() {
           <div className="grid h-16 w-16 place-items-center rounded-full bg-[#eff5ef] text-[#00694c]">
             <Inbox size={28} />
           </div>
-          <p className="font-semibold text-[#171d1a] dark:text-white">Aucune donnée enregistrée pour cette période</p>
+          <p className="font-semibold text-[#171d1a] dark:text-white">{t('history.empty.title', 'Aucune donnée enregistrée pour cette période')}</p>
           <p className="max-w-md text-sm text-[#6d7a73]">
-            Soumettez un formulaire de suivi ou changez de période pour voir apparaître votre historique ici.
+            {t('history.empty.subtitle', 'Soumettez un formulaire de suivi ou changez de période pour voir apparaître votre historique ici.')}
           </p>
         </section>
       ) : (
@@ -222,17 +228,19 @@ function HistoryPage() {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <p className="flex items-center gap-2 text-base font-bold text-[#171d1a] dark:text-white">
                   <CalendarDays className="text-[#00694c]" size={19} />
-                  {formatDateHeading(group.date)}
+                  {formatDateHeading(group.date, t, localeTag)}
                 </p>
                 <span className="rounded-full bg-[#86f8c9]/35 px-3 py-1 text-xs font-semibold text-[#00513a]">
-                  {group.records.length} relevé{group.records.length > 1 ? 's' : ''}
+                  {group.records.length > 1
+                    ? t('history.recordsCountPlural', '{{count}} relevés', { count: group.records.length })
+                    : t('history.recordsCountSingular', '{{count}} relevé', { count: group.records.length })}
                 </span>
               </div>
 
               <div className="grid gap-4">
                 {group.records.map((record) => {
                   const vital = record.originalVital || {}
-                  const chips = buildVitalChips(vital)
+                  const chips = buildVitalChips(vital, t)
                   const narratives = NARRATIVE_FIELDS.filter((field) => vital[field.key])
 
                   return (
@@ -248,7 +256,7 @@ function HistoryPage() {
                               >
                                 <ChipIcon size={16} />
                                 <span>
-                                  {chip.label} : {chip.value}{chip.unit}
+                                  {t('history.labelValueSeparator', '{{label}} : {{value}}', { label: chip.label, value: `${chip.value}${chip.unit}` })}
                                 </span>
                               </div>
                             )
@@ -264,7 +272,7 @@ function HistoryPage() {
                               <div className={`flex items-start gap-2 rounded-lg px-3 py-2 text-sm ${field.style}`} key={field.key}>
                                 <FieldIcon className="mt-0.5 shrink-0" size={16} />
                                 <p>
-                                  <span className="font-semibold">{field.label} : </span>
+                                  <span className="font-semibold">{t('history.fieldLabelSeparator', '{{label}} : ', { label: field.label })}</span>
                                   {vital[field.key]}
                                 </p>
                               </div>
@@ -274,7 +282,7 @@ function HistoryPage() {
                       )}
 
                       {chips.length === 0 && narratives.length === 0 && (
-                        <p className="text-sm text-[#6d7a73]">Aucune mesure renseignée pour ce relevé.</p>
+                        <p className="text-sm text-[#6d7a73]">{t('history.noMeasurements', 'Aucune mesure renseignée pour ce relevé.')}</p>
                       )}
                     </div>
                   )

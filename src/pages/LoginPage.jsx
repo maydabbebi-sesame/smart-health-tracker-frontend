@@ -3,10 +3,12 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { login } from '../features/auth/auth'
+import { useTranslation } from '../i18n/useTranslation'
 
 function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const from = location.state?.from?.pathname || '/dashboard'
   const successMessage = location.state?.message
   const [error, setError] = useState(null)
@@ -38,7 +40,7 @@ function LoginPage() {
 
   function handleSocialLogin(provider) {
     // Social login requires OAuth tokens - placeholder
-    setError(`${provider} login requires OAuth integration`)
+    setError(t('login.socialLoginError', '{{provider}} nécessite une intégration OAuth', { provider }))
   }
 
   return (
@@ -47,9 +49,9 @@ function LoginPage() {
         <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-[#00694c] text-white lg:hidden">
           <ShieldPlus size={22} />
         </div>
-        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Connexion</h2>
+        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">{t('login.title', 'Connexion')}</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Accédez à votre tableau de bord santé sécurisé.
+          {t('login.subtitle', 'Accédez à votre tableau de bord santé sécurisé.')}
         </p>
       </div>
 
@@ -61,7 +63,9 @@ function LoginPage() {
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Adresse e-mail</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+            {t('login.emailLabel', 'Adresse e-mail')}
+          </span>
           <div className="relative mt-2">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
@@ -74,7 +78,9 @@ function LoginPage() {
         </label>
 
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Mot de passe</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+            {t('login.passwordLabel', 'Mot de passe')}
+          </span>
           <div className="relative mt-2">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
@@ -84,7 +90,7 @@ function LoginPage() {
               type="password"
             />
             <button
-              aria-label="Afficher le mot de passe"
+              aria-label={t('login.showPassword', 'Afficher le mot de passe')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6d7a73] transition hover:text-[#00694c]"
               type="button"
             >
@@ -100,10 +106,10 @@ function LoginPage() {
               defaultChecked
               type="checkbox"
             />
-            Se souvenir de moi
+            {t('login.rememberMe', 'Se souvenir de moi')}
           </label>
           <button className="font-semibold text-[#00694c] hover:text-[#008560]" type="button">
-            Mot de passe oublié ?
+            {t('login.forgotPassword', 'Mot de passe oublié ?')}
           </button>
         </div>
 
@@ -115,14 +121,14 @@ function LoginPage() {
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#00694c] px-4 py-3 text-sm font-bold text-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:bg-[#008560]"
           type="submit"
         >
-          Se connecter
+          {t('login.submit', 'Se connecter')}
           <ArrowRight size={17} />
         </button>
       </form>
 
       <div className="my-6 flex items-center gap-3">
         <div className="h-px flex-1 bg-[#dce5df]" />
-        <span className="text-xs font-medium text-[#6d7a73]">Ou continuer avec</span>
+        <span className="text-xs font-medium text-[#6d7a73]">{t('login.orContinueWith', 'Ou continuer avec')}</span>
         <div className="h-px flex-1 bg-[#dce5df]" />
       </div>
 
@@ -143,20 +149,24 @@ function LoginPage() {
       </div>
 
       <div className="mt-4 rounded-lg border border-[#d2e4ff] bg-[#eff5ef] p-3 text-xs leading-5 text-[#3d4943]">
-        Google et Apple sont proposés pour réduire la friction utilisateur et préparer une authentification OAuth
-        sécurisée côté backend. Dans ce MVP, le clic simule une connexion patient.
+        {t(
+          'login.oauthNotice',
+          'Google et Apple sont proposés pour réduire la friction utilisateur et préparer une authentification OAuth sécurisée côté backend. Dans ce MVP, le clic simule une connexion patient.',
+        )}
       </div>
 
       <p className="mt-6 text-center text-sm text-[#3d4943]">
-        Nouveau sur SmartHealth ?{' '}
+        {t('login.newToApp', 'Nouveau sur SmartHealth ?')}{' '}
         <Link className="font-semibold text-[#00694c] hover:text-[#008560]" to="/register">
-          Créer un compte
+          {t('login.createAccount', 'Créer un compte')}
         </Link>
       </p>
 
       <p className="mt-5 text-center text-xs leading-5 text-[#6d7a73]">
-        En vous connectant, vous acceptez les conditions d'utilisation et la politique de confidentialité de Smart
-        Health Tracker.
+        {t(
+          'login.termsNotice',
+          "En vous connectant, vous acceptez les conditions d'utilisation et la politique de confidentialité de Smart Health Tracker.",
+        )}
       </p>
     </div>
   )

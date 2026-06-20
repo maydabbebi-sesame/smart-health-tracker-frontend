@@ -2,15 +2,17 @@ import { motion } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
 
 import { useThemeStore } from '../../store/themeStore'
+import { useTranslation } from '../../i18n/useTranslation'
 
 export function ThemeToggle() {
   const theme = useThemeStore((state) => state.theme)
   const toggleTheme = useThemeStore((state) => state.toggleTheme)
   const isDark = theme === 'dark'
+  const { t } = useTranslation()
 
   return (
     <motion.button
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={isDark ? t('common.lightMode', 'Passer au mode clair') : t('common.darkMode', 'Passer au mode sombre')}
       className="relative grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-cyan-100 dark:hover:bg-slate-800"
       type="button"
       whileHover={{ y: -1 }}

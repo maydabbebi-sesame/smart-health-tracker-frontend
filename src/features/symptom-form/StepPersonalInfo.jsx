@@ -1,5 +1,7 @@
 import { AlertCircle } from 'lucide-react'
 
+import { useTranslation } from '../../i18n/useTranslation'
+
 function FieldError({ message }) {
   if (!message) {
     return null
@@ -35,24 +37,31 @@ function ChoiceGroup({ label, name, options, register }) {
 }
 
 export function StepPersonalInfo({ errors, register, values }) {
+  const { t } = useTranslation()
+
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Données personnelles</h2>
+        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">
+          {t('symptomForm.stepPersonalInfo.title', 'Données personnelles')}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Informations de base collectées une seule fois pour contextualiser tous les modèles LLM.
+          {t(
+            'symptomForm.stepPersonalInfo.subtitle',
+            'Informations de base collectées une seule fois pour contextualiser tous les modèles LLM.',
+          )}
         </p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-wide text-[#171d1a]">
-            Âge <span className="text-[#ba1a1a]">*</span>
+            {t('symptomForm.stepPersonalInfo.ageLabel', 'Âge')} <span className="text-[#ba1a1a]">*</span>
           </span>
           <input
             className="mt-2 h-12 w-full rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
             inputMode="numeric"
-            placeholder="Ex: 45"
+            placeholder={t('symptomForm.stepPersonalInfo.agePlaceholder', 'Ex: 45')}
             required
             type="number"
             {...register('age')}
@@ -61,24 +70,24 @@ export function StepPersonalInfo({ errors, register, values }) {
         </label>
 
         <ChoiceGroup
-          label="Sexe biologique"
+          label={t('symptomForm.stepPersonalInfo.biologicalSexLabel', 'Sexe biologique')}
           name="biologicalSex"
           options={[
-            { label: 'M', value: 'M' },
-            { label: 'F', value: 'F' },
-            { label: 'Autre', value: 'Autre' },
+            { label: t('symptomForm.stepPersonalInfo.biologicalSexOption.male', 'M'), value: 'M' },
+            { label: t('symptomForm.stepPersonalInfo.biologicalSexOption.female', 'F'), value: 'F' },
+            { label: t('symptomForm.stepPersonalInfo.biologicalSexOption.other', 'Autre'), value: 'Autre' },
           ]}
           register={register}
         />
 
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-wide text-[#171d1a]">
-            Poids <span className="text-[#ba1a1a]">*</span>
+            {t('symptomForm.stepPersonalInfo.weightLabel', 'Poids')} <span className="text-[#ba1a1a]">*</span>
           </span>
           <input
             className="mt-2 h-12 w-full rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
             inputMode="decimal"
-            placeholder="Ex: 68.5"
+            placeholder={t('symptomForm.stepPersonalInfo.weightPlaceholder', 'Ex: 68.5')}
             required
             type="number"
             {...register('weight')}
@@ -88,12 +97,12 @@ export function StepPersonalInfo({ errors, register, values }) {
 
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-wide text-[#171d1a]">
-            Taille <span className="text-[#ba1a1a]">*</span>
+            {t('symptomForm.stepPersonalInfo.heightLabel', 'Taille')} <span className="text-[#ba1a1a]">*</span>
           </span>
           <input
             className="mt-2 h-12 w-full rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
             inputMode="numeric"
-            placeholder="Ex: 170"
+            placeholder={t('symptomForm.stepPersonalInfo.heightPlaceholder', 'Ex: 170')}
             required
             type="number"
             {...register('height')}
@@ -107,12 +116,12 @@ export function StepPersonalInfo({ errors, register, values }) {
       {values.biologicalSex === 'F' && (
         <div className="mt-6 rounded-xl border border-[#dee4de] bg-[#f5fbf5] p-4">
           <ChoiceGroup
-            label="Grossesse en cours"
+            label={t('symptomForm.stepPersonalInfo.pregnancyStatusLabel', 'Grossesse en cours')}
             name="pregnancyStatus"
             options={[
-              { label: 'Oui', value: 'Oui' },
-              { label: 'Non', value: 'Non' },
-              { label: 'NSP', value: 'NSP' },
+              { label: t('symptomForm.stepPersonalInfo.pregnancyStatusOption.yes', 'Oui'), value: 'Oui' },
+              { label: t('symptomForm.stepPersonalInfo.pregnancyStatusOption.no', 'Non'), value: 'Non' },
+              { label: t('symptomForm.stepPersonalInfo.pregnancyStatusOption.unknown', 'NSP'), value: 'NSP' },
             ]}
             register={register}
           />

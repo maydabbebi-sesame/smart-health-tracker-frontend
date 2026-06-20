@@ -1,5 +1,7 @@
 import { AlertCircle, BrainCircuit, CheckCircle2 } from 'lucide-react'
 
+import { useTranslation } from '../../i18n/useTranslation'
+
 function FieldError({ message }) {
   if (!message) {
     return null
@@ -14,57 +16,77 @@ function FieldError({ message }) {
 }
 
 export function StepReview({ errors, register, values }) {
+  const { t } = useTranslation()
+
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold leading-tight text-[#171d1a] dark:text-white">Review & Submit</h2>
+        <h2 className="text-2xl font-semibold leading-tight text-[#171d1a] dark:text-white">
+          {t('symptomForm.stepReview.title', 'Review & Submit')}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Verifiez les informations avant de lancer la simulation d'analyse IA.
+          {t('symptomForm.stepReview.subtitle', "Verifiez les informations avant de lancer la simulation d'analyse IA.")}
         </p>
       </div>
 
     <div className="grid gap-6 lg:grid-cols-[1fr_240px]">
       <div className="space-y-4">
         <div className="rounded-xl border border-[#dee4de] bg-[#f5fbf5] p-5">
-          <h3 className="font-semibold text-[#171d1a] dark:text-white">Revision des details</h3>
+          <h3 className="font-semibold text-[#171d1a] dark:text-white">
+            {t('symptomForm.stepReview.detailsReviewTitle', 'Revision des details')}
+          </h3>
           <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="font-medium text-[#6d7a73]">Pathologies</dt>
+              <dt className="font-medium text-[#6d7a73]">{t('symptomForm.stepReview.pathologiesLabel', 'Pathologies')}</dt>
               <dd className="mt-1 text-[#171d1a] dark:text-white">
-                {values.pathologies?.join(', ') || 'Non selectionne'}
+                {values.pathologies?.join(', ') || t('symptomForm.stepReview.notSelected', 'Non selectionne')}
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-[#6d7a73]">Medicaments</dt>
-              <dd className="mt-1 text-[#171d1a] dark:text-white">{values.currentMedication || 'Non fourni'}</dd>
+              <dt className="font-medium text-[#6d7a73]">{t('symptomForm.stepReview.medicationsLabel', 'Medicaments')}</dt>
+              <dd className="mt-1 text-[#171d1a] dark:text-white">
+                {values.currentMedication || t('symptomForm.stepReview.notProvided', 'Non fourni')}
+              </dd>
             </div>
             <div>
-              <dt className="font-medium text-[#6d7a73]">Allergies</dt>
-              <dd className="mt-1 text-[#171d1a] dark:text-white">{values.knownAllergy || 'Non fourni'}</dd>
+              <dt className="font-medium text-[#6d7a73]">{t('symptomForm.stepReview.allergiesLabel', 'Allergies')}</dt>
+              <dd className="mt-1 text-[#171d1a] dark:text-white">
+                {values.knownAllergy || t('symptomForm.stepReview.notProvided', 'Non fourni')}
+              </dd>
             </div>
             <div>
-              <dt className="font-medium text-[#6d7a73]">Symptomes</dt>
-              <dd className="mt-1 text-[#171d1a] dark:text-white">{values.symptoms?.join(', ') || 'Non selectionne'}</dd>
+              <dt className="font-medium text-[#6d7a73]">{t('symptomForm.stepReview.symptomsLabel', 'Symptomes')}</dt>
+              <dd className="mt-1 text-[#171d1a] dark:text-white">
+                {values.symptoms?.join(', ') || t('symptomForm.stepReview.notSelected', 'Non selectionne')}
+              </dd>
             </div>
           </dl>
           <div className="mt-4 rounded-lg bg-white p-4">
-            <p className="text-sm font-medium text-[#6d7a73]">Contact d'urgence</p>
+            <p className="text-sm font-medium text-[#6d7a73]">{t('symptomForm.stepReview.emergencyContactLabel', "Contact d'urgence")}</p>
             <p className="mt-1 text-sm leading-6 text-[#3d4943]">
-              {values.emergencyName || 'Non fourni'} - {values.emergencyPhone || 'Telephone non fourni'}
+              {values.emergencyName || t('symptomForm.stepReview.notProvided', 'Non fourni')} -{' '}
+              {values.emergencyPhone || t('symptomForm.stepReview.phoneNotProvided', 'Telephone non fourni')}
             </p>
           </div>
           <div className="mt-4 rounded-lg bg-[#eff5ef] p-4">
-            <p className="text-sm font-medium text-[#6d7a73]">Question pour MediAssist</p>
-            <p className="mt-1 text-sm leading-6 text-[#3d4943]">{values.description || 'Aucune question — analyse automatique des données'}</p>
+            <p className="text-sm font-medium text-[#6d7a73]">{t('symptomForm.stepReview.mediassistQuestionLabel', 'Question pour MediAssist')}</p>
+            <p className="mt-1 text-sm leading-6 text-[#3d4943]">
+              {values.description || t('symptomForm.stepReview.noQuestion', 'Aucune question — analyse automatique des données')}
+            </p>
           </div>
         </div>
 
         <label className="flex items-start gap-3 rounded-xl border border-[#dee4de] bg-[#eff5ef] p-4">
           <input className="mt-1 h-5 w-5 accent-[#00694c]" type="checkbox" {...register('consent')} />
           <span>
-            <span className="block text-sm font-semibold text-[#171d1a] dark:text-white">Consentement IA</span>
+            <span className="block text-sm font-semibold text-[#171d1a] dark:text-white">
+              {t('symptomForm.stepReview.aiConsentTitle', 'Consentement IA')}
+            </span>
             <span className="mt-1 block text-sm leading-6 text-[#3d4943]">
-              Je comprends que cette demo frontend utilise une reponse IA simulee et ne remplace pas un avis medical.
+              {t(
+                'symptomForm.stepReview.aiConsentText',
+                'Je comprends que cette demo frontend utilise une reponse IA simulee et ne remplace pas un avis medical.',
+              )}
             </span>
             <FieldError message={errors.consent?.message} />
           </span>
@@ -75,13 +97,15 @@ export function StepReview({ errors, register, values }) {
         <div className="grid h-11 w-11 place-items-center rounded-lg bg-[#00694c] text-white">
           <BrainCircuit size={22} />
         </div>
-        <h3 className="mt-4 font-semibold text-[#171d1a] dark:text-white">Pret pour l analyse</h3>
+        <h3 className="mt-4 font-semibold text-[#171d1a] dark:text-white">
+          {t('symptomForm.stepReview.readyForAnalysisTitle', 'Pret pour l analyse')}
+        </h3>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          La demo simule une soumission securisee et retourne une reponse IA mockee.
+          {t('symptomForm.stepReview.readyForAnalysisText', 'La demo simule une soumission securisee et retourne une reponse IA mockee.')}
         </p>
         <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/70 p-3 text-sm font-medium text-[#00694c]">
           <CheckCircle2 size={18} />
-          Flux MVP frontend-only
+          {t('symptomForm.stepReview.frontendOnlyFlow', 'Flux MVP frontend-only')}
         </div>
       </aside>
     </div>
