@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import json
+from datetime import timedelta
 from config import SECRET_KEY
 
 
@@ -62,6 +63,19 @@ def publicize_doctor(record: dict) -> dict:
     return public
 
 
+def _format_time(value) -> str | None:
+    """Format a TIME column value (returned by the MySQL connector as a
+    datetime.timedelta) into an "HH:MM:SS" string so it is JSON serializable."""
+    if value is None:
+        return None
+    if isinstance(value, timedelta):
+        total_seconds = int(value.total_seconds())
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return str(value)
+
+
 def publicize_appointment(record: dict) -> dict:
     if not record:
         return record
@@ -70,7 +84,7 @@ def publicize_appointment(record: dict) -> dict:
         "user_uid": encode_id(record["user_id"]),
         "doctor_uid": encode_id(record["doctor_id"]),
         "appointment_date": record.get("appointment_date"),
-        "appointment_time": record.get("appointment_time"),
+        "appointment_time": _format_time(record.get("appointment_time")),
         "reason": record.get("reason"),
         "status": record.get("status")
     }
