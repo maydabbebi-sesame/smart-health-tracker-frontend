@@ -3,20 +3,20 @@ import { Bell, BrainCircuit, ChartNoAxesColumnIncreasing, ShieldPlus } from 'luc
 
 const valueProps = [
   {
-    title: 'IA personnalisee',
-    text: 'Des analyses predictives basees sur votre profil unique.',
+    title: 'IA personnalisée',
+    text: 'Des analyses prédictives basées sur votre profil unique.',
     icon: BrainCircuit,
     className: 'bg-[#86f8c9] text-[#002115]',
   },
   {
-    title: 'Alertes temps reel',
-    text: 'Soyez informe instantanement des changements importants.',
+    title: 'Alertes temps réel',
+    text: 'Soyez informé instantanément des changements importants.',
     icon: Bell,
     className: 'bg-[#d2e4ff] text-[#001c38]',
   },
   {
     title: 'Recommandations',
-    text: 'Des conseils actionnables pour optimiser votre vitalite.',
+    text: 'Des conseils actionnables pour optimiser votre vitalité.',
     icon: ChartNoAxesColumnIncreasing,
     className: 'bg-[#ffdad6] text-[#7e2a27]',
   },
@@ -38,17 +38,17 @@ export function AuthLayout() {
 
             <div className="max-w-md">
               <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a]">
-                Votre sante, suivie intelligemment.
+                Votre santé, suivie intelligemment.
               </h1>
               <p className="mt-4 text-base leading-7 text-[#3d4943]">
-                Prenez le controle de votre bien-etre avec une precision medicale et une interface intuitive concue
+                Prenez le contrôle de votre bien-être avec une précision médicale et une interface intuitive conçue
                 pour votre quotidien.
               </p>
             </div>
 
             <div className="mt-8 overflow-hidden rounded-xl border border-[#bccac1]/30 bg-white/70 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
               <img
-                alt="Patient utilisant une application de suivi sante"
+                alt="Patient utilisant une application de suivi santé"
                 className="h-56 w-full object-cover"
                 src="/login-ai-healthcare.png"
               />
@@ -73,9 +73,9 @@ export function AuthLayout() {
           </div>
 
           <div className="relative z-10 rounded-xl border border-[#bccac1]/30 bg-white/70 p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] backdrop-blur">
-            <p className="sht-kicker">Frontend MVP</p>
+            <p className="sht-kicker">Démo Frontend</p>
             <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-              Dashboard patient, analyse IA simulee, suivi sante et architecture prete pour backend.
+              Tableau de bord patient, analyse IA simulée, suivi santé et architecture prête pour backend.
             </p>
           </div>
         </section>

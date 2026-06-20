@@ -11,8 +11,8 @@ export function AdminLayout() {
               <ShieldPlus size={21} />
             </div>
             <div>
-              <p className="text-sm font-semibold">Smart Health Admin</p>
-              <p className="text-xs text-slate-400">System operations</p>
+              <p className="text-sm font-semibold">Administration Smart Health</p>
+              <p className="text-xs text-slate-400">Opérations système</p>
             </div>
           </div>
           <NavLink
@@ -20,7 +20,7 @@ export function AdminLayout() {
             to="/dashboard"
           >
             <LayoutDashboard size={17} />
-            User app
+            Application utilisateur
           </NavLink>
         </div>
       </header>

@@ -7,6 +7,7 @@
 const MEDIASSIST_BASE_URL = import.meta.env.VITE_MEDIASSIST_URL || 'http://127.0.0.1:5001'
 const CHAT_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/chat`
 const DOCTOR_AGENT_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/doctor-agent`
+const ANALYZE_TRENDS_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/analyze-trends`
 // Must stay comfortably ABOVE the backend's own gateway-call timeout
 // (mediassist_service/llm_client.py's TIMEOUT_S) — medgemma1.5 is a "thinking"
 // model whose generation routinely runs past a minute, and aborting here
@@ -62,12 +63,44 @@ export async function getDoctorAgentDecision({ alerts, recommendations, orientat
       signal: controller.signal,
     })
 
-    if (!resp.ok) throw new Error(`Erreur du service Doctor Agent : ${resp.status}`)
+    if (!resp.ok) throw new Error(`Erreur du service Agent Médecin : ${resp.status}`)
 
     const decision = await resp.json()
     return { success: true, decision }
   } catch (err) {
-    return { success: false, error: err.message || 'Le service Doctor Agent est indisponible.' }
+    return { success: false, error: err.message || "Le service Agent Médecin est indisponible." }
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+// Analyzes how a patient's vitals/symptoms evolved over a chosen period
+// (week/month/3months) for the health-history page's "Analyser mes
+// tendances" button. Reasons over raw longitudinal data, so it uses the same
+// generous timeout as the main chat — not the lighter Doctor Agent budget.
+export async function getTrendsAnalysis({ vitals, period }) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+  try {
+    const resp = await fetch(ANALYZE_TRENDS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vitals, period }),
+      signal: controller.signal,
+    })
+
+    if (!resp.ok) throw new Error(`Erreur du service d'analyse de tendances : ${resp.status}`)
+
+    const analysis = await resp.json()
+    if (analysis.error && !analysis.synthese) throw new Error(analysis.error)
+
+    return { success: true, analysis }
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      return { success: false, error: "L'analyse a dépassé le délai imparti. Réessayez." }
+    }
+    return { success: false, error: err.message || "Le service d'analyse de tendances est indisponible." }
   } finally {
     clearTimeout(timeoutId)
   }

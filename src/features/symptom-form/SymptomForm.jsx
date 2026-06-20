@@ -20,11 +20,11 @@ import { StepSymptoms } from './StepSymptoms'
 import { StepTreatments } from './StepTreatments'
 
 const steps = [
-  { title: 'Donnees personnelles', description: 'Contexte permanent pour les modeles LLM.' },
-  { title: 'Mesures appareils', description: 'Donnees optionnelles mesurees a domicile.' },
-  { title: 'Antecedents medicaux', description: 'Historique patient et facteurs de risque.' },
-  { title: 'Traitements', description: 'Medicaments, complements et observance.' },
-  { title: 'Symptomes actuels', description: 'Point d entree principal de la consultation.' },
+  { title: 'Données personnelles', description: 'Contexte permanent pour les modèles LLM.' },
+  { title: "Mesures d'appareils", description: 'Données optionnelles mesurées à domicile.' },
+  { title: 'Antécédents médicaux', description: 'Historique patient et facteurs de risque.' },
+  { title: 'Traitements', description: 'Médicaments, compléments et observance.' },
+  { title: 'Symptômes actuels', description: "Point d'entrée principal de la consultation." },
   { title: 'Mode de vie & submit', description: 'Habitudes quotidiennes et validation finale.' },
 ]
 
@@ -130,7 +130,7 @@ const schema = z.object({
   if (values.alcohol === 'Oui' && !values.alcoholQuantity) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Precisez la frequence de consommation d alcool.',
+      message: "Précisez la fréquence de consommation d'alcool.",
       path: ['alcoholQuantity'],
     })
   }
@@ -138,7 +138,7 @@ const schema = z.object({
   if (values.hasSupplements === 'Oui' && !values.supplements) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Precisez les complements ou plantes utilises.',
+      message: 'Précisez les compléments ou plantes utilisés.',
       path: ['supplements'],
     })
   }
@@ -321,8 +321,8 @@ export function SymptomForm() {
       <div className="mb-5 rounded-xl border border-[#d2e4ff] bg-[#eff5ef] p-4">
         <p className="text-sm font-semibold text-[#00694c]">Information importante</p>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Les donnees saisies dans ce formulaire seront stockees dans notre base de donnees et fournies a un modele IA
-          prive pour generer une analyse personnalisee. Cette demo reste frontend-only, mais le flux prepare le futur
+          Les données saisies dans ce formulaire seront stockées dans notre base de données et fournies à un modèle IA
+          privé pour générer une analyse personnalisée. Cette démo reste limitée au frontend, mais le flux prépare le futur
           contrat backend.
         </p>
       </div>

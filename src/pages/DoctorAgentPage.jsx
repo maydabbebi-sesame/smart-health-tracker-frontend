@@ -309,7 +309,7 @@ function DoctorAgentPage() {
       return (
         <SpeechBubble tone="alert">
           <span className="flex items-center gap-2 text-[#6d7a73] dark:text-slate-400">
-            Initialisation du Doctor Agent...
+            Initialisation de l'Agent Médecin...
           </span>
         </SpeechBubble>
       )
@@ -443,7 +443,7 @@ function DoctorAgentPage() {
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="bg-gradient-to-r from-[#00694c] via-[#00b894] to-[#0060a8] bg-clip-text text-[28px] font-bold leading-tight text-transparent">
-              Doctor Agent
+              Agent Médecin
             </h1>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#00f0a0]/15 to-[#0060a8]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#00694c] dark:text-[#5eead4]">
               <Sparkles size={11} />
@@ -497,7 +497,7 @@ function DoctorAgentPage() {
         )}
 
         <p className="flex items-center gap-1.5 text-[11px] text-[#6d7a73] dark:text-slate-500">
-          <Clock size={12} /> Doctor Agent ne remplace pas un avis médical. En cas d'urgence, appelez le 190 (SAMU).
+          <Clock size={12} /> L'Agent Médecin ne remplace pas un avis médical. En cas d'urgence, appelez le 190 (SAMU).
         </p>
       </div>
 

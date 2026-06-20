@@ -10,12 +10,12 @@ import {
 
 export const navigationItems = [
   {
-    label: 'Dashboard',
+    label: 'Tableau de bord',
     to: '/dashboard',
     icon: LayoutDashboard,
   },
   {
-    label: 'Profile',
+    label: 'Profil',
     to: '/profile',
     icon: UserRound,
   },
@@ -25,12 +25,12 @@ export const navigationItems = [
     icon: ClipboardList,
   },
   {
-    label: 'AI Recommendations',
+    label: 'Recommandations IA',
     to: '/ai-analysis',
     icon: BrainCircuit,
   },
   {
-    label: 'Doctor Agent',
+    label: 'Agent Médecin',
     to: '/notifications',
     icon: Stethoscope,
   },
@@ -40,7 +40,7 @@ export const navigationItems = [
     icon: HeartPulse,
   },
   {
-    label: 'Settings',
+    label: 'Paramètres',
     to: '/settings',
     icon: Settings,
   },

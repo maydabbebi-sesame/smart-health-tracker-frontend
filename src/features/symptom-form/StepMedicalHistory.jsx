@@ -182,9 +182,9 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Antecedents medicaux</h2>
+        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Antécédents médicaux</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Historique medical du patient, utilise pour eviter les recommandations trop generiques.
+          Historique médical du patient, utilisé pour éviter les recommandations trop génériques.
         </p>
       </div>
 
@@ -204,7 +204,7 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-            Allergies medicamenteuses <span className="text-[#ba1a1a]">*</span>
+            Allergies médicamenteuses <span className="text-[#ba1a1a]">*</span>
           </span>
           <div className="mt-2 flex gap-2">
             {['Oui', 'Non'].map((option) => (
@@ -259,7 +259,7 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
 
       <div className="mt-8">
         <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Antecedents familiaux
+          Antécédents familiaux
         </label>
         <TagGroup
           name="familyHistory"

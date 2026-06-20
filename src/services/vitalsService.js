@@ -25,20 +25,23 @@ export async function recordVital(vitalData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to record vital',
+        'Impossible d\'enregistrer le relevé',
     }
   }
 }
 
 /**
  * Get list of vitals
- * Backend accepts query params: user_uid (optional)
+ * Backend accepts query params: user_uid (optional), period (optional: week|month|3months)
  */
-export async function getVitals(page = 1, pageSize = 20, userUid = null) {
+export async function getVitals(page = 1, pageSize = 20, userUid = null, period = null) {
   try {
     const params = {}
     if (userUid) {
       params.user_uid = userUid
+    }
+    if (period) {
+      params.period = period
     }
 
     const response = await apiClient.get(VITAL_ENDPOINTS.GET_VITALS, { params })
@@ -49,7 +52,7 @@ export async function getVitals(page = 1, pageSize = 20, userUid = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch vitals',
+        'Impossible de récupérer les relevés',
     }
   }
 }
@@ -67,7 +70,7 @@ export async function getVitalById(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch vital',
+        'Impossible de récupérer le relevé',
     }
   }
 }
@@ -88,7 +91,7 @@ export async function updateVital(id, vitalData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to update vital',
+        'Impossible de mettre à jour le relevé',
     }
   }
 }
@@ -106,7 +109,7 @@ export async function deleteVital(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to delete vital',
+        'Impossible de supprimer le relevé',
     }
   }
 }
@@ -132,7 +135,7 @@ export async function getVitalEvolution(measure, from = null, to = null, userUid
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch vital evolution',
+        'Impossible de récupérer l\'évolution du relevé',
     }
   }
 }
@@ -159,7 +162,34 @@ export async function exportVitals(format = 'csv', from = null, to = null, userU
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to export vitals',
+        'Impossible d\'exporter les relevés',
+    }
+  }
+}
+
+/**
+ * Export an AI-generated trend analysis as a downloadable PDF.
+ * Backend renders the PDF (auth + layout); the analysis text itself comes
+ * from mediAssistService.getTrendsAnalysis().
+ */
+export async function exportTrendAnalysisPdf(period, analysis, userUid = null) {
+  try {
+    const payload = { period, analysis }
+    if (userUid) {
+      payload.user_uid = userUid
+    }
+
+    const response = await apiClient.post(VITAL_ENDPOINTS.EXPORT_ANALYSIS_PDF, payload, {
+      responseType: 'blob',
+    })
+    return { success: true, data: response.data }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Impossible d\'exporter l\'analyse de tendance',
     }
   }
 }
@@ -177,7 +207,7 @@ export async function getLatestVital(type) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch latest vital',
+        'Impossible de récupérer le dernier relevé',
     }
   }
 }

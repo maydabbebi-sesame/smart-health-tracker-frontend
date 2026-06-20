@@ -4,9 +4,9 @@ function SettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">Parametres</h1>
+        <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">Paramètres</h1>
         <p className="mt-2 text-base leading-7 text-[#3d4943]">
-          Configurez vos preferences de suivi, confidentialite et notifications.
+          Configurez vos préférences de suivi, confidentialité et notifications.
         </p>
       </div>
 
@@ -18,7 +18,7 @@ function SettingsPage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Notifications</h2>
-              <p className="text-sm text-[#6d7a73]">Alertes et resumes de votre activite sante.</p>
+              <p className="text-sm text-[#6d7a73]">Alertes et résumés de votre activité santé.</p>
             </div>
           </div>
 
@@ -30,11 +30,11 @@ function SettingsPage() {
               },
               {
                 title: 'Resume quotidien',
-                text: 'Recevoir un digest de sante chaque matin.',
+                text: 'Recevoir un résumé de santé chaque matin.',
               },
               {
                 title: 'Insights IA',
-                text: 'Afficher les notifications quand une tendance inhabituelle est detectee.',
+                text: 'Afficher les notifications quand une tendance inhabituelle est détectée.',
               },
             ].map((item, index) => (
               <label
@@ -53,9 +53,9 @@ function SettingsPage() {
 
         <aside className="space-y-4">
           {[
-            { label: 'Mode confidentialite', text: 'Masquer les donnees sensibles dans les espaces partages.', icon: LockKeyhole },
-            { label: 'Theme', text: 'Palette healthcare vert, bleu et surfaces douces.', icon: Palette },
-            { label: 'Securite', text: 'Token JWT mocke aujourd hui, pret pour backend.', icon: ShieldCheck },
+            { label: 'Mode confidentialité', text: 'Masquer les données sensibles dans les espaces partagés.', icon: LockKeyhole },
+            { label: 'Thème', text: 'Palette santé vert, bleu et surfaces douces.', icon: Palette },
+            { label: 'Sécurité', text: "Token JWT simulé pour l'instant, prêt pour le backend.", icon: ShieldCheck },
           ].map((item) => (
             <article className="sht-card p-5" key={item.label}>
               <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#d2e4ff] text-[#0060a8]">

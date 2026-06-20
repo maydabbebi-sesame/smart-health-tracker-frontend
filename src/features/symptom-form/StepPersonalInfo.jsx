@@ -38,16 +38,16 @@ export function StepPersonalInfo({ errors, register, values }) {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Donnees personnelles</h2>
+        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Données personnelles</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Informations de base collectees une seule fois pour contextualiser tous les modeles LLM.
+          Informations de base collectées une seule fois pour contextualiser tous les modèles LLM.
         </p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-wide text-[#171d1a]">
-            Age <span className="text-[#ba1a1a]">*</span>
+            Âge <span className="text-[#ba1a1a]">*</span>
           </span>
           <input
             className="mt-2 h-12 w-full rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"

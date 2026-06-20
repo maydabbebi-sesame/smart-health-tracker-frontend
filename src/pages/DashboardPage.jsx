@@ -88,7 +88,7 @@ function DashboardPage() {
   if (!summary || !charts) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-lg text-slate-600">Failed to load dashboard data. Please try again.</p>
+        <p className="text-lg text-slate-600">Impossible de charger les données du tableau de bord. Veuillez réessayer.</p>
       </div>
     )
   }
@@ -107,7 +107,7 @@ function DashboardPage() {
         </div>
         <article className="sht-card flex items-center justify-between p-5 md:col-span-4">
           <div>
-            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Score Sante</h2>
+            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Score Santé</h2>
             {(() => {
               const wellnessStat = summary?.stats?.find((s) => s.label.toLowerCase().includes('wellness'))
               const raw = wellnessStat?.value ?? null
@@ -186,11 +186,11 @@ function DashboardPage() {
                   <span className="rounded bg-[#ba1a1a] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
                     Alerte critique
                   </span>
-                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Symptomes inhabituels detectes</h2>
+                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Symptômes inhabituels détectés</h2>
                 </div>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
-                  Le front signale une fatigue repetee combinee a un sommeil court. Cette alerte est mockee et devra
-                  etre confirmee par le moteur IA prive et les endpoints backend.
+                  Le front signale une fatigue répétée combinée à un sommeil court. Cette alerte est simulée et devra
+                  être confirmée par le moteur IA privé et les endpoints backend.
                 </p>
               </div>
             </div>
@@ -210,7 +210,7 @@ function DashboardPage() {
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
             <BrainCircuit size={21} />
           </div>
-          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">AI Recommendation</h2>
+          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">Recommandation IA</h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
             {recommendationsData?.success && recommendationsData?.data?.summary
               ? recommendationsData.data.summary
@@ -220,7 +220,7 @@ function DashboardPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <ChartCard subtitle="Average resting BPM over the last 7 days" title="Evolution de sante (7 jours)">
+        <ChartCard subtitle="Fréquence cardiaque moyenne au repos sur 7 jours" title="Evolution de sante (7 jours)">
           {charts.heartRateData?.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <AreaChart data={charts.heartRateData} margin={{ left: -18, right: 8, top: 8 }}>
@@ -254,7 +254,7 @@ function DashboardPage() {
           )}
         </ChartCard>
 
-        <ChartCard subtitle="Weekly trend based on mock weigh-ins" title="Progression du poids">
+        <ChartCard subtitle="Tendance hebdomadaire basée sur les pesées" title="Progression du poids">
           {charts.weightData?.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={charts.weightData} margin={{ left: -18, right: 8, top: 8 }}>
@@ -284,7 +284,7 @@ function DashboardPage() {
         </ChartCard>
       </section>
 
-      <ChartCard subtitle="Mock weekly steps with sleep context" title="Activite sante hebdomadaire">
+      <ChartCard subtitle="Pas hebdomadaires avec contexte de sommeil" title="Activité santé hebdomadaire">
         {charts.activityData?.length > 0 ? (
           <ResponsiveContainer height="100%" width="100%">
             <BarChart data={charts.activityData} margin={{ left: -18, right: 8, top: 8 }}>
@@ -321,7 +321,7 @@ function DashboardPage() {
                 </div>
               ))
             ) : (
-              <p className="py-3 text-sm text-slate-500">No recommendations at this time.</p>
+              <p className="py-3 text-sm text-slate-500">Aucune recommandation pour le moment.</p>
             )}
           </div>
         </article>
@@ -330,9 +330,9 @@ function DashboardPage() {
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
             <BrainCircuit size={21} />
           </div>
-          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">Resume IA</h2>
+          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">Résumé IA</h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
-            Les donnees recentes suggerent une fatigue plus frequente apres des nuits courtes.
+            Les données récentes suggèrent une fatigue plus fréquente après des nuits courtes.
           </p>
         </article>
       </section>
@@ -344,9 +344,9 @@ function DashboardPage() {
               <AlertTriangle size={22} />
             </div>
             <div>
-              <h2 className="font-semibold text-[#171d1a] dark:text-white">Alerte a verifier</h2>
+              <h2 className="font-semibold text-[#171d1a] dark:text-white">Alerte à vérifier</h2>
               <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-                Fatigue repetee et sommeil court detectes dans les donnees mockees de la semaine.
+                Fatigue répétée et sommeil court détectés dans les données simulées de la semaine.
               </p>
             </div>
           </div>
@@ -363,9 +363,9 @@ function DashboardPage() {
 
         <article className="sht-card p-5">
           <p className="sht-kicker">Backend</p>
-          <h2 className="mt-2 font-semibold text-[#171d1a] dark:text-white">Contrats API prets</h2>
+          <h2 className="mt-2 font-semibold text-[#171d1a] dark:text-white">Contrats API prêts</h2>
           <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-            Les donnees du dashboard passent par des services frontend mockes et pourront etre remplacees par Axios.
+            Les données du tableau de bord passent par des services frontend simulés et pourront être remplacées par Axios.
           </p>
         </article>
       </section>

@@ -112,7 +112,7 @@ export function StepSymptoms({ errors, register, selectedSymptoms = [], setValue
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Symptomes actuels</h2>
+        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Symptômes actuels</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
           Ressenti du patient au moment de la consultation, point d'entree principal de chaque session.
         </p>
@@ -120,7 +120,7 @@ export function StepSymptoms({ errors, register, selectedSymptoms = [], setValue
 
       <div>
         <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Symptomes principaux
+          Symptômes principaux
         </label>
         <TagGroup
           name="symptoms"
@@ -136,7 +136,7 @@ export function StepSymptoms({ errors, register, selectedSymptoms = [], setValue
         <div className="flex items-center justify-between gap-4">
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-              Intensite de la douleur
+              Intensité de la douleur
             </span>
             <p className="mt-1 text-xs text-[#6d7a73]">EVA 0 a 10 - conditionnel si symptome douloureux.</p>
           </div>

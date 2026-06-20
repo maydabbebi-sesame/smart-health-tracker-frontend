@@ -4,8 +4,8 @@ import { SymptomForm } from '../../features/symptom-form/SymptomForm'
 
 const helperCards = [
   {
-    title: 'Securite des donnees',
-    text: 'Les donnees de sante sont simulees cote frontend et preparees pour un flux backend securise.',
+    title: 'Sécurité des données',
+    text: 'Les données de santé sont simulées côté frontend et préparées pour un flux backend sécurisé.',
     icon: ShieldCheck,
   },
   {

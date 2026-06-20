@@ -19,7 +19,7 @@ export async function getAdminStatistics() {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch statistics',
+        'Impossible de récupérer les statistiques',
     }
   }
 }
@@ -37,7 +37,7 @@ export async function getUsers(page = 1, pageSize = 20) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch users',
+        'Impossible de récupérer les utilisateurs',
     }
   }
 }
@@ -55,7 +55,7 @@ export async function getUser(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch user',
+        'Impossible de récupérer l\'utilisateur',
     }
   }
 }
@@ -73,7 +73,7 @@ export async function deleteUser(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to delete user',
+        'Impossible de supprimer l\'utilisateur',
     }
   }
 }
@@ -91,7 +91,7 @@ export async function getActivityLog(page = 1, pageSize = 20) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch activity log',
+        'Impossible de récupérer le journal d\'activité',
     }
   }
 }

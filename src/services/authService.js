@@ -85,11 +85,11 @@ export async function login(authData) {
       return { success: true, user, token: data.access_token }
     }
 
-    return { success: false, error: 'Login failed' }
+    return { success: false, error: 'Échec de la connexion' }
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || error.message || 'Login failed',
+      error: error.response?.data?.error || error.message || 'Échec de la connexion',
     }
   }
 }
@@ -118,7 +118,7 @@ export async function register(name, email, password, role = 'user') {
     }
   } catch (error) {
     const details = error.response?.data?.details
-    const message = error.response?.data?.error || error.message || 'Registration failed'
+    const message = error.response?.data?.error || error.message || 'Échec de l\'inscription'
 
     return {
       success: false,
@@ -146,7 +146,7 @@ export async function verifyEmail(uid, code) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Email verification failed',
+        'Échec de la vérification de l\'e-mail',
     }
   }
 }
@@ -173,7 +173,7 @@ export async function resendVerificationCode(email) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to resend verification code',
+        'Impossible de renvoyer le code de vérification',
     }
   }
 }
@@ -193,7 +193,7 @@ export async function enableMFA(currentPassword) {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || error.message || 'MFA setup failed',
+      error: error.response?.data?.error || error.message || 'Échec de la configuration de la double authentification',
     }
   }
 }
@@ -220,14 +220,14 @@ export async function verifyMFA(email, code) {
       return { success: true, user, token: data.access_token }
     }
 
-    return { success: false, error: 'MFA verification failed' }
+    return { success: false, error: 'Échec de la vérification de la double authentification' }
   } catch (error) {
     return {
       success: false,
       error:
         error.response?.data?.error ||
         error.message ||
-        'MFA verification failed',
+        'Échec de la vérification de la double authentification',
     }
   }
 }
@@ -265,11 +265,11 @@ export async function loginWithGoogle(idToken) {
       return { success: true, user, token: data.access_token }
     }
 
-    return { success: false, error: 'Google login failed' }
+    return { success: false, error: 'Échec de la connexion avec Google' }
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || error.message || 'Google login failed',
+      error: error.response?.data?.error || error.message || 'Échec de la connexion avec Google',
     }
   }
 }
@@ -294,11 +294,11 @@ export async function loginWithFacebook(accessToken) {
       return { success: true, user, token: data.access_token }
     }
 
-    return { success: false, error: 'Facebook login failed' }
+    return { success: false, error: 'Échec de la connexion avec Facebook' }
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || error.message || 'Facebook login failed',
+      error: error.response?.data?.error || error.message || 'Échec de la connexion avec Facebook',
     }
   }
 }
@@ -323,11 +323,11 @@ export async function loginWithApple(idToken) {
       return { success: true, user, token: data.access_token }
     }
 
-    return { success: false, error: 'Apple login failed' }
+    return { success: false, error: 'Échec de la connexion avec Apple' }
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || error.message || 'Apple login failed',
+      error: error.response?.data?.error || error.message || 'Échec de la connexion avec Apple',
     }
   }
 }
@@ -342,7 +342,7 @@ export async function requestMFA(uid) {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.error || error.message || 'MFA request failed',
+      error: error.response?.data?.error || error.message || 'Échec de la demande de double authentification',
     }
   }
 }
@@ -360,7 +360,7 @@ export async function forgotPassword(email) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to send reset email',
+        'Impossible d\'envoyer l\'e-mail de réinitialisation',
     }
   }
 }
@@ -382,7 +382,7 @@ export async function resetPassword(email, code, newPassword) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to reset password',
+        'Impossible de réinitialiser le mot de passe',
     }
   }
 }

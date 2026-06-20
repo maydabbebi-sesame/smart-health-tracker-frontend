@@ -11,6 +11,7 @@ import io
 from datetime import datetime, timezone
 try:
     from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
     from reportlab.pdfgen import canvas
     REPORTLAB_AVAILABLE = True
 except Exception:
@@ -48,8 +49,8 @@ def _gather_vital_alerts(vitals: dict) -> tuple[bool, str, str]:
         warnings.append(f"respiratory_rate={respiratory_rate}")
 
     if warnings:
-        title = "Abnormal vital signs detected"
-        message = "Abnormal readings: " + ", ".join(warnings)
+        title = "Signes vitaux anormaux détectés"
+        message = "Valeurs anormales : " + ", ".join(warnings)
         return True, title, message
     return False, "", ""
 
@@ -547,14 +548,280 @@ def export_vitals():
         return jsonify({"error": "Unsupported export format"}), 400
 
 
+# Maps the frontend's period selector to a day count for the SQL filter.
+PERIOD_TO_DAYS = {"week": 7, "month": 30, "3months": 90}
+PERIOD_LABELS = {"week": "7 derniers jours", "month": "30 derniers jours", "3months": "3 derniers mois"}
+PERIOD_FILENAME_SLUGS = {"week": "Semaine", "month": "Mois", "3months": "3-mois"}
+
+
+def _wrap_lines(text, width=90):
+    """Split a paragraph into reportlab-drawable lines (canvas has no auto-wrap)."""
+    import textwrap
+    if not text:
+        return []
+    return textwrap.wrap(str(text), width=width) or [""]
+
+
+@vitals_bp.route("/analysis-pdf", methods=["POST"])
+@token_required
+def export_analysis_pdf():
+    """Render a trend-analysis result (produced by mediassist_service) as a
+    downloadable PDF. The model call happens upstream; this route only
+    handles auth + layout, reusing the canvas pattern from export_vitals()."""
+    if not REPORTLAB_AVAILABLE:
+        return jsonify({"error": "PDF export not available (reportlab not installed)"}), 500
+
+    data, error = get_request_data()
+    if error:
+        return error
+
+    period = data.get("period")
+    analysis = data.get("analysis") or {}
+    if period not in PERIOD_TO_DAYS:
+        return jsonify({"error": "Invalid period"}), 400
+
+    user_uid = data.get("user_uid")
+    current = g.current_user
+    if user_uid:
+        user_id = decode_id(user_uid)
+        if user_id is None:
+            return jsonify({"error": "Invalid user UID"}), 400
+        if current.get("role") != "admin" and current.get("uid") != user_uid:
+            return jsonify({"error": "Forbidden"}), 403
+    elif current.get("role") != "admin":
+        user_id = decode_id(current.get("uid"))
+    else:
+        return jsonify({"error": "user_uid required for admin"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT name FROM users WHERE id = %s", (user_id,))
+    user_row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    patient_name = (user_row or {}).get("name") or f"Patient #{user_id}"
+
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    p.setTitle(f"Analyse de tendances - {PERIOD_LABELS.get(period, period or '')} - {patient_name}")
+    p.setAuthor("Smart Health Tracker")
+    p.setSubject("Rapport d'analyse de tendances de santé")
+    width, height = letter
+    current_date = datetime.now(timezone.utc).date()
+
+    margin = 50
+    header_height = 78
+    footer_y = 40
+    content_top = height - header_height - 24
+    content_bottom = footer_y + 16
+
+    primary_color = colors.HexColor("#00694c")
+    accent_color = colors.HexColor("#0077b6")
+    text_color = colors.HexColor("#171d1a")
+    muted_color = colors.HexColor("#6d7a73")
+    rule_color = colors.HexColor("#bccac1")
+    section_colors = {
+        "tendances": colors.HexColor("#0077b6"),
+        "points": colors.HexColor("#c2410c"),
+        "recommandations": colors.HexColor("#0f766e"),
+    }
+    evolution_colors = {
+        "hausse": colors.HexColor("#c2410c"),
+        "baisse": colors.HexColor("#0077b6"),
+        "stable": colors.HexColor("#3d4943"),
+        "irreguliere": colors.HexColor("#7c3aed"),
+    }
+    urgency_colors = {
+        "critique": colors.HexColor("#ba1a1a"),
+        "elevee": colors.HexColor("#c2410c"),
+        "moderee": colors.HexColor("#b45309"),
+        "normale": colors.HexColor("#0077b6"),
+    }
+    priority_colors = {
+        "haute": colors.HexColor("#ba1a1a"),
+        "moyenne": colors.HexColor("#b45309"),
+        "basse": colors.HexColor("#3d4943"),
+    }
+
+    page_num = 1
+    y = content_top
+
+    def draw_header():
+        p.setFillColor(primary_color)
+        p.rect(0, height - header_height, width, header_height, stroke=0, fill=1)
+        p.setStrokeColor(accent_color)
+        p.setLineWidth(3)
+        p.line(0, height - header_height, width, height - header_height)
+
+        p.setFillColor(colors.white)
+        p.setFont("Helvetica-Bold", 9)
+        p.drawString(margin, height - 22, "SMART HEALTH TRACKER")
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(margin, height - 44, "Rapport d'analyse de tendances de santé")
+        p.setFont("Helvetica", 9)
+        p.drawString(margin, height - 62, PERIOD_LABELS.get(period, period or ""))
+
+        p.setFont("Helvetica", 9)
+        p.drawRightString(width - margin, height - 22, patient_name)
+        p.drawRightString(width - margin, height - 36, f"Généré le {current_date.strftime('%d/%m/%Y')}")
+
+    def draw_footer():
+        p.setStrokeColor(rule_color)
+        p.setLineWidth(0.5)
+        p.line(margin, footer_y + 10, width - margin, footer_y + 10)
+        p.setFillColor(muted_color)
+        p.setFont("Helvetica", 7)
+        p.drawString(margin, footer_y, "Document généré automatiquement - ne remplace pas un avis médical.")
+        p.drawRightString(width - margin, footer_y, f"Page {page_num}")
+
+    def new_page():
+        nonlocal y, page_num
+        draw_footer()
+        p.showPage()
+        page_num += 1
+        draw_header()
+        y = content_top
+
+    def ensure_space(min_height):
+        if y < content_bottom + min_height:
+            new_page()
+
+    def section_title(label, color):
+        nonlocal y
+        ensure_space(30)
+        p.setFillColor(color)
+        p.rect(margin, y - 16, width - 2 * margin, 20, stroke=0, fill=1)
+        p.setFillColor(colors.white)
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(margin + 8, y - 11, label)
+        y -= 32
+
+    def draw_paragraph(text, font="Helvetica", size=10, color=text_color, gap=14, indent=0):
+        nonlocal y
+        if not text:
+            return
+        p.setFillColor(color)
+        p.setFont(font, size)
+        for line in _wrap_lines(text, width=95 if indent == 0 else 88):
+            ensure_space(gap)
+            p.drawString(margin + indent, y, line)
+            y -= gap
+        y -= 4
+
+    def draw_tendance(t):
+        nonlocal y
+        ensure_space(28)
+        indicateur = t.get("indicateur", "")
+        evolution = (t.get("evolution") or "").lower()
+        evo_color = evolution_colors.get(evolution, muted_color)
+        p.setFillColor(text_color)
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(margin, y, indicateur)
+        label_width = p.stringWidth(indicateur, "Helvetica-Bold", 10)
+        p.setFillColor(evo_color)
+        p.setFont("Helvetica-Bold", 9)
+        p.drawString(margin + label_width + 8, y, f"({evolution or 'n/a'})")
+        y -= 14
+        draw_paragraph(t.get("detail"), size=9, color=muted_color, indent=4, gap=12)
+
+    def draw_point(pt):
+        nonlocal y
+        ensure_space(28)
+        urgence = (pt.get("urgence") or "normale").lower()
+        u_color = urgency_colors.get(urgence, accent_color)
+        p.setFillColor(u_color)
+        p.rect(margin, y - 11, 6, 12, stroke=0, fill=1)
+        p.setFillColor(text_color)
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(margin + 12, y, pt.get("titre", ""))
+        p.setFillColor(u_color)
+        p.setFont("Helvetica-Bold", 8)
+        p.drawRightString(width - margin, y, urgence.upper())
+        y -= 14
+        draw_paragraph(pt.get("detail"), size=9, color=muted_color, indent=12, gap=12)
+
+    def draw_recommandation(r):
+        nonlocal y
+        ensure_space(28)
+        priorite = (r.get("priorite") or "basse").lower()
+        pr_color = priority_colors.get(priorite, muted_color)
+        p.setFillColor(pr_color)
+        p.rect(margin, y - 11, 6, 12, stroke=0, fill=1)
+        p.setFillColor(text_color)
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(margin + 12, y, r.get("titre", ""))
+        p.setFillColor(pr_color)
+        p.setFont("Helvetica-Bold", 8)
+        p.drawRightString(width - margin, y, priorite.upper())
+        y -= 14
+        draw_paragraph(r.get("detail"), size=9, color=muted_color, indent=12, gap=12)
+
+    draw_header()
+
+    section_title("SYNTHÈSE", primary_color)
+    draw_paragraph(analysis.get("synthese"))
+
+    tendances = analysis.get("tendances") or []
+    if tendances:
+        section_title("TENDANCES DÉTECTÉES", section_colors["tendances"])
+        for t in tendances:
+            draw_tendance(t)
+            y -= 6
+
+    points = analysis.get("points_attention") or []
+    if points:
+        section_title("POINTS D'ATTENTION", section_colors["points"])
+        for pt in points:
+            draw_point(pt)
+            y -= 6
+
+    recos = analysis.get("recommandations") or []
+    if recos:
+        section_title("RECOMMANDATIONS", section_colors["recommandations"])
+        for r in recos:
+            draw_recommandation(r)
+            y -= 6
+
+    disclaimer = analysis.get("disclaimer")
+    if disclaimer:
+        ensure_space(30)
+        y -= 6
+        p.setStrokeColor(rule_color)
+        p.setLineWidth(0.5)
+        p.line(margin, y, width - margin, y)
+        y -= 14
+        draw_paragraph(disclaimer, font="Helvetica-Oblique", size=8, color=muted_color, gap=11)
+
+    draw_footer()
+    p.save()
+    pdf = buffer.getvalue()
+    buffer.close()
+    filename_period = PERIOD_FILENAME_SLUGS.get(period, period or "periode")
+    filename_date = current_date.strftime("%d-%m-%Y")
+    headers = {
+        "Content-Disposition": f"attachment; filename=Analyse_tendances_{filename_period}_{filename_date}.pdf",
+        "Content-Type": "application/pdf",
+    }
+    return Response(pdf, headers=headers)
+
+
 @vitals_bp.route("", methods=["GET"])
 @token_required
 def list_vitals():
-    """List health vital records for the requesting user or admin."""
+    """List health vital records for the requesting user or admin.
+
+    Optional query param `period` (week|month|3months) restricts results to
+    vitals recorded in that trailing window, used by the history page's
+    date-grouped view and trend analysis.
+    """
     user_uid = request.args.get("user_uid")
+    period = request.args.get("period")
     current_user = g.current_user
     current_uid = current_user.get("uid")
     current_role = current_user.get("role")
+
+    if period is not None and period not in PERIOD_TO_DAYS:
+        return jsonify({"error": "Invalid period"}), 400
 
     if user_uid:
         user_id = decode_id(user_uid)
@@ -569,10 +836,16 @@ def list_vitals():
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+    query = "SELECT * FROM vitals"
+    params = []
     if user_id is not None:
-        cursor.execute("SELECT * FROM vitals WHERE user_id = %s ORDER BY recorded_at DESC", (user_id,))
-    else:
-        cursor.execute("SELECT * FROM vitals ORDER BY recorded_at DESC")
+        query += " WHERE user_id = %s"
+        params.append(user_id)
+    if period is not None:
+        query += (" AND" if params else " WHERE") + " recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)"
+        params.append(PERIOD_TO_DAYS[period])
+    query += " ORDER BY recorded_at DESC"
+    cursor.execute(query, tuple(params))
 
     vitals = cursor.fetchall()
     cursor.close()

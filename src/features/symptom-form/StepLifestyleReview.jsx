@@ -131,7 +131,7 @@ export function StepLifestyleReview({ errors, register, values }) {
         <span>
           <span className="block text-sm font-semibold text-[#171d1a] dark:text-white">Consentement IA</span>
           <span className="mt-1 block text-sm leading-6 text-[#3d4943]">
-            Je comprends que cette demo frontend utilise une reponse IA simulee et ne remplace pas un avis medical.
+            Je comprends que cette démo frontend utilise une réponse IA simulée et ne remplace pas un avis médical.
           </span>
           <FieldError message={errors.consent?.message} />
         </span>

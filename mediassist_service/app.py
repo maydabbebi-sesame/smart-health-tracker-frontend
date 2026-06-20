@@ -19,7 +19,14 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from llm_client import FALLBACK_RESPONSE, call_model
-from prompt_builder import build_doctor_agent_messages, build_system_prompt, build_user_message
+from prompt_builder import (
+    build_doctor_agent_messages,
+    build_system_prompt,
+    build_trend_analysis_messages,
+    build_user_message,
+    clean_trend_synthese,
+    normalize_tendances,
+)
 from turn_logger import log_turn
 
 # Lighter general-purpose model for the Doctor Agent's recommend-or-not
@@ -204,6 +211,46 @@ def doctor_agent_decision():
         "message": parsed.get("message") or DOCTOR_AGENT_FALLBACK["message"],
         "error": None,
     })
+
+
+TREND_ANALYSIS_FALLBACK = {
+    "periode": "",
+    "synthese": "Nous n'avons pas pu analyser vos tendances pour l'instant. Réessayez plus tard.",
+    "tendances": [],
+    "points_attention": [],
+    "recommandations": [],
+    "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale.",
+}
+
+
+@app.post("/api/mediassist/analyze-trends")
+def analyze_trends():
+    """Analyze how a patient's vitals/symptoms evolved over a chosen period
+    (week/month/3months) for the health-history page's "Analyser mes
+    tendances" button. Stateless and unpersisted — this is a one-off export,
+    not a conversation to resume (see prompt_builder.build_trend_analysis_messages).
+
+    POST body: { vitals: [...], period: "week"|"month"|"3months" }
+    Response: trend-analysis JSON (see prompt_builder) + error?
+    """
+    body = request.get_json(silent=True) or {}
+    vitals = body.get("vitals") or []
+    period = body.get("period") or ""
+
+    messages = build_trend_analysis_messages(vitals, period)
+    raw, parsed, error = call_model(messages)
+    log_turn(messages, raw, parsed)
+
+    if parsed is None:
+        return jsonify({**TREND_ANALYSIS_FALLBACK, "error": error})
+
+    if parsed.get("synthese"):
+        parsed["synthese"] = clean_trend_synthese(parsed["synthese"])
+
+    if parsed.get("tendances"):
+        parsed["tendances"] = normalize_tendances(parsed["tendances"])
+
+    return jsonify({**parsed, "error": None})
 
 
 @app.get("/api/mediassist/health")
