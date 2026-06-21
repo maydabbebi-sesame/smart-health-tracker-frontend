@@ -26,7 +26,6 @@ import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
 import { formatShortDate, getDashboardCharts, getDashboardSummary } from '../services/dashboardService'
 import { getProfile } from '../services/userService'
 import { getRecommendations } from '../services/aiService'
-import { getCurrentUser } from '../features/auth/auth'
 import { useTranslation } from '../i18n/useTranslation'
 
 const statIcons = {
@@ -78,7 +77,7 @@ function DashboardPage() {
     queryKey: ['dashboard-charts', localeTag],
     queryFn: getDashboardCharts,
   })
-  const { data: profileData } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
+  const { data: profileData } = useQuery({ queryKey: ['patient-profile'], queryFn: getProfile })
   const { data: recommendationsData } = useQuery({ queryKey: ['ai-recommendations'], queryFn: getRecommendations })
 
   if (isSummaryLoading || isChartsLoading) {
@@ -119,7 +118,6 @@ function DashboardPage() {
               name:
                 profileData?.data?.first_name ||
                 profileData?.data?.name ||
-                getCurrentUser()?.email ||
                 t('dashboard.defaultUser', 'Utilisateur'),
             })}
           </h1>
