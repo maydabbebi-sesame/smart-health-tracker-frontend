@@ -125,10 +125,16 @@ function formatEvolutionData(res, valueKey, limit = 8) {
   return res.data
     .filter((entry) => entry.value !== null && entry.value !== undefined)
     .slice(-limit)
-    .map((entry) => ({ date: formatShortDate(entry.recorded_at), [valueKey]: entry.value }))
+    .map((entry) => ({ date: entry.recorded_at, [valueKey]: entry.value }))
 }
 
-function formatShortDate(value) {
+/**
+ * Format a timestamp for chart axis ticks/tooltips. Charts key points by the
+ * raw recorded_at timestamp (not this formatted string) so that two
+ * measurements taken on the same calendar day stay distinguishable — see
+ * formatEvolutionData above.
+ */
+export function formatShortDate(value) {
   if (!value) {
     return ''
   }

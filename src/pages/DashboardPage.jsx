@@ -23,7 +23,7 @@ import {
 } from 'recharts'
 
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
-import { getDashboardCharts, getDashboardSummary } from '../services/dashboardService'
+import { formatShortDate, getDashboardCharts, getDashboardSummary } from '../services/dashboardService'
 import { getProfile } from '../services/userService'
 import { getRecommendations } from '../services/aiService'
 import { getCurrentUser } from '../features/auth/auth'
@@ -43,7 +43,7 @@ function ChartTooltip({ active, label, payload }) {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-lg shadow-slate-900/10">
-      <p className="font-semibold text-slate-950">{label}</p>
+      <p className="font-semibold text-slate-950">{formatShortDate(label)}</p>
       <div className="mt-1 space-y-1">
         {payload.map((item) => (
           <p className="text-slate-600" key={item.dataKey}>
@@ -98,6 +98,10 @@ function DashboardPage() {
   const wellnessStat = summary?.stats?.find((s) => s.key === 'wellnessScore')
   const wellnessRaw = wellnessStat?.value ?? null
   const wellnessNum = wellnessRaw !== null ? parseInt(String(wellnessRaw).replace('%', ''), 10) : null
+  const scoreCircleRadius = 34
+  const scoreCircleCircumference = 2 * Math.PI * scoreCircleRadius
+  const scoreCircleProgress = wellnessNum !== null ? Math.min(Math.max(wellnessNum, 0), 100) : 0
+  const scoreCircleOffset = scoreCircleCircumference * (1 - scoreCircleProgress / 100)
   let wellnessSubtitle = t('dashboard.noData', 'Aucune donnée disponible maintenant')
   if (wellnessNum !== null) {
     if (wellnessNum >= 80) wellnessSubtitle = t('dashboard.wellness.excellent', 'Excellente progression')
@@ -131,15 +135,15 @@ function DashboardPage() {
           </div>
           <div className="relative grid h-20 w-20 place-items-center">
             <svg className="h-full w-full -rotate-90">
-              <circle cx="40" cy="40" fill="transparent" r="34" stroke="#dee4de" strokeWidth="8" />
+              <circle cx="40" cy="40" fill="transparent" r={scoreCircleRadius} stroke="#dee4de" strokeWidth="8" />
               <circle
                 cx="40"
                 cy="40"
                 fill="transparent"
-                r="34"
+                r={scoreCircleRadius}
                 stroke="#00694c"
-                strokeDasharray="213.6"
-                strokeDashoffset="47"
+                strokeDasharray={scoreCircleCircumference}
+                strokeDashoffset={scoreCircleOffset}
                 strokeLinecap="round"
                 strokeWidth="8"
               />
@@ -252,7 +256,7 @@ function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                <XAxis axisLine={false} dataKey="date" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
+                <XAxis axisLine={false} dataKey="date" tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={formatShortDate} tickLine={false} />
                 <YAxis axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#99f6e4', strokeWidth: 2 }} />
                 <Area
@@ -278,7 +282,7 @@ function DashboardPage() {
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={charts.weightData} margin={{ left: -18, right: 8, top: 8 }}>
                 <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                <XAxis axisLine={false} dataKey="date" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
+                <XAxis axisLine={false} dataKey="date" tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={formatShortDate} tickLine={false} />
                 <YAxis axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#bae6fd', strokeWidth: 2 }} />
                 <Line
