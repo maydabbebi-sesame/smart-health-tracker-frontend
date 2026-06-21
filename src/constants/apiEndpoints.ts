@@ -131,6 +131,9 @@ export const ADMIN_ENDPOINTS = {
   GET_USERS: '/api/admin/users',
   GET_USER: (id: string) => `/api/admin/users/${id}`,
   DELETE_USER: (id: string) => `/api/admin/users/${id}`,
+  UPDATE_USER_STATUS: (id: string) => `/api/admin/users/${id}/status`,
+  UPDATE_USER_ROLE: (id: string) => `/api/admin/users/${id}/role`,
+  REGENERATE_USER_TOKEN: (id: string) => `/api/admin/users/${id}/regenerate-token`,
   GET_STATISTICS: '/api/admin/statistics',
   GET_ACTIVITY_LOG: '/api/admin/activity-log',
 };

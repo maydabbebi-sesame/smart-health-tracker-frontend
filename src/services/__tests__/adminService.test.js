@@ -6,6 +6,7 @@ vi.mock('../apiClient', () => ({
     post: vi.fn(),
     get: vi.fn(),
     put: vi.fn(),
+    patch: vi.fn(),
     delete: vi.fn(),
   },
 }))
@@ -16,6 +17,9 @@ import {
   getUsers,
   getUser,
   deleteUser,
+  updateUserStatus,
+  updateUserRole,
+  regenerateUserToken,
   getActivityLog,
 } from '../adminService'
 
@@ -88,6 +92,50 @@ describe('adminService', () => {
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('User not found')
+    })
+  })
+
+  describe('updateUserStatus', () => {
+    it('enables a user', async () => {
+      apiClient.patch.mockResolvedValue({ data: { message: 'User enabled', is_active: true } })
+
+      const result = await updateUserStatus('u1', true)
+
+      expect(apiClient.patch).toHaveBeenCalledWith('/api/admin/users/u1/status', { is_active: true })
+      expect(result.success).toBe(true)
+      expect(result.data.is_active).toBe(true)
+    })
+
+    it('returns error when disabling own account', async () => {
+      apiClient.patch.mockRejectedValue({ response: { data: { error: 'You cannot disable your own account' } } })
+
+      const result = await updateUserStatus('u1', false)
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('You cannot disable your own account')
+    })
+  })
+
+  describe('updateUserRole', () => {
+    it('changes a user role', async () => {
+      apiClient.patch.mockResolvedValue({ data: { message: 'User role updated', role: 'doctor' } })
+
+      const result = await updateUserRole('u1', 'doctor')
+
+      expect(apiClient.patch).toHaveBeenCalledWith('/api/admin/users/u1/role', { role: 'doctor' })
+      expect(result.success).toBe(true)
+      expect(result.data.role).toBe('doctor')
+    })
+  })
+
+  describe('regenerateUserToken', () => {
+    it('invalidates a user session', async () => {
+      apiClient.post.mockResolvedValue({ data: { message: 'User sessions invalidated; they must log in again' } })
+
+      const result = await regenerateUserToken('u1')
+
+      expect(apiClient.post).toHaveBeenCalledWith('/api/admin/users/u1/regenerate-token')
+      expect(result.success).toBe(true)
     })
   })
 
