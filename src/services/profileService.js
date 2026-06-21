@@ -7,6 +7,20 @@ import { USER_ENDPOINTS } from '../constants/apiEndpoints'
  */
 
 /**
+ * Resolve a server-relative asset path (e.g. an uploaded profile picture)
+ * into an absolute URL against the API origin.
+ */
+export function resolveAssetUrl(path) {
+  if (!path) {
+    return ''
+  }
+  if (/^https?:\/\//i.test(path)) {
+    return path
+  }
+  return `${apiClient.defaults.baseURL}${path}`
+}
+
+/**
  * Get user profile
  */
 export async function getPatientProfile() {

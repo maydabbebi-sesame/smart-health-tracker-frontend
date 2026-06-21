@@ -1,3 +1,4 @@
+import mysql.connector
 from flask import Blueprint, jsonify, request, g
 from database import get_db_connection
 from validators import validate_json_fields, get_request_data
@@ -218,24 +219,47 @@ def update_profile():
     if not isinstance(data, dict):
         return jsonify({"error": "Invalid JSON payload"}), 400
 
-    allowed_fields = ["name", "email", "phone", "date_of_birth", "gender", "address", "emergency_contact"]
-    updates = []
-    values = []
+    allowed_fields = [
+        "name", "email", "phone", "date_of_birth", "gender", "address", "emergency_contact",
+        "age", "weight", "height", "blood_group", "notifications_enabled",
+    ]
+    update_fields = {}
     for field in allowed_fields:
         if field in data:
-            updates.append(f"{field} = %s")
-            values.append(data[field])
+            update_fields[field] = data[field]
 
-    if not updates:
+    if not update_fields:
         return jsonify({"error": "No valid fields to update"}), 400
+
+    try:
+        if "age" in update_fields and update_fields["age"] is not None:
+            update_fields["age"] = int(update_fields["age"])
+        if "height" in update_fields and update_fields["height"] is not None:
+            update_fields["height"] = int(update_fields["height"])
+        if "weight" in update_fields and update_fields["weight"] is not None:
+            update_fields["weight"] = float(update_fields["weight"])
+        if "notifications_enabled" in update_fields:
+            update_fields["notifications_enabled"] = 1 if update_fields["notifications_enabled"] else 0
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid types for profile fields"}), 400
+
+    updates = [f"{field} = %s" for field in update_fields]
+    values = list(update_fields.values())
 
     values.append(internal_id)
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = %s", tuple(values))
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = %s", tuple(values))
+            conn.commit()
+        except mysql.connector.Error as exc:
+            conn.rollback()
+            return jsonify({"error": f"Database error: {exc}"}), 500
+        finally:
+            cursor.close()
+    finally:
+        conn.close()
     return jsonify({"message": "Profile updated successfully"})
 
 

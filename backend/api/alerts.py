@@ -111,7 +111,7 @@ def get_alert(uid: str):
 
 @alerts_bp.route("", methods=["POST"])
 @token_required
-@roles_required("admin", "doctor")
+@roles_required("admin", "doctor","user")
 def create_alert():
     """Create a new alert for a user."""
     data, error = validate_json_fields(["user_uid", "title", "message"])
