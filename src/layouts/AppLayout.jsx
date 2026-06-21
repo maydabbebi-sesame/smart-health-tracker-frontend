@@ -3,10 +3,9 @@ import { Bell, Menu, Search, Settings, ShieldPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
-import { clearToken } from '../features/auth/auth'
+import { logout } from '../features/auth/auth'
 import { useQuery } from '@tanstack/react-query'
 import { getProfile } from '../services/userService'
-import { getCurrentUser } from '../features/auth/auth'
 import { navigationItems } from '../shared/navigation'
 import { ThemeToggle } from '../shared/ui/ThemeToggle'
 import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher'
@@ -85,10 +84,10 @@ export function AppLayout() {
   const navigate = useNavigate()
   const { t } = useTranslation()
 
-  const { data: profileData } = useQuery({ queryKey: ['profile-header'], queryFn: getProfile })
+  const { data: profileData } = useQuery({ queryKey: ['patient-profile'], queryFn: getProfile })
 
-  function handleLogout() {
-    clearToken()
+  async function handleLogout() {
+    await logout()
     navigate('/login', { replace: true })
   }
 
@@ -179,7 +178,7 @@ export function AppLayout() {
                 onClick={() => navigate('/profile')}
               >
                 <p className="text-sm font-semibold text-slate-900">
-                  {profileData?.data?.first_name || profileData?.data?.name || getCurrentUser()?.email || t('layout.defaultUser', 'Utilisateur')}
+                  {profileData?.data?.first_name || profileData?.data?.name || t('layout.defaultUser', 'Utilisateur')}
                 </p>
                 <p className="text-xs text-slate-500">{t('layout.accountType', 'Compte patient')}</p>
               </button>

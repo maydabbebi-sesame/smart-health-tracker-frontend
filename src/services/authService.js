@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient'
 import { AUTH_ENDPOINTS } from '../constants/apiEndpoints'
+import { queryClient } from '../lib/queryClient'
 
 /**
  * Authentication Service - Real API Integration
@@ -242,6 +243,7 @@ export async function logout() {
     // Best-effort - clear local state regardless
   }
   clearToken()
+  queryClient.clear()
   return { success: true }
 }
 
