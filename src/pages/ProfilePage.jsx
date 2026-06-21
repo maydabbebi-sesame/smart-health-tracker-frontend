@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Activity,
   AlertCircle,
@@ -16,8 +16,13 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-import { getPatientProfile } from '../services/profileService'
+import { EditableListSection } from '../features/profile/EditableListSection'
+import { getPatientProfile, resolveAssetUrl, updateUserProfile, uploadProfilePicture } from '../services/profileService'
+import { getMedicalHistory, createMedicalHistoryEntry, updateMedicalHistoryEntry, deleteMedicalHistoryEntry } from '../services/medicalHistoryService'
+import { getVaccinations, createVaccination, updateVaccination, deleteVaccination } from '../services/vaccinationsService'
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
+import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher'
+import { ThemeToggle } from '../shared/ui/ThemeToggle'
 import { useTranslation } from '../i18n/useTranslation'
 
 function ProfilePage() {
@@ -28,18 +33,6 @@ function ProfilePage() {
     { label: t('profile.details.weight', 'Poids'), value: t('profile.details.weightValueFallback', '68 kg') },
     { label: t('profile.details.height', 'Taille'), value: t('profile.details.heightValueFallback', '1.68 m') },
     { label: t('profile.details.bloodGroup', 'Groupe sanguin'), value: t('profile.details.bloodGroupValueFallback', 'O+') },
-  ]
-
-  const medicalHistory = [
-    { title: t('profile.history.asthmaTitle', 'Asthme léger'), date: t('profile.history.asthmaDate', 'Diagnostiqué en 2018'), status: t('profile.history.statusStable', 'Stable') },
-    { title: t('profile.history.migraineTitle', 'Migraine chronique'), date: t('profile.history.migraineDate', 'Suivi depuis 2021'), status: t('profile.history.statusSurveillance', 'Surveillance') },
-    { title: t('profile.history.pollenAllergyTitle', 'Allergie pollen'), date: t('profile.history.pollenAllergyDate', 'Declaree en 2019'), status: t('profile.history.statusActive', 'Active') },
-  ]
-
-  const vaccinations = [
-    { name: t('profile.vaccinations.covid', 'COVID-19'), date: t('profile.vaccinations.covidDate', 'Mars 2025'), status: t('profile.vaccinations.statusUpToDate', 'A jour') },
-    { name: t('profile.vaccinations.flu', 'Grippe saisonnière'), date: t('profile.vaccinations.fluDate', 'Octobre 2025'), status: t('profile.vaccinations.statusToRenew', 'À renouveler') },
-    { name: t('profile.vaccinations.tetanus', 'Tetanos'), date: t('profile.vaccinations.tetanusDate', 'Juillet 2022'), status: t('profile.vaccinations.statusUpToDate', 'A jour') },
   ]
 
   const tabs = [
@@ -58,9 +51,43 @@ function ProfilePage() {
     location: '',
     phone: '',
   })
+  const [saveError, setSaveError] = useState('')
+  const [photoError, setPhotoError] = useState('')
+  const [isEditingHealth, setIsEditingHealth] = useState(false)
+  const [editableHealth, setEditableHealth] = useState({ age: '', weight: '', height: '', blood_group: '' })
+  const [healthError, setHealthError] = useState('')
+  const [isEditingEmergency, setIsEditingEmergency] = useState(false)
+  const [editableEmergencyContact, setEditableEmergencyContact] = useState('')
+  const [emergencyError, setEmergencyError] = useState('')
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [notificationsError, setNotificationsError] = useState('')
+  const queryClient = useQueryClient()
   const { data: profile, isLoading } = useQuery({
     queryKey: ['patient-profile'],
     queryFn: getPatientProfile,
+  })
+
+  function invalidateProfile() {
+    queryClient.invalidateQueries({ queryKey: ['patient-profile'] })
+  }
+
+  const { mutate: updateProfile, isPending: isSavingProfile } = useMutation({
+    mutationFn: (payload) => updateUserProfile(payload),
+  })
+
+  const { mutate: savePhoto, isPending: isSavingPhoto } = useMutation({
+    mutationFn: (file) => uploadProfilePicture(file),
+    onSuccess: (result) => {
+      if (!result.success) {
+        setPhotoError(result.error)
+        return
+      }
+      setPhotoError('')
+      invalidateProfile()
+    },
+    onError: (error) => {
+      setPhotoError(error.message || t('profile.photoError', 'Impossible de mettre à jour la photo de profil'))
+    },
   })
 
   useEffect(() => {
@@ -70,9 +97,20 @@ function ProfilePage() {
         ...current,
         name: p.first_name || p.name || current.name,
         email: p.email || current.email,
-        location: p.location || p.city || current.location,
+        location: p.location || p.city || p.address || current.location,
         phone: p.phone || current.phone,
       }))
+      setEditableHealth((current) => ({
+        age: p.age ?? current.age,
+        weight: p.weight ?? current.weight,
+        height: p.height ?? current.height,
+        blood_group: p.blood_group || current.blood_group,
+      }))
+      setEditableEmergencyContact((current) => p.emergency_contact ?? current)
+      setNotificationsEnabled(p.notifications_enabled ?? true)
+      if (p.profile_picture) {
+        setProfilePhoto(resolveAssetUrl(p.profile_picture))
+      }
     }
   }, [profile])
 
@@ -91,6 +129,7 @@ function ProfilePage() {
     }
 
     setProfilePhoto(URL.createObjectURL(file))
+    savePhoto(file)
   }
 
   function updateEditableProfile(field, value) {
@@ -98,6 +137,105 @@ function ProfilePage() {
       ...current,
       [field]: value,
     }))
+  }
+
+  function updateEditableHealth(field, value) {
+    setEditableHealth((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  function handleSaveProfile() {
+    updateProfile(
+      {
+        name: editableProfile.name,
+        email: editableProfile.email,
+        address: editableProfile.location,
+        phone: editableProfile.phone,
+      },
+      {
+        onSuccess: (result) => {
+          if (!result.success) {
+            setSaveError(result.error)
+            return
+          }
+          setSaveError('')
+          setIsEditingProfile(false)
+          invalidateProfile()
+        },
+        onError: (error) => {
+          setSaveError(error.message || t('profile.saveError', 'Impossible de mettre à jour le profil'))
+        },
+      },
+    )
+  }
+
+  function handleSaveHealth() {
+    updateProfile(
+      {
+        age: editableHealth.age || null,
+        weight: editableHealth.weight || null,
+        height: editableHealth.height || null,
+        blood_group: editableHealth.blood_group || null,
+      },
+      {
+        onSuccess: (result) => {
+          if (!result.success) {
+            setHealthError(result.error)
+            return
+          }
+          setHealthError('')
+          setIsEditingHealth(false)
+          invalidateProfile()
+        },
+        onError: (error) => {
+          setHealthError(error.message || t('profile.details.saveError', 'Impossible de mettre à jour les détails de santé'))
+        },
+      },
+    )
+  }
+
+  function handleSaveEmergencyContact() {
+    updateProfile(
+      { emergency_contact: editableEmergencyContact },
+      {
+        onSuccess: (result) => {
+          if (!result.success) {
+            setEmergencyError(result.error)
+            return
+          }
+          setEmergencyError('')
+          setIsEditingEmergency(false)
+          invalidateProfile()
+        },
+        onError: (error) => {
+          setEmergencyError(error.message || t('profile.emergencyContact.saveError', "Impossible de mettre à jour le contact d'urgence"))
+        },
+      },
+    )
+  }
+
+  function handleToggleNotifications(checked) {
+    setNotificationsEnabled(checked)
+    updateProfile(
+      { notifications_enabled: checked },
+      {
+        onSuccess: (result) => {
+          if (!result.success) {
+            setNotificationsEnabled(!checked)
+            setNotificationsError(result.error)
+            return
+          }
+          setNotificationsError('')
+          invalidateProfile()
+        },
+        onError: (error) => {
+          setNotificationsEnabled(!checked)
+          setNotificationsError(error.message || t('profile.preferences.notificationsError', 'Impossible de mettre à jour les notifications'))
+        },
+      },
+    )
   }
 
   const notAvailable = t('profile.details.notAvailable', 'N/R')
@@ -130,8 +268,14 @@ function ProfilePage() {
             <span className="absolute bottom-1 right-1 grid h-9 w-9 place-items-center rounded-full bg-[#00694c] text-white shadow-lg transition group-hover:bg-[#008560]">
               <Camera size={17} />
             </span>
-            <input accept="image/*" className="sr-only" type="file" onChange={handlePhotoChange} />
+            <input accept="image/*" className="sr-only" disabled={isSavingPhoto} type="file" onChange={handlePhotoChange} />
           </label>
+          {isSavingPhoto && (
+            <p className="mt-2 text-xs text-[#6d7a73]">{t('profile.photoUploading', 'Téléchargement…')}</p>
+          )}
+          {photoError && (
+            <p className="mt-2 text-xs font-medium text-[#ba1a1a]">{photoError}</p>
+          )}
 
           {isEditingProfile ? (
             <input
@@ -196,29 +340,44 @@ function ProfilePage() {
           </div>
 
           {isEditingProfile ? (
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm font-semibold text-[#3d4943] transition hover:bg-[#eff5ef]"
-                type="button"
-                onClick={() => setIsEditingProfile(false)}
-              >
-                <X size={17} />
-                {t('profile.actions.cancel', 'Annuler')}
-              </button>
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#00694c] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#008560]"
-                type="button"
-                onClick={() => setIsEditingProfile(false)}
-              >
-                <Check size={17} />
-                {t('profile.actions.save', 'Enregistrer')}
-              </button>
+            <div className="mt-6 space-y-3">
+              {saveError && (
+                <p className="text-sm font-medium text-[#ba1a1a]">{saveError}</p>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm font-semibold text-[#3d4943] transition hover:bg-[#eff5ef] disabled:opacity-60"
+                  disabled={isSavingProfile}
+                  type="button"
+                  onClick={() => {
+                    setSaveError('')
+                    setIsEditingProfile(false)
+                  }}
+                >
+                  <X size={17} />
+                  {t('profile.actions.cancel', 'Annuler')}
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#00694c] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#008560] disabled:opacity-60"
+                  disabled={isSavingProfile}
+                  type="button"
+                  onClick={handleSaveProfile}
+                >
+                  <Check size={17} />
+                  {isSavingProfile
+                    ? t('profile.actions.saving', 'Enregistrement…')
+                    : t('profile.actions.save', 'Enregistrer')}
+                </button>
+              </div>
             </div>
           ) : (
             <button
               className="mt-6 w-full rounded-lg bg-[#00694c] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#008560]"
               type="button"
-              onClick={() => setIsEditingProfile(true)}
+              onClick={() => {
+                setSaveError('')
+                setIsEditingProfile(true)
+              }}
             >
               {t('profile.actions.editProfile', 'Modifier le profil')}
             </button>
@@ -246,16 +405,103 @@ function ProfilePage() {
 
           {activeTab === 'information' && (
             <div className="space-y-6">
-              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {details.map((item) => (
-                  <article className="sht-card p-5" key={item.label}>
-                    <p className="text-sm text-[#6d7a73]">{item.label}</p>
-                    <p className="font-metric mt-2 text-2xl font-semibold text-[#171d1a] dark:text-white">
-                      {item.value}
-                    </p>
-                  </article>
-                ))}
-              </section>
+              <div>
+                <div className="flex items-center justify-between gap-4">
+                  <h2 className="text-sm font-semibold text-[#171d1a] dark:text-white">{t('profile.details.sectionTitle', 'Détails de santé')}</h2>
+                  {isEditingHealth ? (
+                    <div className="flex gap-2">
+                      <button
+                        className="rounded-lg border border-[#bccac1] bg-white px-3 py-2 text-xs font-semibold text-[#3d4943] transition hover:bg-[#eff5ef] disabled:opacity-60"
+                        disabled={isSavingProfile}
+                        type="button"
+                        onClick={() => {
+                          setHealthError('')
+                          setIsEditingHealth(false)
+                        }}
+                      >
+                        {t('profile.actions.cancel', 'Annuler')}
+                      </button>
+                      <button
+                        className="rounded-lg bg-[#00694c] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#008560] disabled:opacity-60"
+                        disabled={isSavingProfile}
+                        type="button"
+                        onClick={handleSaveHealth}
+                      >
+                        {isSavingProfile ? t('profile.actions.saving', 'Enregistrement…') : t('profile.actions.save', 'Enregistrer')}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="rounded-lg bg-[#eff5ef] px-3 py-2 text-xs font-semibold text-[#00694c] transition hover:bg-[#dff0e7]"
+                      type="button"
+                      onClick={() => {
+                        setHealthError('')
+                        setIsEditingHealth(true)
+                      }}
+                    >
+                      {t('profile.actions.modify', 'Modifier')}
+                    </button>
+                  )}
+                </div>
+                {healthError && (
+                  <p className="mt-2 text-sm font-medium text-[#ba1a1a]">{healthError}</p>
+                )}
+                <section className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {isEditingHealth ? (
+                    <>
+                      <article className="sht-card p-5">
+                        <p className="text-sm text-[#6d7a73]">{t('profile.details.age', 'Age')}</p>
+                        <input
+                          className="font-metric mt-2 w-full rounded-lg border border-[#bccac1] px-2 py-1 text-xl font-semibold outline-none focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
+                          type="number"
+                          value={editableHealth.age ?? ''}
+                          onChange={(event) => updateEditableHealth('age', event.target.value)}
+                        />
+                      </article>
+                      <article className="sht-card p-5">
+                        <p className="text-sm text-[#6d7a73]">{t('profile.details.weight', 'Poids')}</p>
+                        <input
+                          className="font-metric mt-2 w-full rounded-lg border border-[#bccac1] px-2 py-1 text-xl font-semibold outline-none focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
+                          type="number"
+                          value={editableHealth.weight ?? ''}
+                          onChange={(event) => updateEditableHealth('weight', event.target.value)}
+                        />
+                      </article>
+                      <article className="sht-card p-5">
+                        <p className="text-sm text-[#6d7a73]">{t('profile.details.height', 'Taille')} (cm)</p>
+                        <input
+                          className="font-metric mt-2 w-full rounded-lg border border-[#bccac1] px-2 py-1 text-xl font-semibold outline-none focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
+                          type="number"
+                          value={editableHealth.height ?? ''}
+                          onChange={(event) => updateEditableHealth('height', event.target.value)}
+                        />
+                      </article>
+                      <article className="sht-card p-5">
+                        <p className="text-sm text-[#6d7a73]">{t('profile.details.bloodGroup', 'Groupe sanguin')}</p>
+                        <select
+                          className="font-metric mt-2 w-full rounded-lg border border-[#bccac1] px-2 py-1 text-xl font-semibold outline-none focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
+                          value={editableHealth.blood_group || ''}
+                          onChange={(event) => updateEditableHealth('blood_group', event.target.value)}
+                        >
+                          <option value="">{notAvailable}</option>
+                          {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((group) => (
+                            <option key={group} value={group}>{group}</option>
+                          ))}
+                        </select>
+                      </article>
+                    </>
+                  ) : (
+                    details.map((item) => (
+                      <article className="sht-card p-5" key={item.label}>
+                        <p className="text-sm text-[#6d7a73]">{item.label}</p>
+                        <p className="font-metric mt-2 text-2xl font-semibold text-[#171d1a] dark:text-white">
+                          {item.value}
+                        </p>
+                      </article>
+                    ))
+                  )}
+                </section>
+              </div>
 
               <section className="grid gap-4 md:grid-cols-3">
                 {[
@@ -275,94 +521,187 @@ function ProfilePage() {
 
               <article className="sht-card border-l-4 border-l-[#ba1a1a] p-5">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex gap-3">
+                  <div className="flex flex-1 gap-3">
                     <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#ffdad6] text-[#ba1a1a]">
                       <AlertCircle size={22} />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h2 className="font-semibold text-[#171d1a] dark:text-white">{t('profile.emergencyContact.title', "Contact d'urgence")}</h2>
-                      <p className="mt-1 text-sm text-[#6d7a73]">{t('profile.emergencyContact.details', 'Nom complet - Membre de la famille - Téléphone')}</p>
+                      {isEditingEmergency ? (
+                        <input
+                          className="mt-2 w-full rounded-lg border border-[#bccac1] bg-white px-3 py-2 text-sm outline-none focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
+                          placeholder={t('profile.emergencyContact.details', 'Nom complet - Membre de la famille - Téléphone')}
+                          value={editableEmergencyContact}
+                          onChange={(event) => setEditableEmergencyContact(event.target.value)}
+                        />
+                      ) : (
+                        <p className="mt-1 text-sm text-[#6d7a73]">
+                          {editableEmergencyContact || t('profile.emergencyContact.details', 'Nom complet - Membre de la famille - Téléphone')}
+                        </p>
+                      )}
+                      {emergencyError && (
+                        <p className="mt-1 text-xs font-medium text-[#ba1a1a]">{emergencyError}</p>
+                      )}
                     </div>
                   </div>
-                  <button className="rounded-lg bg-[#eff5ef] px-4 py-2 text-sm font-semibold text-[#00694c]" type="button">
-                    {t('profile.actions.modify', 'Modifier')}
-                  </button>
+                  {isEditingEmergency ? (
+                    <div className="flex gap-2">
+                      <button
+                        className="rounded-lg border border-[#bccac1] bg-white px-4 py-2 text-sm font-semibold text-[#3d4943] transition hover:bg-[#eff5ef] disabled:opacity-60"
+                        disabled={isSavingProfile}
+                        type="button"
+                        onClick={() => {
+                          setEmergencyError('')
+                          setIsEditingEmergency(false)
+                        }}
+                      >
+                        {t('profile.actions.cancel', 'Annuler')}
+                      </button>
+                      <button
+                        className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#008560] disabled:opacity-60"
+                        disabled={isSavingProfile}
+                        type="button"
+                        onClick={handleSaveEmergencyContact}
+                      >
+                        {isSavingProfile ? t('profile.actions.saving', 'Enregistrement…') : t('profile.actions.save', 'Enregistrer')}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="rounded-lg bg-[#eff5ef] px-4 py-2 text-sm font-semibold text-[#00694c] transition hover:bg-[#dff0e7]"
+                      type="button"
+                      onClick={() => {
+                        setEmergencyError('')
+                        setIsEditingEmergency(true)
+                      }}
+                    >
+                      {t('profile.actions.modify', 'Modifier')}
+                    </button>
+                  )}
                 </div>
               </article>
             </div>
           )}
 
           {activeTab === 'history' && (
-            <article className="sht-card p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">{t('profile.history.title', 'Médecine historique')}</h2>
-                  <p className="mt-1 text-sm text-[#6d7a73]">
-                    {t('profile.history.subtitle', 'Pathologies, allergies et suivis importants pour contextualiser les futures analyses IA.')}
-                  </p>
-                </div>
-                <CalendarCheck className="text-[#00694c]" size={23} />
-              </div>
-              <div className="mt-5 space-y-3">
-                {medicalHistory.map((item) => (
-                  <div className="rounded-lg border border-[#dce5df] bg-white p-4" key={item.title}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-[#171d1a]">{item.title}</p>
-                        <p className="mt-1 text-sm text-[#6d7a73]">{item.date}</p>
-                      </div>
-                      <span className="rounded-full bg-[#eff5ef] px-3 py-1 text-xs font-semibold text-[#00694c]">
-                        {item.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </article>
+            <EditableListSection
+              createFn={createMedicalHistoryEntry}
+              dateLabel={t('profile.history.dateLabel', 'Date')}
+              deleteFn={deleteMedicalHistoryEntry}
+              fetchFn={getMedicalHistory}
+              getStatusClassName={() => 'bg-[#eff5ef] text-[#00694c]'}
+              icon={CalendarCheck}
+              labels={{
+                add: t('profile.actions.add', 'Ajouter'),
+                save: t('profile.actions.save', 'Enregistrer'),
+                saving: t('profile.actions.saving', 'Enregistrement…'),
+                cancel: t('profile.actions.cancel', 'Annuler'),
+                edit: t('profile.actions.modify', 'Modifier'),
+                delete: t('profile.actions.delete', 'Supprimer'),
+                loading: t('profile.history.loading', 'Chargement…'),
+                empty: t('profile.history.empty', 'Aucun antécédent médical enregistré.'),
+                error: t('profile.history.error', 'Impossible de mettre à jour les antécédents médicaux'),
+              }}
+              nameField="title"
+              nameLabel={t('profile.history.titleLabel', 'Titre')}
+              queryKey={['medical-history']}
+              statusOptions={[
+                t('profile.history.statusStable', 'Stable'),
+                t('profile.history.statusSurveillance', 'Surveillance'),
+                t('profile.history.statusActive', 'Active'),
+              ]}
+              subtitle={t('profile.history.subtitle', 'Pathologies, allergies et suivis importants pour contextualiser les futures analyses IA.')}
+              title={t('profile.history.title', 'Médecine historique')}
+              updateFn={updateMedicalHistoryEntry}
+            />
           )}
 
           {activeTab === 'vaccinations' && (
-            <article className="sht-card p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">{t('profile.vaccinations.title', 'Vaccinations')}</h2>
-                  <p className="mt-1 text-sm text-[#6d7a73]">{t('profile.vaccinations.subtitle', 'Carnet patient avec statut de chaque vaccin.')}</p>
-                </div>
-                <Syringe className="text-[#00694c]" size={23} />
-              </div>
-              <div className="mt-5 space-y-3">
-                {vaccinations.map((item) => (
-                  <div className="flex items-center justify-between gap-4 rounded-lg border border-[#dce5df] bg-white p-4" key={item.name}>
-                    <div>
-                      <p className="font-semibold text-[#171d1a]">{item.name}</p>
-                      <p className="mt-1 text-sm text-[#6d7a73]">{item.date}</p>
-                    </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        item.status === t('profile.vaccinations.statusUpToDate', 'A jour') ? 'bg-[#86f8c9]/35 text-[#00694c]' : 'bg-[#fff3cd] text-[#8a5a00]'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </article>
+            <EditableListSection
+              createFn={createVaccination}
+              dateLabel={t('profile.vaccinations.dateLabel', 'Date')}
+              deleteFn={deleteVaccination}
+              fetchFn={getVaccinations}
+              getStatusClassName={(status) =>
+                status === t('profile.vaccinations.statusUpToDate', 'A jour')
+                  ? 'bg-[#86f8c9]/35 text-[#00694c]'
+                  : 'bg-[#fff3cd] text-[#8a5a00]'
+              }
+              icon={Syringe}
+              labels={{
+                add: t('profile.actions.add', 'Ajouter'),
+                save: t('profile.actions.save', 'Enregistrer'),
+                saving: t('profile.actions.saving', 'Enregistrement…'),
+                cancel: t('profile.actions.cancel', 'Annuler'),
+                edit: t('profile.actions.modify', 'Modifier'),
+                delete: t('profile.actions.delete', 'Supprimer'),
+                loading: t('profile.vaccinations.loading', 'Chargement…'),
+                empty: t('profile.vaccinations.empty', 'Aucune vaccination enregistrée.'),
+                error: t('profile.vaccinations.error', 'Impossible de mettre à jour les vaccinations'),
+              }}
+              nameField="name"
+              nameLabel={t('profile.vaccinations.nameLabel', 'Vaccin')}
+              queryKey={['vaccinations']}
+              statusOptions={[
+                t('profile.vaccinations.statusUpToDate', 'A jour'),
+                t('profile.vaccinations.statusToRenew', 'À renouveler'),
+              ]}
+              subtitle={t('profile.vaccinations.subtitle', 'Carnet patient avec statut de chaque vaccin.')}
+              title={t('profile.vaccinations.title', 'Vaccinations')}
+              updateFn={updateVaccination}
+            />
           )}
 
           {activeTab === 'preferences' && (
             <section className="grid gap-4 md:grid-cols-2">
-              {[
-                { title: t('profile.preferences.notificationsTitle', 'Notifications'), text: t('profile.preferences.notificationsText', 'Alertes IA, rappels de suivi et synthèses hebdomadaires actives.') },
-                { title: t('profile.preferences.confidentialityTitle', 'Confidentialité'), text: t('profile.preferences.confidentialityText', 'Données patient simulées côté front, contrat backend documenté.') },
-                { title: t('profile.preferences.themeTitle', 'Thème'), text: t('profile.preferences.themeText', 'Préférence de thème persistante via Zustand.') },
-                { title: t('profile.preferences.languageTitle', 'Langue'), text: t('profile.preferences.languageText', 'Interface de démo préparée en français fonctionnel.') },
-              ].map((item) => (
-                <article className="sht-card p-5" key={item.title}>
-                  <h2 className="font-semibold text-[#171d1a] dark:text-white">{item.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-[#6d7a73]">{item.text}</p>
-                </article>
-              ))}
+              <article className="sht-card p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="font-semibold text-[#171d1a] dark:text-white">{t('profile.preferences.notificationsTitle', 'Notifications')}</h2>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      checked={notificationsEnabled}
+                      className="peer sr-only"
+                      type="checkbox"
+                      onChange={(event) => handleToggleNotifications(event.target.checked)}
+                    />
+                    <span className="h-6 w-11 rounded-full bg-[#dce5df] transition peer-checked:bg-[#00694c] peer-focus-visible:ring-2 peer-focus-visible:ring-[#00694c]" />
+                    <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5" />
+                  </label>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-[#6d7a73]">
+                  {t('profile.preferences.notificationsText', 'Alertes IA, rappels de suivi et synthèses hebdomadaires actives.')}
+                </p>
+                {notificationsError && (
+                  <p className="mt-2 text-xs font-medium text-[#ba1a1a]">{notificationsError}</p>
+                )}
+              </article>
+
+              <article className="sht-card p-5">
+                <h2 className="font-semibold text-[#171d1a] dark:text-white">{t('profile.preferences.confidentialityTitle', 'Confidentialité')}</h2>
+                <p className="mt-2 text-sm leading-6 text-[#6d7a73]">
+                  {t('profile.preferences.confidentialityText', 'Données patient simulées côté front, contrat backend documenté.')}
+                </p>
+              </article>
+
+              <article className="sht-card p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="font-semibold text-[#171d1a] dark:text-white">{t('profile.preferences.themeTitle', 'Thème')}</h2>
+                  <ThemeToggle />
+                </div>
+                <p className="mt-2 text-sm leading-6 text-[#6d7a73]">
+                  {t('profile.preferences.themeText', 'Préférence de thème persistante via Zustand.')}
+                </p>
+              </article>
+
+              <article className="sht-card p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="font-semibold text-[#171d1a] dark:text-white">{t('profile.preferences.languageTitle', 'Langue')}</h2>
+                  <LanguageSwitcher />
+                </div>
+                <p className="mt-2 text-sm leading-6 text-[#6d7a73]">
+                  {t('profile.preferences.languageText', 'Interface de démo préparée en français fonctionnel.')}
+                </p>
+              </article>
             </section>
           )}
         </div>

@@ -35,7 +35,18 @@ def publicize_user(record: dict) -> dict:
     public = {
         "uid": encode_id(record["id"]),
         "name": record.get("name"),
-        "email": record.get("email")
+        "email": record.get("email"),
+        "phone": record.get("phone"),
+        "address": record.get("address"),
+        "date_of_birth": record.get("date_of_birth"),
+        "gender": record.get("gender"),
+        "emergency_contact": record.get("emergency_contact"),
+        "profile_picture": record.get("profile_picture"),
+        "age": record.get("age"),
+        "weight": record.get("weight"),
+        "height": record.get("height"),
+        "blood_group": record.get("blood_group"),
+        "notifications_enabled": bool(record.get("notifications_enabled", True)),
     }
     return public
 
@@ -122,6 +133,34 @@ def publicize_form(record: dict) -> dict:
         "status": record.get("status"),
         "submitted_at": record.get("submitted_at"),
         "updated_at": record.get("updated_at")
+    }
+
+
+def publicize_medical_history(record: dict) -> dict:
+    if not record:
+        return record
+    return {
+        "uid": encode_id(record["id"]),
+        "user_uid": encode_id(record["user_id"]),
+        "title": record.get("title"),
+        "date_label": record.get("date_label"),
+        "status": record.get("status"),
+        "created_at": record.get("created_at"),
+        "updated_at": record.get("updated_at"),
+    }
+
+
+def publicize_vaccination(record: dict) -> dict:
+    if not record:
+        return record
+    return {
+        "uid": encode_id(record["id"]),
+        "user_uid": encode_id(record["user_id"]),
+        "name": record.get("name"),
+        "date_label": record.get("date_label"),
+        "status": record.get("status"),
+        "created_at": record.get("created_at"),
+        "updated_at": record.get("updated_at"),
     }
 
 

@@ -36,6 +36,22 @@ export const USER_ENDPOINTS = {
   UPLOAD_PROFILE_PICTURE: '/api/users/profile-picture',
 };
 
+// ==================== Medical History Endpoints ====================
+export const MEDICAL_HISTORY_ENDPOINTS = {
+  GET_MEDICAL_HISTORY: '/api/medical-history',
+  CREATE_MEDICAL_HISTORY: '/api/medical-history',
+  UPDATE_MEDICAL_HISTORY: (id: string) => `/api/medical-history/${id}`,
+  DELETE_MEDICAL_HISTORY: (id: string) => `/api/medical-history/${id}`,
+};
+
+// ==================== Vaccinations Endpoints ====================
+export const VACCINATION_ENDPOINTS = {
+  GET_VACCINATIONS: '/api/vaccinations',
+  CREATE_VACCINATION: '/api/vaccinations',
+  UPDATE_VACCINATION: (id: string) => `/api/vaccinations/${id}`,
+  DELETE_VACCINATION: (id: string) => `/api/vaccinations/${id}`,
+};
+
 // ==================== Vital Signs Endpoints ====================
 export const VITAL_ENDPOINTS = {
   RECORD_VITAL: '/api/vitals',
@@ -142,6 +158,8 @@ export const getAllEndpoints = () => ({
   ai: AI_ENDPOINTS,
   translations: TRANSLATION_ENDPOINTS,
   admin: ADMIN_ENDPOINTS,
+  medicalHistory: MEDICAL_HISTORY_ENDPOINTS,
+  vaccinations: VACCINATION_ENDPOINTS,
 });
 
 /**
