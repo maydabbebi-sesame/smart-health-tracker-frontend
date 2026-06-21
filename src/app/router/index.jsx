@@ -8,6 +8,7 @@ import { ProtectedRoute } from '../../features/auth/ProtectedRoute'
 import { LoadingSkeleton } from '../../shared/ui/LoadingSkeleton'
 
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'))
+const AdminUsersPage = lazy(() => import('../../pages/admin/AdminUsersPage'))
 const AIAnalysisPage = lazy(() => import('../../pages/AIAnalysisPage'))
 const DashboardPage = lazy(() => import('../../pages/DashboardPage'))
 const HistoryPage = lazy(() => import('../../pages/HistoryPage'))
@@ -101,6 +102,10 @@ const router = createBrowserRouter([
           {
             index: true,
             element: withSuspense(<AdminDashboardPage />),
+          },
+          {
+            path: 'users',
+            element: withSuspense(<AdminUsersPage />),
           },
         ],
       },

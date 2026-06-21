@@ -3,7 +3,7 @@ import { Bell, Menu, Search, Settings, ShieldPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
-import { logout } from '../features/auth/auth'
+import { getCurrentUser, logout } from '../features/auth/auth'
 import { useQuery } from '@tanstack/react-query'
 import { getProfile } from '../services/userService'
 import { navigationItems } from '../shared/navigation'
@@ -16,6 +16,7 @@ const linkBase =
 
 function SidebarContent({ onNavigate }) {
   const { t } = useTranslation()
+  const isAdmin = getCurrentUser()?.role === 'admin'
 
   return (
     <>
@@ -58,6 +59,24 @@ function SidebarContent({ onNavigate }) {
             </motion.span>
           </NavLink>
         ))}
+        {isAdmin && (
+          <NavLink
+            to="/admin"
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              `${linkBase} ${
+                isActive
+                  ? 'border-[#00694c] bg-[#eff5ef] text-[#00694c] font-semibold dark:border-teal-300 dark:bg-teal-900/20 dark:text-teal-200'
+                  : 'border-transparent text-slate-600 dark:text-slate-400'
+              }`
+            }
+          >
+            <motion.span className="flex items-center gap-3" whileHover={{ x: 2 }} transition={{ duration: 0.18 }}>
+              <ShieldPlus size={19} />
+              {t('layout.administration', 'Administration')}
+            </motion.span>
+          </NavLink>
+        )}
       </nav>
 
       <div className="mt-auto p-5">
