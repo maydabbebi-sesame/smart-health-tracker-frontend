@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS users (
     mfa_expiry DATETIME DEFAULT NULL,
     provider VARCHAR(50) DEFAULT NULL,
     provider_id VARCHAR(255) DEFAULT NULL,
+    phone VARCHAR(50) DEFAULT NULL,
+    date_of_birth DATE DEFAULT NULL,
+    gender VARCHAR(50) DEFAULT NULL,
+    address VARCHAR(500) DEFAULT NULL,
+    emergency_contact VARCHAR(500) DEFAULT NULL,
+    profile_picture VARCHAR(500) DEFAULT NULL,
     failed_attempts INT NOT NULL DEFAULT 0,
     locked_until DATETIME DEFAULT NULL
 );

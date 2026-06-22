@@ -1,9 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Activity,
   AlertCircle,
   Camera,
-  CalendarCheck,
   Check,
   HeartPulse,
   Mail,
@@ -14,111 +13,246 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 
-import { getPatientProfile } from '../services/profileService'
+import {
+  getPatientProfile,
+  updateUserProfile,
+  uploadProfilePicture,
+} from '../services/profileService'
+import { getVitals } from '../services/vitalsService'
+import { getCurrentUser } from '../services/authService'
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
-
-const healthDetails = [
-  { label: 'Age', value: '29 ans' },
-  { label: 'Poids', value: '68 kg' },
-  { label: 'Taille', value: '1.68 m' },
-  { label: 'Groupe sanguin', value: 'O+' },
-]
-
-const medicalHistory = [
-  { title: 'Asthme leger', date: 'Diagnostique en 2018', status: 'Stable' },
-  { title: 'Migraine chronique', date: 'Suivi depuis 2021', status: 'Surveillance' },
-  { title: 'Allergie pollen', date: 'Declaree en 2019', status: 'Active' },
-]
-
-const vaccinations = [
-  { name: 'COVID-19', date: 'Mars 2025', status: 'A jour' },
-  { name: 'Grippe saisonniere', date: 'Octobre 2025', status: 'A renouveler' },
-  { name: 'Tetanos', date: 'Juillet 2022', status: 'A jour' },
-]
 
 const tabs = [
   { id: 'information', label: 'Informations' },
-  { id: 'history', label: 'Medecine historique' },
+  { id: 'history', label: 'Historique medical' },
   { id: 'vaccinations', label: 'Vaccinations' },
   { id: 'preferences', label: 'Preferences' },
 ]
 
+const emptyProfile = {
+  name: '',
+  email: '',
+  address: '',
+  phone: '',
+  date_of_birth: '',
+  gender: '',
+  emergency_contact: '',
+}
+
+function getAssetUrl(path) {
+  if (!path) return ''
+  if (/^https?:\/\//.test(path)) return path
+
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5002'
+  return `${apiBase.replace(/\/$/, '')}${path}`
+}
+
+function formatDate(value) {
+  if (!value) return ''
+  return String(value).slice(0, 10)
+}
+
+function splitValues(value) {
+  if (!value) return []
+  return String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function EmptyState({ children, icon: Icon }) {
+  return (
+    <div className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-[#bccac1] bg-[#f5fbf5] p-6 text-center">
+      <Icon className="text-[#00694c]" size={28} />
+      <p className="mt-3 max-w-md text-sm leading-6 text-[#6d7a73]">{children}</p>
+    </div>
+  )
+}
+
 function ProfilePage() {
+  const queryClient = useQueryClient()
+  const currentUserUid = getCurrentUser()?.uid || 'anonymous'
   const [activeTab, setActiveTab] = useState('information')
-  const [isEditingProfile, setIsEditingProfile] = useState(false)
-  const [profilePhoto, setProfilePhoto] = useState('')
-  const [editableProfile, setEditableProfile] = useState({
-    name: '',
-    email: '',
-    location: '',
-    phone: '',
-  })
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ['patient-profile'],
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [form, setForm] = useState(emptyProfile)
+
+  const profileQuery = useQuery({
+    queryKey: ['patient-profile', currentUserUid],
     queryFn: getPatientProfile,
   })
+  const vitalsQuery = useQuery({
+    queryKey: ['patient-vitals', currentUserUid],
+    queryFn: () => getVitals(),
+  })
+
+  const profile = profileQuery.data?.success ? profileQuery.data.data : null
+  const vitals = vitalsQuery.data?.success && Array.isArray(vitalsQuery.data.data)
+    ? vitalsQuery.data.data
+    : []
+  const latestVital = vitals[0] || null
 
   useEffect(() => {
-    if (profile && profile.data) {
-      const p = profile.data
-      setEditableProfile((current) => ({
-        ...current,
-        name: p.first_name || p.name || current.name,
-        email: p.email || current.email,
-        location: p.location || p.city || current.location,
-        phone: p.phone || current.phone,
-      }))
-    }
+    if (!profile) return
+    setForm({
+      name: profile.name || '',
+      email: profile.email || '',
+      address: profile.address || '',
+      phone: profile.phone || '',
+      date_of_birth: formatDate(profile.date_of_birth),
+      gender: profile.gender || '',
+      emergency_contact: profile.emergency_contact || '',
+    })
   }, [profile])
 
-  if (isLoading) {
-    return <LoadingSkeleton />
+  const medicalItems = useMemo(() => {
+    if (!latestVital) return []
+
+    return [
+      ...splitValues(latestVital.health_issues_history).map((title) => ({
+        title,
+        category: 'Antecedent',
+      })),
+      ...splitValues(latestVital.drug_allergies).map((title) => ({
+        title,
+        category: 'Allergie',
+      })),
+      ...splitValues(latestVital.family_health_issues).map((title) => ({
+        title,
+        category: 'Historique familial',
+      })),
+      ...splitValues(latestVital.current_treatments).map((title) => ({
+        title,
+        category: 'Traitement',
+      })),
+    ]
+  }, [latestVital])
+
+  const details = [
+    { label: 'Age', value: latestVital?.age ? `${latestVital.age} ans` : 'Non renseigne' },
+    { label: 'Poids', value: latestVital?.weight ? `${latestVital.weight} kg` : 'Non renseigne' },
+    {
+      label: 'Taille',
+      value: latestVital?.height ? `${(Number(latestVital.height) / 100).toFixed(2)} m` : 'Non renseigne',
+    },
+    { label: 'Sexe', value: latestVital?.gender || profile?.gender || 'Non renseigne' },
+  ]
+
+  const completedFields = [
+    profile?.name,
+    profile?.email,
+    profile?.phone,
+    profile?.address,
+    profile?.date_of_birth,
+    profile?.gender,
+    profile?.emergency_contact,
+  ].filter(Boolean).length
+  const profileCompletion = Math.round((completedFields / 7) * 100)
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }))
   }
 
-  const profileStatus = profile?.profileStatus
-  const healthProfileStatus = profile?.healthProfileStatus
+  function cancelEditing() {
+    setForm({
+      name: profile?.name || '',
+      email: profile?.email || '',
+      address: profile?.address || '',
+      phone: profile?.phone || '',
+      date_of_birth: formatDate(profile?.date_of_birth),
+      gender: profile?.gender || '',
+      emergency_contact: profile?.emergency_contact || '',
+    })
+    setIsEditing(false)
+  }
 
-  function handlePhotoChange(event) {
-    const file = event.target.files?.[0]
-
-    if (!file) {
+  async function saveProfile() {
+    if (!form.name.trim() || !form.email.trim()) {
+      toast.error('Le nom et l adresse e-mail sont obligatoires.')
       return
     }
 
-    setProfilePhoto(URL.createObjectURL(file))
+    setIsSaving(true)
+    const result = await updateUserProfile({
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      address: form.address.trim() || null,
+      date_of_birth: form.date_of_birth || null,
+      gender: form.gender || null,
+      emergency_contact: form.emergency_contact.trim() || null,
+    })
+    setIsSaving(false)
+
+    if (!result.success) {
+      toast.error(result.error || 'Impossible de mettre a jour le profil.')
+      return
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ['patient-profile', currentUserUid] })
+    await queryClient.invalidateQueries({ queryKey: ['profile'] })
+    setIsEditing(false)
+    toast.success('Profil mis a jour.')
   }
 
-  function updateEditableProfile(field, value) {
-    setEditableProfile((current) => ({
-      ...current,
-      [field]: value,
-    }))
+  async function handlePhotoChange(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La photo ne doit pas depasser 5 Mo.')
+      return
+    }
+
+    setIsUploading(true)
+    const result = await uploadProfilePicture(file)
+    setIsUploading(false)
+
+    if (!result.success) {
+      toast.error(result.error || 'Impossible de charger la photo.')
+      return
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ['patient-profile', currentUserUid] })
+    toast.success('Photo de profil mise a jour.')
   }
 
-  const details = (profile && profile.data) ? [
-    { label: 'Age', value: profile.data.age ? `${profile.data.age} ans` : 'N/R' },
-    { label: 'Poids', value: profile.data.weight ? `${profile.data.weight} kg` : 'N/R' },
-    { label: 'Taille', value: profile.data.height ? `${(Number(profile.data.height) / 100).toFixed(2)} m` : 'N/R' },
-    { label: 'Groupe sanguin', value: profile.data.blood_group || 'N/R' },
-  ] : healthDetails
+  if (profileQuery.isLoading || vitalsQuery.isLoading) {
+    return <LoadingSkeleton />
+  }
+
+  if (!profileQuery.data?.success) {
+    return (
+      <EmptyState icon={AlertCircle}>
+        {profileQuery.data?.error || 'Impossible de charger le profil depuis le backend.'}
+      </EmptyState>
+    )
+  }
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">Mon Profil</h1>
         <p className="mt-2 text-base leading-7 text-[#3d4943]">
-          Gerez vos informations de sante et vos preferences de suivi.
+          Gerez les informations enregistrees dans votre compte patient.
         </p>
       </div>
 
       <section className="grid gap-6 xl:grid-cols-[360px_1fr]">
         <article className="sht-card p-6 text-center">
-          <label className="group relative mx-auto block h-28 w-28 cursor-pointer">
+          <label className={`group relative mx-auto block h-28 w-28 ${isUploading ? 'cursor-wait' : 'cursor-pointer'}`}>
             <span className="grid h-28 w-28 place-items-center overflow-hidden rounded-full border-4 border-[#008560] bg-[#86f8c9]/35 text-[#00694c]">
-              {profilePhoto ? (
-                <img alt="Photo de profil" className="h-full w-full object-cover" src={profilePhoto} />
+              {profile?.profile_picture ? (
+                <img
+                  alt="Photo de profil"
+                  className="h-full w-full object-cover"
+                  src={`${getAssetUrl(profile.profile_picture)}?v=${encodeURIComponent(profile.profile_picture)}`}
+                />
               ) : (
                 <UserRound size={48} />
               )}
@@ -126,91 +260,86 @@ function ProfilePage() {
             <span className="absolute bottom-1 right-1 grid h-9 w-9 place-items-center rounded-full bg-[#00694c] text-white shadow-lg transition group-hover:bg-[#008560]">
               <Camera size={17} />
             </span>
-            <input accept="image/*" className="sr-only" type="file" onChange={handlePhotoChange} />
+            <input
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              disabled={isUploading}
+              type="file"
+              onChange={handlePhotoChange}
+            />
           </label>
 
-          {isEditingProfile ? (
+          {isEditing ? (
             <input
-              className="mx-auto mt-5 h-11 w-full rounded-lg border border-[#bccac1] bg-white px-3 text-center text-xl font-semibold outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
-              value={editableProfile.name}
-              onChange={(event) => updateEditableProfile('name', event.target.value)}
+              className="mx-auto mt-5 h-11 w-full rounded-lg border border-[#bccac1] bg-white px-3 text-center text-xl font-semibold outline-none focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
+              value={form.name}
+              onChange={(event) => updateField('name', event.target.value)}
             />
           ) : (
-            <h2 className="mt-5 text-2xl font-semibold text-[#171d1a] dark:text-white">{editableProfile.name}</h2>
+            <h2 className="mt-5 text-2xl font-semibold text-[#171d1a] dark:text-white">{profile.name}</h2>
           )}
-          <p className="mt-1 text-sm text-[#6d7a73]">Compte patient verifie</p>
+          <p className="mt-1 text-sm text-[#6d7a73]">
+            {profile.is_verified ? 'Compte patient verifie' : 'Compte en attente de verification'}
+          </p>
 
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            {['Patient/User', 'Profil complet', 'Acces securise'].map((tag) => (
-              <span className="rounded-full bg-[#eff5ef] px-3 py-1 text-xs font-semibold text-[#00694c]" key={tag}>
-                {tag}
-              </span>
-            ))}
+            <span className="rounded-full bg-[#eff5ef] px-3 py-1 text-xs font-semibold text-[#00694c]">
+              {profile.role === 'admin' ? 'Admin' : 'Patient/User'}
+            </span>
+            <span className="rounded-full bg-[#eff5ef] px-3 py-1 text-xs font-semibold text-[#00694c]">
+              Profil {profileCompletion}%
+            </span>
           </div>
 
           <div className="mt-6 space-y-3 text-left">
-            <div className="flex items-center gap-3 rounded-lg bg-[#eff5ef] p-3 text-sm text-[#3d4943]">
-              <Mail size={17} className="text-[#00694c]" />
-              {isEditingProfile ? (
-                <input
-                  className="w-full bg-transparent outline-none"
-                  value={editableProfile.email}
-                  onChange={(event) => updateEditableProfile('email', event.target.value)}
-                />
-              ) : (
-                editableProfile.email
-              )}
-            </div>
-            <div className="flex items-center gap-3 rounded-lg bg-[#eff5ef] p-3 text-sm text-[#3d4943]">
-              <MapPin size={17} className="text-[#00694c]" />
-              {isEditingProfile ? (
-                <input
-                  className="w-full bg-transparent outline-none"
-                  value={editableProfile.location}
-                  onChange={(event) => updateEditableProfile('location', event.target.value)}
-                />
-              ) : (
-                editableProfile.location
-              )}
-            </div>
-            <div className="flex items-center gap-3 rounded-lg bg-[#eff5ef] p-3 text-sm text-[#3d4943]">
-              <Phone size={17} className="text-[#00694c]" />
-              {isEditingProfile ? (
-                <input
-                  className="w-full bg-transparent outline-none"
-                  value={editableProfile.phone}
-                  onChange={(event) => updateEditableProfile('phone', event.target.value)}
-                />
-              ) : (
-                editableProfile.phone
-              )}
-            </div>
+            {[
+              { field: 'email', icon: Mail, type: 'email', placeholder: 'Adresse e-mail' },
+              { field: 'address', icon: MapPin, type: 'text', placeholder: 'Adresse' },
+              { field: 'phone', icon: Phone, type: 'tel', placeholder: 'Telephone' },
+            ].map(({ field, icon: Icon, type, placeholder }) => (
+              <div className="flex min-h-12 items-center gap-3 rounded-lg bg-[#eff5ef] p-3 text-sm text-[#3d4943]" key={field}>
+                <Icon className="shrink-0 text-[#00694c]" size={17} />
+                {isEditing ? (
+                  <input
+                    className="w-full bg-transparent outline-none"
+                    placeholder={placeholder}
+                    type={type}
+                    value={form[field]}
+                    onChange={(event) => updateField(field, event.target.value)}
+                  />
+                ) : (
+                  <span>{profile[field] || 'Non renseigne'}</span>
+                )}
+              </div>
+            ))}
           </div>
 
-          {isEditingProfile ? (
+          {isEditing ? (
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm font-semibold text-[#3d4943] transition hover:bg-[#eff5ef]"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm font-semibold text-[#3d4943] hover:bg-[#eff5ef]"
+                disabled={isSaving}
                 type="button"
-                onClick={() => setIsEditingProfile(false)}
+                onClick={cancelEditing}
               >
                 <X size={17} />
                 Annuler
               </button>
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#00694c] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#008560]"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#00694c] px-4 py-3 text-sm font-semibold text-white hover:bg-[#008560] disabled:opacity-60"
+                disabled={isSaving}
                 type="button"
-                onClick={() => setIsEditingProfile(false)}
+                onClick={saveProfile}
               >
                 <Check size={17} />
-                Enregistrer
+                {isSaving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </div>
           ) : (
             <button
-              className="mt-6 w-full rounded-lg bg-[#00694c] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#008560]"
+              className="mt-6 w-full rounded-lg bg-[#00694c] px-4 py-3 text-sm font-semibold text-white hover:bg-[#008560]"
               type="button"
-              onClick={() => setIsEditingProfile(true)}
+              onClick={() => setIsEditing(true)}
             >
               Modifier le profil
             </button>
@@ -242,7 +371,7 @@ function ProfilePage() {
                 {details.map((item) => (
                   <article className="sht-card p-5" key={item.label}>
                     <p className="text-sm text-[#6d7a73]">{item.label}</p>
-                    <p className="font-metric mt-2 text-2xl font-semibold text-[#171d1a] dark:text-white">
+                    <p className="font-metric mt-2 text-xl font-semibold text-[#171d1a] dark:text-white">
                       {item.value}
                     </p>
                   </article>
@@ -251,9 +380,9 @@ function ProfilePage() {
 
               <section className="grid gap-4 md:grid-cols-3">
                 {[
-                  { label: 'Profil', value: profileStatus, icon: ShieldCheck },
-                  { label: 'Sante', value: healthProfileStatus, icon: HeartPulse },
-                  { label: 'Activite', value: 'Suivi hebdomadaire actif', icon: Activity },
+                  { label: 'Profil', value: `${profileCompletion}% complete`, icon: ShieldCheck },
+                  { label: 'Sante', value: latestVital ? 'Donnees synchronisees' : 'Aucune mesure', icon: HeartPulse },
+                  { label: 'Activite', value: `${vitals.length} saisie(s)`, icon: Activity },
                 ].map((item) => (
                   <article className="sht-card p-5" key={item.label}>
                     <div className="grid h-11 w-11 place-items-center rounded-lg bg-[#86f8c9]/35 text-[#00694c]">
@@ -273,71 +402,93 @@ function ProfilePage() {
                     </div>
                     <div>
                       <h2 className="font-semibold text-[#171d1a] dark:text-white">Contact d'urgence</h2>
-                      <p className="mt-1 text-sm text-[#6d7a73]">Sarra Ben Ali - Soeur - +216 55 000 000</p>
+                      {isEditing ? (
+                        <input
+                          className="mt-2 w-full rounded-lg border border-[#bccac1] bg-white px-3 py-2 text-sm outline-none focus:border-[#00694c]"
+                          placeholder="Nom, relation et telephone"
+                          value={form.emergency_contact}
+                          onChange={(event) => updateField('emergency_contact', event.target.value)}
+                        />
+                      ) : (
+                        <p className="mt-1 text-sm text-[#6d7a73]">
+                          {profile.emergency_contact || 'Aucun contact renseigne'}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <button className="rounded-lg bg-[#eff5ef] px-4 py-2 text-sm font-semibold text-[#00694c]" type="button">
-                    Modifier
-                  </button>
+                  {!isEditing && (
+                    <button
+                      className="rounded-lg bg-[#eff5ef] px-4 py-2 text-sm font-semibold text-[#00694c]"
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      Modifier
+                    </button>
+                  )}
                 </div>
               </article>
+
+              {isEditing && (
+                <article className="sht-card grid gap-4 p-5 sm:grid-cols-2">
+                  <label>
+                    <span className="text-sm font-medium text-[#3d4943]">Date de naissance</span>
+                    <input
+                      className="mt-2 w-full rounded-lg border border-[#bccac1] bg-white px-3 py-3 text-sm outline-none focus:border-[#00694c]"
+                      type="date"
+                      value={form.date_of_birth}
+                      onChange={(event) => updateField('date_of_birth', event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span className="text-sm font-medium text-[#3d4943]">Genre</span>
+                    <select
+                      className="mt-2 w-full rounded-lg border border-[#bccac1] bg-white px-3 py-3 text-sm outline-none focus:border-[#00694c]"
+                      value={form.gender}
+                      onChange={(event) => updateField('gender', event.target.value)}
+                    >
+                      <option value="">Non renseigne</option>
+                      <option value="F">Femme</option>
+                      <option value="M">Homme</option>
+                      <option value="Autre">Autre</option>
+                    </select>
+                  </label>
+                </article>
+              )}
             </div>
           )}
 
           {activeTab === 'history' && (
             <article className="sht-card p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Medecine historique</h2>
-                  <p className="mt-1 text-sm text-[#6d7a73]">
-                    Pathologies, allergies et suivis importants pour contextualiser les futures analyses IA.
-                  </p>
-                </div>
-                <CalendarCheck className="text-[#00694c]" size={23} />
-              </div>
-              <div className="mt-5 space-y-3">
-                {medicalHistory.map((item) => (
-                  <div className="rounded-lg border border-[#dce5df] bg-white p-4" key={item.title}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-[#171d1a]">{item.title}</p>
-                        <p className="mt-1 text-sm text-[#6d7a73]">{item.date}</p>
+              <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Historique medical</h2>
+              <p className="mt-1 text-sm text-[#6d7a73]">
+                Informations issues de votre derniere saisie de symptomes.
+              </p>
+              <div className="mt-5">
+                {medicalItems.length ? (
+                  <div className="space-y-3">
+                    {medicalItems.map((item, index) => (
+                      <div className="rounded-lg border border-[#dce5df] bg-white p-4" key={`${item.category}-${item.title}-${index}`}>
+                        <p className="text-xs font-semibold uppercase text-[#00694c]">{item.category}</p>
+                        <p className="mt-1 font-semibold text-[#171d1a]">{item.title}</p>
                       </div>
-                      <span className="rounded-full bg-[#eff5ef] px-3 py-1 text-xs font-semibold text-[#00694c]">
-                        {item.status}
-                      </span>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <EmptyState icon={HeartPulse}>
+                    Aucun antecedent, traitement ou allergie n est encore disponible dans vos saisies.
+                  </EmptyState>
+                )}
               </div>
             </article>
           )}
 
           {activeTab === 'vaccinations' && (
             <article className="sht-card p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Vaccinations</h2>
-                  <p className="mt-1 text-sm text-[#6d7a73]">Carnet patient avec statut de chaque vaccin.</p>
-                </div>
-                <Syringe className="text-[#00694c]" size={23} />
-              </div>
-              <div className="mt-5 space-y-3">
-                {vaccinations.map((item) => (
-                  <div className="flex items-center justify-between gap-4 rounded-lg border border-[#dce5df] bg-white p-4" key={item.name}>
-                    <div>
-                      <p className="font-semibold text-[#171d1a]">{item.name}</p>
-                      <p className="mt-1 text-sm text-[#6d7a73]">{item.date}</p>
-                    </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        item.status === 'A jour' ? 'bg-[#86f8c9]/35 text-[#00694c]' : 'bg-[#fff3cd] text-[#8a5a00]'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </div>
-                ))}
+              <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Vaccinations</h2>
+              <div className="mt-5">
+                <EmptyState icon={Syringe}>
+                  Le backend ne fournit pas encore d endpoint de vaccination. Aucun vaccin fictif n est affiche.
+                </EmptyState>
               </div>
             </article>
           )}
@@ -345,10 +496,10 @@ function ProfilePage() {
           {activeTab === 'preferences' && (
             <section className="grid gap-4 md:grid-cols-2">
               {[
-                { title: 'Notifications', text: 'Alertes IA, rappels de suivi et syntheses hebdomadaires actives.' },
-                { title: 'Confidentialite', text: 'Donnees patient mockees cote front, contrat backend documente.' },
-                { title: 'Theme', text: 'Preference de theme persistante via Zustand.' },
-                { title: 'Langue', text: 'Interface de demo preparee en francais fonctionnel.' },
+                { title: 'Notifications', text: 'Les alertes sont recuperees depuis le service backend.' },
+                { title: 'Confidentialite', text: 'Les informations du profil sont protegees par authentification JWT.' },
+                { title: 'Theme', text: 'La preference claire ou sombre est conservee localement.' },
+                { title: 'Langue', text: 'Interface patient en francais.' },
               ].map((item) => (
                 <article className="sht-card p-5" key={item.title}>
                   <h2 className="font-semibold text-[#171d1a] dark:text-white">{item.title}</h2>

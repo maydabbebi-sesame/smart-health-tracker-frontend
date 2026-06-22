@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient'
 import { AUTH_ENDPOINTS } from '../constants/apiEndpoints'
+import { queryClient } from '../app/queryClient'
 
 /**
  * Authentication Service - Real API Integration
@@ -13,6 +14,7 @@ const USER_KEY = 'smart_health_tracker_user'
  * Store token and user in localStorage
  */
 export function setAuthToken(token, user) {
+  queryClient.clear()
   localStorage.setItem(TOKEN_KEY, token)
   localStorage.setItem(USER_KEY, JSON.stringify(user))
 }
@@ -40,6 +42,7 @@ export function getStoredUser() {
  * Clear authentication data
  */
 export function clearToken() {
+  queryClient.clear()
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
 }

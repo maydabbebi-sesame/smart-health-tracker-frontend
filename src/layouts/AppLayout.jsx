@@ -75,8 +75,12 @@ export function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const currentUser = getCurrentUser()
 
-  const { data: profileData } = useQuery({ queryKey: ['profile-header'], queryFn: getProfile })
+  const { data: profileData } = useQuery({
+    queryKey: ['profile-header', currentUser?.uid || 'anonymous'],
+    queryFn: getProfile,
+  })
 
   function handleLogout() {
     clearToken()
@@ -168,7 +172,7 @@ export function AppLayout() {
                 type="button"
                 onClick={() => navigate('/profile')}
               >
-                <p className="text-sm font-semibold text-slate-900">{profileData?.data?.first_name || profileData?.data?.name || getCurrentUser()?.email || 'Utilisateur'}</p>
+                <p className="text-sm font-semibold text-slate-900">{profileData?.data?.first_name || profileData?.data?.name || currentUser?.email || 'Utilisateur'}</p>
                 <p className="text-xs text-slate-500">Patient account</p>
               </button>
               <motion.button

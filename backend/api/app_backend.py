@@ -1,7 +1,8 @@
 import importlib.util
+from pathlib import Path
 import pkgutil
 
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 
 from users import users_bp
@@ -30,6 +31,13 @@ app.register_blueprint(alerts_bp)
 app.register_blueprint(forms_bp)
 app.register_blueprint(vitals_bp)
 app.register_blueprint(admin_bp)
+
+UPLOADS_DIR = Path(__file__).resolve().parents[1] / "uploads"
+
+
+@app.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    return send_from_directory(UPLOADS_DIR, filename)
 
 
 if __name__ == "__main__":

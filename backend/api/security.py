@@ -34,7 +34,15 @@ def publicize_user(record: dict) -> dict:
     public = {
         "uid": encode_id(record["id"]),
         "name": record.get("name"),
-        "email": record.get("email")
+        "email": record.get("email"),
+        "role": record.get("role"),
+        "is_verified": bool(record.get("is_verified")),
+        "phone": record.get("phone"),
+        "date_of_birth": record.get("date_of_birth"),
+        "gender": record.get("gender"),
+        "address": record.get("address"),
+        "emergency_contact": record.get("emergency_contact"),
+        "profile_picture": record.get("profile_picture"),
     }
     return public
 

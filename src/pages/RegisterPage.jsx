@@ -24,14 +24,16 @@ function RegisterPage() {
     setLoading(false)
 
     if (result.success) {
+      const verificationSession = {
+        uid: result.data.uid,
+        email,
+        verificationCode: result.data.verificationCode || '',
+        devNote: result.data.devNote || '',
+      }
+      sessionStorage.setItem('smart_health_verification', JSON.stringify(verificationSession))
       navigate('/verify-email', {
         replace: true,
-        state: {
-          uid: result.data.uid,
-          email,
-          verificationCode: result.data.verificationCode,
-          devNote: result.data.devNote,
-        },
+        state: verificationSession,
       })
     } else {
       setError(result.error)
@@ -43,7 +45,7 @@ function RegisterPage() {
       <div className="mb-8">
         <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Creer un compte</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Demarrez avec un compte demo securise pour explorer le tableau de bord.
+          Creez votre compte patient. Un code vous sera envoye pour verifier votre adresse e-mail.
         </p>
       </div>
 
@@ -82,7 +84,8 @@ function RegisterPage() {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
               className="w-full rounded-lg border border-[#bccac1] bg-[#eff5ef] py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
-              defaultValue="password"
+              autoComplete="new-password"
+              defaultValue=""
               minLength={6}
               name="password"
               required

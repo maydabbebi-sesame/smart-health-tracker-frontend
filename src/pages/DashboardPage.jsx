@@ -70,6 +70,7 @@ function ChartCard({ children, subtitle, title }) {
 }
 
 function DashboardPage() {
+  const currentUser = getCurrentUser()
   const { data: summary, isLoading: isSummaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: getDashboardSummary,
@@ -78,7 +79,10 @@ function DashboardPage() {
     queryKey: ['dashboard-charts'],
     queryFn: getDashboardCharts,
   })
-  const { data: profileData } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
+  const { data: profileData } = useQuery({
+    queryKey: ['profile', currentUser?.uid || 'anonymous'],
+    queryFn: getProfile,
+  })
   const { data: recommendationsData } = useQuery({ queryKey: ['ai-recommendations'], queryFn: getRecommendations })
 
   if (isSummaryLoading || isChartsLoading) {
@@ -98,7 +102,7 @@ function DashboardPage() {
       <section className="grid gap-6 md:grid-cols-12">
         <div className="flex flex-col justify-center md:col-span-8">
           <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">
-            Bonjour {profileData?.data?.first_name || profileData?.data?.name || getCurrentUser()?.email || 'Utilisateur'}
+            Bonjour {profileData?.data?.first_name || profileData?.data?.name || currentUser?.email || 'Utilisateur'}
           </h1>
           <p className="mt-3 flex items-center gap-2 text-base text-[#6d7a73]">
             <CalendarDays size={19} />
