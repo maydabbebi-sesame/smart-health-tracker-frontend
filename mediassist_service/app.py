@@ -25,7 +25,9 @@ from prompt_builder import (
     build_trend_analysis_messages,
     build_user_message,
     clean_trend_synthese,
+    normalize_chat_response,
     normalize_tendances,
+    response_is_incomplete,
 )
 from turn_logger import log_turn
 
@@ -160,6 +162,25 @@ def chat():
     ]
 
     raw, parsed, error = call_model(messages)
+    if parsed is not None:
+        parsed = normalize_chat_response(parsed)
+
+    # Two known degenerate-but-syntactically-valid failure modes, neither a
+    # prompt-building bug (messages sent differ correctly turn to turn, see
+    # mediassist.log): (1) medgemma1.5 occasionally echoes the previous
+    # turn's response verbatim for a genuinely new follow-up question; (2) it
+    # plans a detailed list in its own reasoning but closes "analyse" right
+    # after announcing it ("Voici les principes generaux :") without ever
+    # writing the list. One retry is enough to break out of either in practice.
+    is_duplicate = (
+        history and history[-1]["role"] == "assistant" and parsed is not None
+        and _json.dumps(parsed, ensure_ascii=False) == history[-1]["content"]
+    )
+    if parsed is not None and (is_duplicate or response_is_incomplete(parsed)):
+        raw, parsed, error = call_model(messages)
+        if parsed is not None:
+            parsed = normalize_chat_response(parsed)
+
     log_turn(messages, raw, parsed)
 
     # Only persist when the model actually produced a usable response.

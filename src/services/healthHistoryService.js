@@ -38,16 +38,21 @@ export async function getHealthHistory(page = 1, pageSize = 20, period = null) {
 /**
  * Build a sortable 'YYYY-MM-DD' key from the backend's recorded_at.
  * Flask serializes datetimes as RFC1123 strings (e.g. "Thu, 18 Jun 2026
- * 14:20:12 GMT") which `new Date(...)` parses correctly, but naive string
- * slicing does not.
+ * 14:20:12 GMT") which `new Date(...)` parses correctly — but the "GMT" is a
+ * mislabel: the stored value is a naive local timestamp, never actually
+ * converted to UTC. Reading it back with local-time getters (getDate() etc.)
+ * re-applies the browser's timezone offset on top of a value that was never
+ * shifted in the first place, which can push late-evening records into the
+ * next calendar day. Using the UTC getters instead echoes back the exact
+ * date/time embedded in the string, with no timezone math at all.
  */
 function toDateKey(value) {
   if (!value) return 'Date inconnue'
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return 'Date inconnue'
-  const year = parsed.getFullYear()
-  const month = String(parsed.getMonth() + 1).padStart(2, '0')
-  const day = String(parsed.getDate()).padStart(2, '0')
+  const year = parsed.getUTCFullYear()
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getUTCDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
 

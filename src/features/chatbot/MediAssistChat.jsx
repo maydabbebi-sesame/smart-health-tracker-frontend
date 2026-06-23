@@ -58,7 +58,12 @@ function renderBoldSegments(line) {
 }
 
 function FormattedText({ content, className }) {
-  const paragraphs = (content || '').split(/\n\n+/)
+  // The model is expected to put a string here, but has been observed
+  // returning [] or {} for an empty field instead (truthy in JS, so
+  // `content || ''` doesn't catch it) — guard so a malformed reply degrades
+  // to an empty bubble instead of crashing the whole chat.
+  const text = typeof content === 'string' ? content : ''
+  const paragraphs = text.split(/\n\n+/)
   return paragraphs.map((para, i) => (
     <p className={className} key={i}>
       {para.split('\n').map((line, j, arr) => (
@@ -164,7 +169,16 @@ function AnalysisCard({ parsed }) {
 }
 
 // ── Chat bubble ───────────────────────────────────────────────────────────────
-function AssistantBubble({ content }) {
+// Follow-up turns sometimes put the actual substance of the answer (e.g.
+// concrete diet/exercise advice) into "recommandations" rather than
+// "analyse" — by design those cards otherwise only surface later on the AI
+// Recommendations page, so a question asked directly in the chat ("donne-moi
+// des conseils pour...") could get a generic/empty-feeling bubble even
+// though the model did produce real content, just on the wrong field.
+// Rendering them inline guarantees the answer is visible right where the
+// patient asked for it, regardless of which field the model used.
+function AssistantBubble({ content, parsed }) {
+  const recommandations = parsed?.recommandations || []
   return (
     <div className="flex items-start gap-3">
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#00694c] text-white shadow">
@@ -172,6 +186,19 @@ function AssistantBubble({ content }) {
       </div>
       <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[#dee4de] bg-white px-4 py-3 text-sm leading-6 text-[#3d4943] shadow-sm space-y-2">
         <FormattedText content={content} />
+        {recommandations.length > 0 && (
+          <ul className="space-y-2 border-t border-[#dee4de] pt-2">
+            {recommandations.map((r, i) => (
+              <li className="flex gap-2" key={i}>
+                <ListChecks className="mt-0.5 shrink-0 text-[#00694c]" size={14} />
+                <div>
+                  <p className="font-semibold">{r.titre}</p>
+                  {r.detail && <p className="text-xs leading-5 text-[#6d7a73]">{r.detail}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )
@@ -414,9 +441,14 @@ export function MediAssistChat({ patientData }) {
         { role: 'assistant', content: assistantContent },
       ])
 
-      // New recommendations/alerts from this turn become cards on the AI
-      // Recommendations page (left panel) and entries in the Alerts center.
-      useMedAssistStore.getState().applyAnalysis(parsed)
+      // Only the initial analysis seeds the AI Recommendations page (left
+      // panel) and the Alerts center — a follow-up question's recommandations
+      // are shown inline in the chat bubble (see AssistantBubble) but never
+      // written to the store, so the left panel stays exactly as the initial
+      // analysis left it no matter how the conversation continues.
+      if (isInitial) {
+        useMedAssistStore.getState().applyAnalysis(parsed)
+      }
 
       const displayText = parsed.analyse || parsed.resume_situation || ''
       setMessages((prev) => [
@@ -499,7 +531,7 @@ export function MediAssistChat({ patientData }) {
               </div>
             )
           }
-          return <AssistantBubble key={i} content={msg.text} />
+          return <AssistantBubble content={msg.text} key={i} parsed={msg.parsed} />
         })}
 
         {isLoading && <ThinkingBubble patientData={patientData} />}

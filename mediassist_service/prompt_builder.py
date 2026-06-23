@@ -256,6 +256,13 @@ pas redonné à chaque message. Distingue deux types de message utilisateur :
   suivre", donne des conseils concrets de sommeil/activité/alimentation/stress
   adaptés au profil — pas un résumé clinique).
 
+  INTERDICTION ABSOLUE : ne termine JAMAIS le champ "analyse" par une phrase
+  qui annonce une liste ou des explications à venir ("Voici les principes
+  généraux :", "Voici quelques conseils :"...) sans écrire cette liste dans
+  la foulée, dans la même réponse. Si tu annonces "Voici X :", le contenu de
+  X doit immédiatement suivre, intégré aux paragraphes — une "analyse" qui se
+  termine sur ":" est toujours une erreur, quelle que soit sa longueur.
+
 ### [9] FORMAT DE RÉPONSE — RAPPEL FINAL ###
 
 Rappel des règles critiques :
@@ -311,19 +318,25 @@ UNIQUEMENT : "haute", "moyenne", "basse".
   - "basse"   → conseil général, prévention à long terme
 Trie les recommandations par priorité décroissante (haute → moyenne → basse).
 
+Les valeurs ci-dessous (XXX/YY, ZZ.Z...) sont des PLACEHOLDERS purement illustratifs
+du format attendu — elles ne décrivent aucun patient réel. Ne les recopie JAMAIS
+dans une vraie réponse : remplace-les toujours par les valeurs réelles du patient
+données en [5]/[6], et si une mesure n'a pas été fournie, ne crée aucune alerte ou
+phrase à son sujet plutôt que d'inventer un chiffre plausible.
+
 Structure JSON obligatoire :
 {
   "urgence": "normale",
   "alertes": [
     {
       "titre": "Tension artérielle élevée",
-      "detail": "148/92 mmHg — HTA grade 2 confirmée.",
+      "detail": "XXX/YY mmHg — HTA grade 2 confirmée.",
       "action": "Consultez votre médecin généraliste dans la semaine.",
       "urgence": "moderee"
     }
   ],
   "resume_situation": "...",
-  "analyse": "Votre **tension artérielle (148/92 mmHg)** et votre **IMC de 31.6** forment ensemble un facteur de risque cardiovasculaire significatif.\n\nVos vertiges peuvent être liés à une **hypotension orthostatique**, favorisée par votre sommeil de mauvaise qualité.\n\nCette combinaison justifie une consultation rapide pour ajuster votre suivi.",
+  "analyse": "Votre **tension artérielle (XXX/YY mmHg)** et votre **IMC de ZZ.Z** forment ensemble un facteur de risque cardiovasculaire significatif.\n\nVos vertiges peuvent être liés à une **hypotension orthostatique**, favorisée par votre sommeil de mauvaise qualité.\n\nCette combinaison justifie une consultation rapide pour ajuster votre suivi.",
   "recommandations": [
     {
       "titre": "...",
@@ -683,3 +696,45 @@ def normalize_tendances(tendances):
             item["evolution"] = "hausse" if end_f > start_f else "baisse"
         normalized.append(item)
     return normalized
+
+
+def _as_text(value):
+    """Coerce a field the model should have written as a string but
+    sometimes emits as [] or {} (observed: it omits "analyse" entirely and
+    leaves "resume_situation"/"orientation"/"disclaimer" as empty arrays
+    instead — see mediassist_service/app.py's chat route). [] and {} are
+    truthy in JS, so passing them through as-is crashes the chat UI, which
+    calls .split() on whatever it receives expecting a string."""
+    if isinstance(value, str):
+        return value
+    if value in (None, [], {}):
+        return ""
+    return str(value)
+
+
+_LIST_PROMISE_RE = re.compile(r"[:：]\s*$")
+
+
+def response_is_incomplete(parsed):
+    """True if "analyse" ends on a colon — the model has been observed
+    planning a detailed list in its own reasoning (e.g. 9 bullet points on
+    managing obesity) and then closing the JSON string right after
+    announcing it ("Voici les principes generaux :") without ever writing
+    the list. Cheap, reliable signal that the turn needs a retry."""
+    analyse = (parsed or {}).get("analyse") or ""
+    return bool(_LIST_PROMISE_RE.search(analyse.rstrip()))
+
+
+def normalize_chat_response(parsed):
+    """Guarantees the fields the chat UI renders as text/lists/dict are
+    actually of that type, regardless of what the model put in them."""
+    parsed["analyse"] = _as_text(parsed.get("analyse"))
+    parsed["resume_situation"] = _as_text(parsed.get("resume_situation"))
+    parsed["disclaimer"] = _as_text(parsed.get("disclaimer"))
+    if not isinstance(parsed.get("alertes"), list):
+        parsed["alertes"] = []
+    if not isinstance(parsed.get("recommandations"), list):
+        parsed["recommandations"] = []
+    if not isinstance(parsed.get("orientation"), dict):
+        parsed["orientation"] = None
+    return parsed
