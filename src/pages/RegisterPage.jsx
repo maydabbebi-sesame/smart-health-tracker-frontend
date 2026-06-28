@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Lock, Mail, UserRound } from 'lucide-react'
 
+import SocialAuthButtons from '../components/auth/SocialAuthButtons'
 import { register } from '../features/auth/auth'
 import { useTranslation } from '../i18n/useTranslation'
 
@@ -38,6 +39,14 @@ function RegisterPage() {
     } else {
       setError(result.error)
     }
+  }
+
+  function handleSocialSuccess() {
+    navigate('/dashboard', { replace: true })
+  }
+
+  function handleSocialError(message) {
+    setError(message)
   }
 
   return (
@@ -111,6 +120,14 @@ function RegisterPage() {
           {loading ? t('register.submitting', 'Création du compte...') : t('register.submit', 'Créer mon compte')}
         </button>
       </form>
+
+      <div className="my-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-[#dce5df]" />
+        <span className="text-xs font-medium text-[#6d7a73]">{t('register.orContinueWith', 'Ou continuer avec')}</span>
+        <div className="h-px flex-1 bg-[#dce5df]" />
+      </div>
+
+      <SocialAuthButtons onError={handleSocialError} onSuccess={handleSocialSuccess} />
 
       <p className="mt-6 text-center text-sm text-[#3d4943]">
         {t('register.alreadyRegistered', 'Déjà inscrit ?')}{' '}
