@@ -8,6 +8,8 @@ const MEDIASSIST_BASE_URL = import.meta.env.VITE_MEDIASSIST_URL || 'http://127.0
 const CHAT_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/chat`
 const DOCTOR_AGENT_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/doctor-agent`
 const ANALYZE_TRENDS_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/analyze-trends`
+const RECOMMENDATIONS_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/recommendations`
+const RECOMMENDATIONS_HISTORY_ENDPOINT = `${MEDIASSIST_BASE_URL}/api/mediassist/recommendations-history`
 // Must stay comfortably ABOVE the backend's own gateway-call timeout
 // (mediassist_service/llm_client.py's TIMEOUT_S) — medgemma1.5 is a "thinking"
 // model whose generation routinely runs past a minute, and aborting here
@@ -18,6 +20,10 @@ const TIMEOUT_MS = 520_000
 // should resolve much faster than a full MediAssist analysis — but still
 // give it a generous budget since LLM latency varies.
 const DOCTOR_AGENT_TIMEOUT_MS = 120_000
+// The recommendations lookup is a plain DB read (no LLM call), so it should
+// resolve almost instantly — a short budget keeps a stalled DB from hanging
+// the dashboard.
+const RECOMMENDATIONS_TIMEOUT_MS = 10_000
 
 export async function sendMediAssistMessage({ patientData, history, userText, userUid, sessionId, signal }) {
   const controller = new AbortController()
@@ -36,7 +42,13 @@ export async function sendMediAssistMessage({ patientData, history, userText, us
     const { userContent, assistantContent, parsed, error } = await resp.json()
     if (error && !parsed) throw new Error(error)
 
-    return { userContent, assistantContent, parsed }
+    // error can be set alongside a non-null `parsed` — the backend still
+    // returns a usable (but generic, recommendation-less) fallback object so
+    // the chat bubble always has something to render; surfacing error too
+    // lets the caller tell "the model genuinely found nothing to recommend"
+    // apart from "the LLM gateway call failed" (see AI Analysis page's
+    // history fallback in MediAssistChat.jsx).
+    return { userContent, assistantContent, parsed, error }
   } catch (err) {
     if (err.name === 'AbortError') throw new Error("L'analyse a dépassé le délai imparti. Réessayez.", { cause: err })
     throw err
@@ -101,6 +113,65 @@ export async function getTrendsAnalysis({ vitals, period }) {
       return { success: false, error: "L'analyse a dépassé le délai imparti. Réessayez." }
     }
     return { success: false, error: err.message || "Le service d'analyse de tendances est indisponible." }
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+// Fetches the dashboard's "Recommandation IA" card content: the top-priority
+// recommendation from the patient's most recent MediAssist analysis, already
+// stored in mediassist_history — see app.py's latest_recommendation route.
+// No LLM call, so it stays fast enough to load alongside the rest of the
+// dashboard.
+export async function getLatestRecommendation({ userUid }) {
+  if (!userUid) return { success: false, error: 'Utilisateur non identifié.' }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), RECOMMENDATIONS_TIMEOUT_MS)
+
+  try {
+    const resp = await fetch(`${RECOMMENDATIONS_ENDPOINT}?user_uid=${encodeURIComponent(userUid)}`, {
+      signal: controller.signal,
+    })
+
+    if (!resp.ok) throw new Error(`Erreur du service MediAssist : ${resp.status}`)
+
+    const { summary, error } = await resp.json()
+    if (error) throw new Error(error)
+
+    return { success: true, summary }
+  } catch (err) {
+    return { success: false, error: err.message || 'Le service de recommandations est indisponible.' }
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+// Fallback for the AI Analysis page: when the initial analysis turn's LLM
+// call fails, the chat response falls back to a generic, recommendation-less
+// object (see llm_client.FALLBACK_RESPONSE) — the recommendations panel would
+// otherwise go empty even though MediAssist successfully produced real
+// recommendations in a previous session. Returns the patient's last
+// persisted recommendations (see app.py's recommendations_history route).
+export async function getRecommendationsHistory({ userUid }) {
+  if (!userUid) return { success: false, error: 'Utilisateur non identifié.' }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), RECOMMENDATIONS_TIMEOUT_MS)
+
+  try {
+    const resp = await fetch(`${RECOMMENDATIONS_HISTORY_ENDPOINT}?user_uid=${encodeURIComponent(userUid)}`, {
+      signal: controller.signal,
+    })
+
+    if (!resp.ok) throw new Error(`Erreur du service MediAssist : ${resp.status}`)
+
+    const { recommendations, error } = await resp.json()
+    if (error) throw new Error(error)
+
+    return { success: true, recommendations: recommendations || [] }
+  } catch (err) {
+    return { success: false, error: err.message || "L'historique des recommandations est indisponible." }
   } finally {
     clearTimeout(timeoutId)
   }

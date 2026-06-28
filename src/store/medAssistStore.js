@@ -36,6 +36,12 @@ export const useMedAssistStore = create(
     (set) => ({
       recommendations: [],
       alerts: [],
+      // True when `recommendations` was populated from past, persisted
+      // recommendations (see loadFallbackRecommendations) rather than the
+      // current session's own analysis — lets the AI Analysis page tell the
+      // patient these aren't fresh (see MediAssistChat's use of
+      // getRecommendationsHistory when the live LLM call fails).
+      recommendationsAreFallback: false,
 
       // Last orientation suggested by MediAssist ({ niveau, specialite, raison,
       // delai }) — drives the Doctor Agent page's "should I suggest a doctor?"
@@ -55,7 +61,7 @@ export const useMedAssistStore = create(
       // analysis state so a fresh form run always triggers a new analysis,
       // even when the patient data hasn't changed.
       resetSession() {
-        set({ chatMessages: [], chatHistory: [], chatSessionKey: null, recommendations: [], alerts: [], lastOrientation: null })
+        set({ chatMessages: [], chatHistory: [], chatSessionKey: null, recommendations: [], alerts: [], lastOrientation: null, recommendationsAreFallback: false })
       },
 
       // Chat conversation — persisted so leaving the AI Recommendations page
@@ -89,6 +95,7 @@ export const useMedAssistStore = create(
             recommendations: [],
             alerts: [],
             lastOrientation: null,
+            recommendationsAreFallback: false,
           }
         })
         return claimed
@@ -156,6 +163,30 @@ export const useMedAssistStore = create(
             recommendations: [...newRecommendations, ...state.recommendations],
             alerts: [...newAlerts, ...state.alerts],
             lastOrientation: parsed.orientation || state.lastOrientation,
+          }
+        })
+      },
+
+      // Called by MediAssistChat after an initial analysis whose LLM call
+      // failed (gateway unreachable/timeout) and therefore produced no
+      // recommandations — backs the panel with the patient's last persisted
+      // recommendations (see services/mediAssistService.getRecommendationsHistory)
+      // instead of leaving it empty. Only applies if nothing real landed first.
+      loadFallbackRecommendations(history) {
+        set((state) => {
+          if (state.recommendations.length > 0 || !history?.length) return state
+          return {
+            recommendations: history.map((r) => ({
+              id: makeId('rec'),
+              titre: r.titre,
+              detail: r.detail || '',
+              pourquoi: r.pourquoi || '',
+              priorite: normalizePriorite(r.priorite),
+              urgence: normalizeUrgence(r.urgence),
+              createdAt: r.createdAt || new Date().toISOString(),
+              done: false,
+            })),
+            recommendationsAreFallback: true,
           }
         })
       },

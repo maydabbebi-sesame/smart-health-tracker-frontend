@@ -25,7 +25,8 @@ import {
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
 import { formatShortDate, getDashboardCharts, getDashboardSummary } from '../services/dashboardService'
 import { getProfile } from '../services/userService'
-import { getRecommendations } from '../services/aiService'
+import { getCurrentUser } from '../services/authService'
+import { getLatestRecommendation } from '../services/mediAssistService'
 import { useTranslation } from '../i18n/useTranslation'
 
 const statIcons = {
@@ -78,7 +79,12 @@ function DashboardPage() {
     queryFn: getDashboardCharts,
   })
   const { data: profileData } = useQuery({ queryKey: ['patient-profile'], queryFn: getProfile })
-  const { data: recommendationsData } = useQuery({ queryKey: ['ai-recommendations'], queryFn: getRecommendations })
+  const currentUser = getCurrentUser()
+  const { data: recommendationsData } = useQuery({
+    queryKey: ['ai-recommendations', currentUser?.uid],
+    queryFn: () => getLatestRecommendation({ userUid: currentUser?.uid }),
+    enabled: !!currentUser?.uid,
+  })
 
   if (isSummaryLoading || isChartsLoading) {
     return <LoadingSkeleton />
@@ -193,9 +199,13 @@ function DashboardPage() {
                     <span className="rounded bg-[#ba1a1a] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
                       {t('dashboard.alert.unread', 'Alerte non lue')}
                     </span>
-                    <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">{summary.recentAlert.title}</h2>
+                    <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">
+                      {t(summary.recentAlert.title, summary.recentAlert.title)}
+                    </h2>
                   </div>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">{summary.recentAlert.message}</p>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
+                    {t(summary.recentAlert.message, summary.recentAlert.message)}
+                  </p>
                 </div>
               </div>
               <span className="text-xs font-medium text-[#6d7a73]">
@@ -232,8 +242,8 @@ function DashboardPage() {
           </div>
           <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">{t('dashboard.aiRecommendation.title', 'Recommandation IA')}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
-            {recommendationsData?.success && recommendationsData?.data?.summary
-              ? recommendationsData.data.summary
+            {recommendationsData?.success && recommendationsData?.summary
+              ? recommendationsData.summary
               : t('dashboard.noData', 'Aucune donnée disponible maintenant')}
           </p>
         </article>
@@ -301,7 +311,7 @@ function DashboardPage() {
       </section>
 
       <section className="grid gap-4">
-        <article className="sht-card p-5">
+        <article className="sht-card overflow-hidden p-5">
           <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-950">
             <CalendarCheck className="text-[#00694c]" size={22} />
             {t('dashboard.appointments.title', 'Prochains rendez-vous')}
@@ -333,6 +343,11 @@ function DashboardPage() {
             ) : (
               <p className="py-3 text-sm text-slate-500">{t('dashboard.noData', 'Aucune donnée disponible maintenant')}</p>
             )}
+          </div>
+          <div className="-mx-5 -mb-5 mt-4 border-t border-slate-100 px-5 py-4">
+            <a className="text-sm font-semibold text-[#00694c] hover:underline" href="/appointments">
+              {t('dashboard.appointments.viewAll', 'Voir tous les rendez-vous')}
+            </a>
           </div>
         </article>
       </section>

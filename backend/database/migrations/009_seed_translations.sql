@@ -499,7 +499,7 @@ INSERT INTO translations (`key`, locale, value) VALUES
 ('profile.preferences.confidentialityText', 'en', 'Simulated patient data on the frontend, backend contract documented.'),
 ('profile.preferences.confidentialityTitle', 'fr', 'Confidentialité'),
 ('profile.preferences.confidentialityTitle', 'en', 'Privacy'),
-('profile.preferences.languageText', 'fr', 'Interface de démo préparée en français fonctionnel.'),
+('profile.preferences.languageText', 'fr', 'Interface de démo préparée en français et en anglais.'),
 ('profile.preferences.languageText', 'en', 'Demo interface available in English and French.'),
 ('profile.preferences.languageTitle', 'fr', 'Langue'),
 ('profile.preferences.languageTitle', 'en', 'Language'),
