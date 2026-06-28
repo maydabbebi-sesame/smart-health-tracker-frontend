@@ -2,6 +2,7 @@ import { ArrowRight, Eye, Lock, Mail, ShieldPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import SocialAuthButtons from '../components/auth/SocialAuthButtons'
 import { login } from '../features/auth/auth'
 import { useTranslation } from '../i18n/useTranslation'
 
@@ -38,9 +39,12 @@ function LoginPage() {
     }
   }
 
-  function handleSocialLogin(provider) {
-    // Social login requires OAuth tokens - placeholder
-    setError(t('login.socialLoginError', '{{provider}} nécessite une intégration OAuth', { provider }))
+  function handleSocialSuccess() {
+    navigate(from, { replace: true })
+  }
+
+  function handleSocialError(message) {
+    setError(message)
   }
 
   return (
@@ -132,28 +136,7 @@ function LoginPage() {
         <div className="h-px flex-1 bg-[#dce5df]" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {['Google', 'Apple'].map((provider) => (
-          <button
-            className="flex items-center justify-center gap-2 rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm font-semibold text-[#171d1a] shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition hover:border-[#00694c] hover:text-[#00694c]"
-            key={provider}
-            type="button"
-            onClick={() => handleSocialLogin(provider)}
-          >
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#eff5ef] text-xs font-bold text-[#00694c]">
-              {provider[0]}
-            </span>
-            {provider}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 rounded-lg border border-[#d2e4ff] bg-[#eff5ef] p-3 text-xs leading-5 text-[#3d4943]">
-        {t(
-          'login.oauthNotice',
-          'Google et Apple sont proposés pour réduire la friction utilisateur et préparer une authentification OAuth sécurisée côté backend. Dans ce MVP, le clic simule une connexion patient.',
-        )}
-      </div>
+      <SocialAuthButtons onError={handleSocialError} onSuccess={handleSocialSuccess} />
 
       <p className="mt-6 text-center text-sm text-[#3d4943]">
         {t('login.newToApp', 'Nouveau sur SmartHealth ?')}{' '}
