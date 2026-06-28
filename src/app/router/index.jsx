@@ -10,6 +10,7 @@ import { LoadingSkeleton } from '../../shared/ui/LoadingSkeleton'
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'))
 const AdminUsersPage = lazy(() => import('../../pages/admin/AdminUsersPage'))
 const AIAnalysisPage = lazy(() => import('../../pages/AIAnalysisPage'))
+const AppointmentsPage = lazy(() => import('../../pages/AppointmentsPage'))
 const DashboardPage = lazy(() => import('../../pages/DashboardPage'))
 const HistoryPage = lazy(() => import('../../pages/HistoryPage'))
 const LoginPage = lazy(() => import('../../pages/LoginPage'))
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
           {
             path: '/symptoms',
             element: withSuspense(<SymptomsPage />),
+          },
+          {
+            path: '/appointments',
+            element: withSuspense(<AppointmentsPage />),
           },
           {
             path: '/history',

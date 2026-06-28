@@ -4,7 +4,7 @@ import { flushSync } from 'react-dom'
 
 import { useTranslation } from '../../i18n/useTranslation'
 import { getCurrentUser } from '../../services/authService'
-import { sendMediAssistMessage } from '../../services/mediAssistService'
+import { getRecommendationsHistory, sendMediAssistMessage } from '../../services/mediAssistService'
 import { useMedAssistStore } from '../../store/medAssistStore'
 
 // ── Urgence config ────────────────────────────────────────────────────────────
@@ -346,6 +346,25 @@ export function MediAssistChat({ patientData }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isCurrentSession, isLoading])
 
+  // Backfills the recommendations panel from the patient's persisted history
+  // (see services/mediAssistService.getRecommendationsHistory) whenever it's
+  // empty — covers both a fresh turn whose LLM call just failed (called from
+  // sendToLLM below) and a *resumed* session that was left empty by an
+  // earlier failed attempt, before this fallback existed, and would
+  // otherwise never retry (the mount effect skips calling the LLM at all
+  // when resuming — see hasPersistedMessages below).
+  function loadFallbackIfEmpty() {
+    if (!userUid) return
+    if (useMedAssistStore.getState().recommendations.length > 0) return
+    const requestSessionKey = sessionKey
+    getRecommendationsHistory({ userUid }).then(({ success, recommendations }) => {
+      if (useMedAssistStore.getState().chatSessionKey !== requestSessionKey) return
+      if (success && recommendations.length > 0) {
+        useMedAssistStore.getState().loadFallbackRecommendations(recommendations)
+      }
+    })
+  }
+
   // Send initial automated analysis on mount — this is what populates the
   // "no recommendations yet" panel as soon as the model responds. If the
   // patient wrote their own question in the form, lead with that instead of
@@ -370,6 +389,7 @@ export function MediAssistChat({ patientData }) {
     hasInitializedRef.current = true
 
     if (hasPersistedMessages) {
+      loadFallbackIfEmpty()
       return // resume the persisted conversation as-is
     }
 
@@ -423,7 +443,7 @@ export function MediAssistChat({ patientData }) {
       // Enforce a minimum visible loading time so the ThinkingBubble is always
       // perceptible — without this a fast error response (e.g. empty content
       // from the model) dismisses the loader before the user even sees it.
-      const [{ userContent, assistantContent, parsed }] = await Promise.all([
+      const [{ userContent, assistantContent, parsed, error }] = await Promise.all([
         sendMediAssistMessage({
           patientData,
           history: useMedAssistStore.getState().chatHistory,
@@ -448,6 +468,15 @@ export function MediAssistChat({ patientData }) {
       // analysis left it no matter how the conversation continues.
       if (isInitial) {
         useMedAssistStore.getState().applyAnalysis(parsed)
+
+        // `error` set means the LLM gateway call itself failed (timeout,
+        // unreachable...) — `parsed` is then just the generic, empty
+        // FALLBACK_RESPONSE, not a real "nothing to recommend" analysis. Back
+        // the panel with the patient's last known-good recommendations
+        // instead of leaving it empty.
+        if (error) {
+          loadFallbackIfEmpty()
+        }
       }
 
       const displayText = parsed.analyse || parsed.resume_situation || ''

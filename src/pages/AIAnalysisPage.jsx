@@ -250,6 +250,7 @@ function AIAnalysisPage() {
   const storedPatientData = useMedAssistStore((s) => s.patientData)
   const patientData = location.state?.patientData ?? storedPatientData
   const storeRecommendations = useMedAssistStore((s) => s.recommendations)
+  const recommendationsAreFallback = useMedAssistStore((s) => s.recommendationsAreFallback)
   const storeAlerts = useMedAssistStore((s) => s.alerts)
   const recommendations = useMemo(() => [...storeRecommendations].sort(byPrioriteDesc), [storeRecommendations])
   const alerts = useMemo(() => [...storeAlerts].sort(byUrgenceDesc), [storeAlerts])
@@ -346,6 +347,14 @@ function AIAnalysisPage() {
                 {recsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </span>
             </button>
+            {recsOpen && recommendationsAreFallback && (
+              <div className="rounded-lg border border-[#fcd34d] bg-[#fef3c7] px-3 py-2 text-xs leading-5 text-[#92400e]">
+                {t(
+                  'aiAnalysis.section.fallbackNotice',
+                  "Le service d'analyse en direct est momentanément indisponible — voici vos dernières recommandations connues.",
+                )}
+              </div>
+            )}
             {recsOpen && (
               recommendations.length === 0 ? (
                 <EmptyRecommendations />

@@ -1,5 +1,6 @@
 import {
   BrainCircuit,
+  CalendarCheck,
   ClipboardList,
   HeartPulse,
   LayoutDashboard,
@@ -32,6 +33,12 @@ export const navigationItems = [
     labelKey: 'nav.aiRecommendations',
     to: '/ai-analysis',
     icon: BrainCircuit,
+  },
+  {
+    label: 'Rendez-vous',
+    labelKey: 'nav.appointments',
+    to: '/appointments',
+    icon: CalendarCheck,
   },
   {
     label: 'Agent Médecin',

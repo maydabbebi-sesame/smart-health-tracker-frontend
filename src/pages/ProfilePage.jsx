@@ -699,7 +699,7 @@ function ProfilePage() {
                   <LanguageSwitcher />
                 </div>
                 <p className="mt-2 text-sm leading-6 text-[#6d7a73]">
-                  {t('profile.preferences.languageText', 'Interface de démo préparée en français fonctionnel.')}
+                  {t('profile.preferences.languageText', 'Interface de démo préparée en français et en anglais.')}
                 </p>
               </article>
             </section>
