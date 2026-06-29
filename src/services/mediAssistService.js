@@ -136,10 +136,10 @@ export async function getLatestRecommendation({ userUid }) {
 
     if (!resp.ok) throw new Error(`Erreur du service MediAssist : ${resp.status}`)
 
-    const { summary, error } = await resp.json()
+    const { summary, recommendation, error } = await resp.json()
     if (error) throw new Error(error)
 
-    return { success: true, summary }
+    return { success: true, summary, recommendation }
   } catch (err) {
     return { success: false, error: err.message || 'Le service de recommandations est indisponible.' }
   } finally {

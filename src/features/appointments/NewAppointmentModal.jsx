@@ -59,7 +59,7 @@ export function NewAppointmentModal({ userUid, onClose, onCreated }) {
     })
     setSubmitting(false)
     if (result.success) {
-      toast.success(t('newAppointment.successMessage', 'Rendez-vous demandé auprès de {{name}}.', { name: selectedDoctor.name }))
+      toast.success(t('newAppointment.successMessage', 'RDV enregistré avec {{name}}.', { name: selectedDoctor.name }))
       onCreated?.()
       onClose()
     } else {
@@ -215,7 +215,7 @@ export function NewAppointmentModal({ userUid, onClose, onCreated }) {
                   type="button"
                   onClick={handleSubmit}
                 >
-                  {submitting ? t('newAppointment.sendingStatus', 'Envoi...') : t('newAppointment.confirmButton', 'Confirmer le rendez-vous')}
+                  {submitting ? t('newAppointment.sendingStatus', 'Enregistrement...') : t('newAppointment.confirmButton', 'Enregistrer le RDV')}
                 </button>
               </div>
             </div>

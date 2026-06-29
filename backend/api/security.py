@@ -48,6 +48,7 @@ def publicize_user(record: dict) -> dict:
         "height": record.get("height"),
         "blood_group": record.get("blood_group"),
         "notifications_enabled": bool(record.get("notifications_enabled", True)),
+        "created_at": record.get("created_at"),
     }
     return public
 

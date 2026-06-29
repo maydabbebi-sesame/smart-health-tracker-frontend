@@ -184,7 +184,7 @@ def get_admin_statistics():
     cursor.execute("SELECT COUNT(*) as count FROM users WHERE role = 'admin'")
     stats["admin_users"] = cursor.fetchone()["count"]
 
-    cursor.execute("SELECT COUNT(*) as count FROM doctors")
+    cursor.execute("SELECT COUNT(*) as count FROM external_doctors")
     stats["total_doctors"] = cursor.fetchone()["count"]
 
     cursor.execute("SELECT COUNT(*) as count FROM appointments")

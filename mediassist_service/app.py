@@ -389,7 +389,7 @@ def latest_recommendation():
         # recommendation from an older analysis never outranks a real, more
         # recent (even if lower-priority) one.
         cur.execute(
-            "SELECT titre, priorite FROM mediassist_recommendations "
+            "SELECT titre, detail, pourquoi, priorite FROM mediassist_recommendations "
             "WHERE user_id = %s AND session_id = ("
             "  SELECT session_id FROM mediassist_recommendations "
             "  WHERE user_id = %s ORDER BY created_at DESC LIMIT 1"
@@ -407,10 +407,19 @@ def latest_recommendation():
             pass
 
     if not rows:
-        return jsonify({"summary": None, "error": None})
+        return jsonify({"summary": None, "recommendation": None, "error": None})
 
     top = min(rows, key=lambda r: _PRIORITY_ORDER.get(r["priorite"], 99))
-    return jsonify({"summary": top["titre"], "error": None})
+    return jsonify({
+        "summary": top["titre"],
+        "recommendation": {
+            "titre": top["titre"],
+            "detail": top["detail"],
+            "pourquoi": top["pourquoi"],
+            "priorite": top["priorite"],
+        },
+        "error": None,
+    })
 
 
 @app.get("/api/mediassist/recommendations-history")

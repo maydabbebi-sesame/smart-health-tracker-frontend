@@ -30,6 +30,30 @@ export async function getAlerts(page = 1, pageSize = 20, unreadOnly = false) {
 }
 
 /**
+ * Create a new alert for the given user (e.g. surfacing a MediAssist-detected
+ * issue on the dashboard's unread alerts card, alongside vitals-threshold alerts)
+ */
+export async function createAlert({ userUid, title, message, category = 'general' }) {
+  try {
+    const response = await apiClient.post(ALERT_ENDPOINTS.CREATE_ALERT, {
+      user_uid: userUid,
+      title,
+      message,
+      category,
+    })
+    return { success: true, data: response.data }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        "Impossible de créer l'alerte",
+    }
+  }
+}
+
+/**
  * Get specific alert by ID
  */
 export async function getAlertById(id) {

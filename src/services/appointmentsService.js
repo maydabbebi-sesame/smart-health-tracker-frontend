@@ -120,30 +120,6 @@ export async function cancelAppointment(id, reason = null) {
 }
 
 /**
- * Get available appointment slots for a doctor
- */
-export async function getAvailableSlots(doctorId, date = null) {
-  try {
-    const params = { doctorId }
-    if (date) params.date = date
-
-    const response = await apiClient.get(
-      APPOINTMENT_ENDPOINTS.GET_AVAILABLE_SLOTS,
-      { params },
-    )
-    return { success: true, data: response.data }
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.error ||
-        error.message ||
-        'Impossible de récupérer les créneaux disponibles',
-    }
-  }
-}
-
-/**
  * Confirm appointment
  */
 export async function confirmAppointment(id) {
@@ -164,23 +140,3 @@ export async function confirmAppointment(id) {
   }
 }
 
-/**
- * Send appointment reminder
- */
-export async function sendReminder(id) {
-  try {
-    const response = await apiClient.post(
-      APPOINTMENT_ENDPOINTS.SEND_REMINDER(id),
-      {},
-    )
-    return { success: true, data: response.data }
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.error ||
-        error.message ||
-        'Impossible d\'envoyer le rappel',
-    }
-  }
-}

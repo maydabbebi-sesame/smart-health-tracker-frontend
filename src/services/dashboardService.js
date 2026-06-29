@@ -65,7 +65,7 @@ export async function getDashboardSummary() {
         key: 'upcomingAppointments',
         label: 'Rendez-vous à venir',
         value: upcomingAppointments !== null ? String(upcomingAppointments.length) : null,
-        icon: 'activity',
+        icon: 'calendar',
       },
     ]
 
@@ -81,7 +81,7 @@ export async function getDashboardSummary() {
         { key: 'wellnessScore', label: 'Score de bien-être', value: null, icon: 'heart' },
         { key: 'symptomsLogged', label: 'Symptômes enregistrés', value: null, icon: 'activity' },
         { key: 'unreadAlerts', label: 'Alertes non lues', value: null, icon: 'bell' },
-        { key: 'upcomingAppointments', label: 'Rendez-vous à venir', value: null, icon: 'activity' },
+        { key: 'upcomingAppointments', label: 'Rendez-vous à venir', value: null, icon: 'calendar' },
       ],
       recentAlert: null,
       upcomingAppointments: [],
@@ -158,8 +158,6 @@ function calculateWellnessScore(vitals) {
     return null
   }
 
-  const latest = vitals[0]
-
   // Define normal ranges for each vital field returned by the backend
   const normalRanges = {
     heart_rate: { min: 50, max: 100 },
@@ -168,6 +166,14 @@ function calculateWellnessScore(vitals) {
     temperature: { min: 36.1, max: 37.2 },
     oxygen_saturation: { min: 95, max: 100 },
     respiratory_rate: { min: 12, max: 20 },
+  }
+
+  // Not every submission fills in the vitals step (it's optional in the
+  // symptom form) — a symptoms-only entry would otherwise blank the score
+  // even when a recent, real vitals reading exists just before it.
+  const latest = vitals.find((v) => Object.keys(normalRanges).some((field) => v[field] !== null && v[field] !== undefined))
+  if (!latest) {
+    return null
   }
 
   let scorePoints = 0

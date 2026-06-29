@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
 import { useTranslation } from '../../i18n/useTranslation'
+import { createAlert } from '../../services/alertsService'
 import { getCurrentUser } from '../../services/authService'
 import { getRecommendationsHistory, sendMediAssistMessage } from '../../services/mediAssistService'
 import { useMedAssistStore } from '../../store/medAssistStore'
+import { queryClient } from '../../lib/queryClient'
 
 // ── Urgence config ────────────────────────────────────────────────────────────
 function getUrgenceConfig(t) {
@@ -468,6 +470,37 @@ export function MediAssistChat({ patientData }) {
       // analysis left it no matter how the conversation continues.
       if (isInitial) {
         useMedAssistStore.getState().applyAnalysis(parsed)
+
+        // mediassist_service persists this turn's recommendations server-side
+        // (see app.py's _save_recommendations) in the same request, so the
+        // dashboard's "Recommandation IA" card has fresh data to fetch — but
+        // its query stays cached for staleTime (queryClient.js) unless told
+        // otherwise, so without this it would keep showing whatever was
+        // current before this analysis ran.
+        queryClient.invalidateQueries({ queryKey: ['ai-recommendations'] })
+
+        // Unlike recommendations, alertes from a MediAssist analysis only
+        // ever lived in the client-side store (AI Analysis page) — the
+        // dashboard's "Alerte non lue" card and unread count only knew about
+        // vitals-threshold alerts (backend/api/vitals.py). Persist each one
+        // as a real alert too, so a severe MediAssist finding (e.g. "Douleur
+        // intense") surfaces there exactly like a vitals-threshold alert
+        // does.
+        const alertesToSave = (parsed.alertes || []).filter(Boolean)
+        if (alertesToSave.length > 0 && userUid) {
+          Promise.all(
+            alertesToSave.map((a) =>
+              createAlert({
+                userUid,
+                title: typeof a === 'string' ? a : a.titre || 'Alerte MediAssist',
+                message: typeof a === 'string' ? a : a.detail || a.action || '',
+                category: 'mediassist',
+              }),
+            ),
+          ).then(() => {
+            queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+          })
+        }
 
         // `error` set means the LLM gateway call itself failed (timeout,
         // unreachable...) — `parsed` is then just the generic, empty

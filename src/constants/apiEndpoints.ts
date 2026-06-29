@@ -73,15 +73,14 @@ export const APPOINTMENT_ENDPOINTS = {
   UPDATE_APPOINTMENT: (id: string) => `/api/appointments/${id}`,
   CANCEL_APPOINTMENT: (id: string) => `/api/appointments/${id}/cancel`,
   DELETE_APPOINTMENT: (id: string) => `/api/appointments/${id}`,
-  GET_AVAILABLE_SLOTS: '/api/appointments/available-slots',
   CONFIRM_APPOINTMENT: (id: string) => `/api/appointments/${id}/confirm`,
-  SEND_REMINDER: (id: string) => `/api/appointments/${id}/reminder`,
   SEND_REMINDERS: '/api/appointments/send-reminders',
 };
 
 // ==================== Alerts Endpoints ====================
 export const ALERT_ENDPOINTS = {
   GET_ALERTS: '/api/alerts',
+  CREATE_ALERT: '/api/alerts',
   GET_ALERT_BY_ID: (id: string) => `/api/alerts/${id}`,
   MARK_AS_READ: (id: string) => `/api/alerts/${id}/read`,
   MARK_AS_UNREAD: (id: string) => `/api/alerts/${id}/unread`,
@@ -102,7 +101,6 @@ export const DOCTOR_ENDPOINTS = {
   GET_EXTERNAL_DOCTORS: '/api/doctors/external',
   GET_DOCTOR_APPOINTMENTS: (id: string) => `/api/doctors/${id}/appointments`,
   RATE_DOCTOR: (id: string) => `/api/doctors/${id}/rate`,
-  CONFIRM_DOCTOR: (id: string) => `/api/doctors/${id}/confirm`,
   CREATE_DOCTOR: '/api/doctors',
 };
 

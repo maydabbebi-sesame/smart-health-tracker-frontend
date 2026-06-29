@@ -32,10 +32,22 @@ export function buildDirectionsUrl(userPosition, destLat, destLng) {
 // final URL is known — browsers block window.open() calls made outside a
 // direct click handler, so awaiting first and opening after would get popup-
 // blocked in most of them.
-export async function openDirections(destLat, destLng) {
+// When GPS coordinates are unavailable, falls back to a Google Maps text search
+// on the provided fallbackAddress so the button always works for med.tn doctors
+// whose detail page had no Google Maps link during scraping.
+export async function openDirections(destLat, destLng, fallbackAddress = null) {
   const tab = window.open('', '_blank')
-  const userPosition = await getUserPosition()
-  const url = buildDirectionsUrl(userPosition, destLat, destLng)
-  if (tab) tab.location.href = url
-  else window.open(url, '_blank')
+  let url
+  if (destLat != null && destLng != null) {
+    const userPosition = await getUserPosition()
+    url = buildDirectionsUrl(userPosition, destLat, destLng)
+  } else if (fallbackAddress) {
+    url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fallbackAddress)}`
+  }
+  if (url) {
+    if (tab) tab.location.href = url
+    else window.open(url, '_blank')
+  } else if (tab) {
+    tab.close()
+  }
 }

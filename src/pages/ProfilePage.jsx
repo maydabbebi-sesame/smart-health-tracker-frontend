@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Activity,
   AlertCircle,
   Camera,
   CalendarCheck,
@@ -26,7 +25,7 @@ import { ThemeToggle } from '../shared/ui/ThemeToggle'
 import { useTranslation } from '../i18n/useTranslation'
 
 function ProfilePage() {
-  const { t } = useTranslation()
+  const { t, localeTag } = useTranslation()
 
   const healthDetails = [
     { label: t('profile.details.age', 'Age'), value: t('profile.details.ageValueFallback', '29 ans') },
@@ -118,8 +117,17 @@ function ProfilePage() {
     return <LoadingSkeleton />
   }
 
-  const profileStatus = profile?.profileStatus
-  const healthProfileStatus = profile?.healthProfileStatus
+  const profileData = profile?.data
+  const profileStatus = profileData && profileData.name && profileData.email && profileData.phone && (profileData.address || profileData.city || profileData.location)
+    ? t('profile.statusCards.complete', 'Complet')
+    : t('profile.statusCards.incomplete', 'Incomplet')
+  const healthProfileStatus = profileData && profileData.age && profileData.weight && profileData.height && profileData.blood_group
+    ? t('profile.statusCards.complete', 'Complet')
+    : t('profile.statusCards.incomplete', 'Incomplet')
+  const rawCreatedAt = profileData?.created_at || profileData?.registration_date || profileData?.date_joined || profileData?.joined_at
+  const memberSince = rawCreatedAt
+    ? new Date(rawCreatedAt).toLocaleDateString(localeTag, { month: 'long', year: 'numeric' })
+    : t('profile.details.notAvailable', 'N/R')
 
   function handlePhotoChange(event) {
     const file = event.target.files?.[0]
@@ -507,7 +515,7 @@ function ProfilePage() {
                 {[
                   { label: t('profile.statusCards.profile', 'Profil'), value: profileStatus, icon: ShieldCheck },
                   { label: t('profile.statusCards.health', 'Santé'), value: healthProfileStatus, icon: HeartPulse },
-                  { label: t('profile.statusCards.activity', 'Activité'), value: t('profile.statusCards.activityValue', 'Suivi hebdomadaire actif'), icon: Activity },
+                  { label: t('profile.statusCards.memberSince', 'Membre depuis'), value: memberSince, icon: CalendarCheck },
                 ].map((item) => (
                   <article className="sht-card p-5" key={item.label}>
                     <div className="grid h-11 w-11 place-items-center rounded-lg bg-[#86f8c9]/35 text-[#00694c]">

@@ -5,6 +5,7 @@ import {
   Bell,
   BrainCircuit,
   CalendarCheck,
+  CalendarClock,
   CalendarDays,
   CheckCircle2,
   HeartPulse,
@@ -32,8 +33,18 @@ import { useTranslation } from '../i18n/useTranslation'
 const statIcons = {
   activity: Activity,
   bell: Bell,
+  calendar: CalendarClock,
   heart: HeartPulse,
   temperature: Thermometer,
+}
+
+// Mirrors AIAnalysisPage's PRIORITY_THEME so the dashboard's recommendation
+// card reads the same visual language (URGENT/IMPORTANT/INFORMATIF) as the
+// full Recommandations IA page it links to.
+const RECOMMENDATION_PRIORITY_THEME = {
+  haute:   { badge: 'URGENT',     badgeBg: 'bg-[#ba1a1a]', border: 'border-l-[#ba1a1a]', iconBox: 'bg-[#ffdad6] text-[#ba1a1a]' },
+  moyenne: { badge: 'IMPORTANT',  badgeBg: 'bg-[#0060a8]', border: 'border-l-[#0060a8]', iconBox: 'bg-[#d2e4ff] text-[#0060a8]' },
+  basse:   { badge: 'INFORMATIF', badgeBg: 'bg-[#00694c]', border: 'border-l-[#00694c]', iconBox: 'bg-[#86f8c9]/40 text-[#00694c]' },
 }
 
 function ChartTooltip({ active, label, payload }) {
@@ -99,6 +110,11 @@ function DashboardPage() {
       </div>
     )
   }
+
+  const topRecommendation = recommendationsData?.success ? recommendationsData.recommendation : null
+  const recommendationTheme = topRecommendation
+    ? RECOMMENDATION_PRIORITY_THEME[topRecommendation.priorite] || RECOMMENDATION_PRIORITY_THEME.basse
+    : null
 
   const wellnessStat = summary?.stats?.find((s) => s.key === 'wellnessScore')
   const wellnessRaw = wellnessStat?.value ?? null
@@ -166,14 +182,8 @@ function DashboardPage() {
 
           return (
             <article key={stat.key || stat.label} className="sht-card p-5">
-              <div className="mb-5 flex items-start justify-between gap-4">
-                <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
-                  <StatIcon size={23} />
-                </div>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${hasValue ? 'bg-[#86f8c9]/35 text-[#00513a]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
-                  <CheckCircle2 size={14} />
-                  {hasValue ? t('dashboard.statusNormal', 'Normal') : t('dashboard.statusUnavailable', 'Indisponible')}
-                </span>
+              <div className="mb-5 grid h-12 w-12 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
+                <StatIcon size={23} />
               </div>
               <div>
                 <p className="text-sm text-slate-500">{t(`dashboard.stats.${stat.key}`, stat.label)}</p>
@@ -213,7 +223,7 @@ function DashboardPage() {
               </span>
             </div>
             <div className="flex flex-wrap gap-3 border-t border-[#bccac1]/30 px-5 py-4">
-              <a className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white" href="/notifications">
+              <a className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white" href="/ai-analysis">
                 {t('dashboard.alert.viewAll', 'Voir les alertes')}
               </a>
             </div>
@@ -236,17 +246,49 @@ function DashboardPage() {
           </article>
         )}
 
-        <article className="rounded-xl border border-dashed border-[#68dbae] bg-[#eff5ef] p-5">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
-            <BrainCircuit size={21} />
-          </div>
-          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">{t('dashboard.aiRecommendation.title', 'Recommandation IA')}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-700">
-            {recommendationsData?.success && recommendationsData?.summary
-              ? recommendationsData.summary
-              : t('dashboard.noData', 'Aucune donnée disponible maintenant')}
-          </p>
-        </article>
+        {topRecommendation ? (
+          <article className={`sht-card overflow-hidden border-l-4 ${recommendationTheme.border}`}>
+            <div className="flex flex-col gap-5 p-5 md:flex-row md:items-start md:justify-between">
+              <div className="flex gap-4">
+                <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${recommendationTheme.iconBox}`}>
+                  <BrainCircuit size={24} />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white ${recommendationTheme.badgeBg}`}>
+                      {recommendationTheme.badge}
+                    </span>
+                    <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">{topRecommendation.titre}</h2>
+                  </div>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
+                    {topRecommendation.detail || topRecommendation.pourquoi || ''}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 border-t border-[#bccac1]/30 px-5 py-4">
+              <a className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white" href="/ai-analysis">
+                {t('dashboard.aiRecommendation.viewAll', 'Voir les recommandations')}
+              </a>
+            </div>
+          </article>
+        ) : (
+          <article className="sht-card overflow-hidden border-l-4 border-l-[#00694c]">
+            <div className="flex gap-4 p-5">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
+                <BrainCircuit size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">
+                  {t('dashboard.aiRecommendation.title', 'Recommandation IA')}
+                </h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
+                  {t('dashboard.noData', 'Aucune donnée disponible maintenant')}
+                </p>
+              </div>
+            </div>
+          </article>
+        )}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">

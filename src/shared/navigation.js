@@ -35,16 +35,16 @@ export const navigationItems = [
     icon: BrainCircuit,
   },
   {
-    label: 'Rendez-vous',
-    labelKey: 'nav.appointments',
-    to: '/appointments',
-    icon: CalendarCheck,
-  },
-  {
     label: 'Agent Médecin',
     labelKey: 'nav.doctorAgent',
     to: '/notifications',
     icon: Stethoscope,
+  },
+  {
+    label: 'Rendez-vous',
+    labelKey: 'nav.appointments',
+    to: '/appointments',
+    icon: CalendarCheck,
   },
   {
     label: 'Historique',

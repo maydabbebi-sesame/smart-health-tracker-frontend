@@ -50,7 +50,7 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
     })
     setSubmitting(false)
     if (result.success) {
-      toast.success(t('doctorDetail.booking.successMessage', 'Demande de rendez-vous envoyée à Dr {{name}}.', { name: doctor.name }))
+      toast.success(t('doctorDetail.booking.successMessage', 'RDV enregistré avec Dr {{name}}.', { name: doctor.name }))
       onClose()
     } else {
       toast.error(result.error)
@@ -176,14 +176,14 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
                     type="button"
                     onClick={() => setBooking(true)}
                   >
-                    <Calendar size={15} /> {t('doctorDetail.requestAppointmentButton', 'Demander un rendez-vous')}
+                    <Calendar size={15} /> {t('doctorDetail.requestAppointmentButton', 'Enregistrer un RDV')}
                   </button>
                 )}
-                {doctor?.lat != null && doctor?.lng != null && (
+                {(doctor?.lat != null && doctor?.lng != null || doctor?.location) && (
                   <button
                     className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#0060a8] to-[#5b9cff] px-4 py-2 text-sm font-semibold text-white shadow-md"
                     type="button"
-                    onClick={() => openDirections(doctor.lat, doctor.lng)}
+                    onClick={() => openDirections(doctor.lat, doctor.lng, doctor.location)}
                   >
                     <Navigation size={15} /> {t('doctorDetail.directionsButton', 'Itinéraire')}
                   </button>

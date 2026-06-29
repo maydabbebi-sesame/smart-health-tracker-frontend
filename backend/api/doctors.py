@@ -249,60 +249,6 @@ def get_doctor_availability(uid: str):
     })
 
 
-@doctors_bp.route("/<uid>/confirm", methods=["POST"])
-@token_required
-def confirm_doctor(uid: str):
-    """Send a confirmation message for a doctor to the user.
-
-    POST /api/doctors/<uid>/confirm
-    Body JSON: { user_uid, appointment_date?, appointment_time? }
-    """
-    data, error = get_request_data()
-    if error:
-        return error
-
-    user_uid = data.get("user_uid")
-    if not user_uid:
-        return jsonify({"error": "Missing required field: user_uid"}), 400
-
-    if g.current_user.get("role") != "admin" and g.current_user.get("uid") != user_uid:
-        return jsonify({"error": "Forbidden"}), 403
-
-    user_id = decode_id(user_uid)
-    doctor_id = decode_id(uid)
-    if user_id is None:
-        return jsonify({"error": "Invalid user UID"}), 400
-    if doctor_id is None:
-        return jsonify({"error": "Invalid doctor UID"}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT email, name FROM users WHERE id = %s", (user_id,))
-    user = cursor.fetchone()
-    cursor.execute("SELECT * FROM external_doctors WHERE id = %s", (doctor_id,))
-    doctor = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if user is None or doctor is None:
-        return jsonify({"error": "User or doctor not found"}), 404
-
-    appointment_date = data.get("appointment_date")
-    appointment_time = data.get("appointment_time")
-    body = [
-        f"Hello {user.get('name')},",
-        f"Here is the confirmation for Dr. {doctor.get('name')} ({doctor.get('specialization')}) at {doctor.get('location')}.",
-    ]
-    if appointment_date and appointment_time:
-        body.append(f"Requested appointment: {appointment_date} at {appointment_time}.")
-    if doctor.get("availability"):
-        body.append("Doctor availability: " + str(doctor.get("availability")))
-    body.append("Thank you for using SmartHealth.")
-    body_text = "\n".join(body)
-    send_email(user.get("email"), f"Doctor Confirmation: {doctor.get('name')}", body_text)
-
-    return jsonify({"message": "Confirmation sent to user email."})
-
 
 @doctors_bp.route("", methods=["POST"])
 @token_required
