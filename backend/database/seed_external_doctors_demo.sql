@@ -1,8 +1,7 @@
 -- Seeds a handful of external_doctors rows (see
 -- backend/database/migrations/004_add_external_doctors.sql) so the Doctor
--- Agent has scraped-style directory entries to recommend besides the
--- platform's own `doctors` table. source_url is UNIQUE, so re-running this
--- script is safe -- duplicates are skipped.
+-- Agent has scraped-style directory entries to recommend. source_url is
+-- UNIQUE, so re-running this script is safe -- duplicates are skipped.
 
 INSERT INTO external_doctors (source, source_url, name, specialization, location, phone, scraped_at, lat, lng)
 VALUES

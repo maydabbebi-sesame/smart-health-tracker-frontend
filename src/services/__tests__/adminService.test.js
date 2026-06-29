@@ -118,13 +118,13 @@ describe('adminService', () => {
 
   describe('updateUserRole', () => {
     it('changes a user role', async () => {
-      apiClient.patch.mockResolvedValue({ data: { message: 'User role updated', role: 'doctor' } })
+      apiClient.patch.mockResolvedValue({ data: { message: 'User role updated', role: 'admin' } })
 
-      const result = await updateUserRole('u1', 'doctor')
+      const result = await updateUserRole('u1', 'admin')
 
-      expect(apiClient.patch).toHaveBeenCalledWith('/api/admin/users/u1/role', { role: 'doctor' })
+      expect(apiClient.patch).toHaveBeenCalledWith('/api/admin/users/u1/role', { role: 'admin' })
       expect(result.success).toBe(true)
-      expect(result.data.role).toBe('doctor')
+      expect(result.data.role).toBe('admin')
     })
   })
 

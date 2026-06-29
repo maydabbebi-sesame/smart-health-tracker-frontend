@@ -28,7 +28,7 @@
   ```json
   {
     "uid": "encoded_user_id",
-    "role": "user|doctor|admin",
+    "role": "user|admin",
     "exp": "timestamp"
   }
   ```
@@ -49,17 +49,17 @@
 ## Authorization
 
 ### Role-Based Access Control (RBAC)
-Three roles available: `user`, `doctor`, `admin`
+Two roles available: `user`, `admin`
 
-| Endpoint | User | Doctor | Admin |
-|----------|------|--------|-------|
-| GET /api/users | ✗ | ✗ | ✓ |
-| GET /api/doctors | ✓ | ✓ | ✓ |
-| POST /api/doctors | ✗ | ✗ | ✓ |
-| POST /api/alerts (create) | ✗ | ✓ | ✓ |
-| POST /api/appointments/send-reminders | ✗ | ✗ | ✓ |
-| POST /api/vitals | ✓* | ✓* | ✓ |
-| GET /api/vitals | ✓* | ✓* | ✓ |
+| Endpoint | User | Admin |
+|----------|------|-------|
+| GET /api/users | ✗ | ✓ |
+| GET /api/doctors | ✓ | ✓ |
+| POST /api/doctors | ✗ | ✓ |
+| POST /api/alerts (create) | ✓ | ✓ |
+| POST /api/appointments/send-reminders | ✗ | ✓ |
+| POST /api/vitals | ✓* | ✓ |
+| GET /api/vitals | ✓* | ✓ |
 
 *Can access own data; admin can access all
 
@@ -73,7 +73,7 @@ Three roles available: `user`, `doctor`, `admin`
   "uid": "encoded_id",
   "name": "string",
   "email": "string",
-  "role": "user|doctor|admin",
+  "role": "user|admin",
   "is_verified": boolean,
   "provider": "google|facebook|apple|null",
   "provider_id": "string|null"
@@ -199,7 +199,7 @@ Register a new user account.
   "name": "string",
   "email": "string",
   "password": "string",
-  "role": "user|doctor|admin (optional, default: user)"
+  "role": "user|admin (optional, default: user)"
 }
 ```
 
@@ -212,7 +212,7 @@ Register a new user account.
 ```
 
 **Notes:**
-- Requires admin token to register doctor/admin roles
+- Requires admin token to register admin role
 - Verification email sent automatically
 - User cannot login until email verified
 
@@ -411,7 +411,7 @@ List all users (admin only).
     "uid": "encoded_id",
     "name": "string",
     "email": "string",
-    "role": "user|doctor|admin",
+    "role": "user|admin",
     "is_verified": boolean
   }
 ]
@@ -1013,10 +1013,10 @@ Get a specific alert.
 ---
 
 #### POST /api/alerts
-Create a new alert (admin/doctor only).
+Create a new alert.
 
 **Auth Required:** Yes  
-**Role Required:** Admin or Doctor
+**Role Required:** Admin or User
 
 **Request:**
 ```json

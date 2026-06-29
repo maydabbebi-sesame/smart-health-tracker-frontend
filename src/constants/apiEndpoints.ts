@@ -99,6 +99,7 @@ export const DOCTOR_ENDPOINTS = {
   GET_DOCTOR_AVAILABILITY: (id: string) => `/api/doctors/${id}/availability`,
   SEARCH_DOCTORS: '/api/doctors/search',
   SEARCH_NEARBY: '/api/doctors/nearby',
+  GET_EXTERNAL_DOCTORS: '/api/doctors/external',
   GET_DOCTOR_APPOINTMENTS: (id: string) => `/api/doctors/${id}/appointments`,
   RATE_DOCTOR: (id: string) => `/api/doctors/${id}/rate`,
   CONFIRM_DOCTOR: (id: string) => `/api/doctors/${id}/confirm`,

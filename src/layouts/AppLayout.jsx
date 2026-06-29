@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, Menu, Search, Settings, ShieldPlus, X } from 'lucide-react'
+import { Bell, Menu, Settings, ShieldPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
@@ -165,10 +165,6 @@ export function AppLayout() {
               >
                 <Menu size={20} />
               </motion.button>
-              <div className="hidden w-[min(42vw,520px)] items-center gap-2 rounded-lg border border-transparent bg-[#eff5ef] px-4 py-2 text-sm text-[#6d7a73] md:flex">
-                <Search size={17} />
-                {t('layout.searchPlaceholder', 'Rechercher des données...')}
-              </div>
             </div>
 
             <div className="flex items-center gap-3">

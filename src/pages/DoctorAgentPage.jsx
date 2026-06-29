@@ -63,44 +63,38 @@ function MotionBtn({ children, className, ...rest }) {
   )
 }
 
-// ── Normalize the 3 backend sources into one shape so Médecins/Centres can
-// be grouped by TYPE rather than by where the data came from ─────────────────
+// ── Normalize the two backend lists (doctors/centers, both real
+// external_doctors/health_centers rows — see GET /api/doctors/nearby) into
+// the shape the cards/detail modal render ──────────────────────────────────
 function getOsmCategoryLabels(t) {
   return {
-    doctors: t('doctorAgent.osmCategory.doctor', 'Médecin'),
     clinic: t('doctorAgent.osmCategory.clinic', 'Clinique'),
     hospital: t('doctorAgent.osmCategory.hospital', 'Hôpital'),
   }
 }
 
-function normalizePlatform(doc) {
+const DOCTOR_SOURCE_LABELS = { platform: 'SmartHealth', 'med.tn': 'med.tn', osm: 'OpenStreetMap' }
+
+// Every doctor is a real external_doctors row (platform-added, med.tn-scraped,
+// or OSM-sourced), so every one of them can be booked via doctor_uid.
+function normalizeDoctor(doc) {
   return {
-    kind: 'medecin', source: 'platform', bookable: true,
+    kind: 'medecin', source: doc.source, bookable: true,
     id: doc.uid, name: doc.name, specialization: doc.specialization,
-    categoryLabel: 'SmartHealth', location: doc.location, phone: doc.phone,
-    email: doc.email, website: null, rating: doc.rating, distanceKm: null,
-    lat: null, lng: null,
+    categoryLabel: DOCTOR_SOURCE_LABELS[doc.source] || doc.source, location: doc.location,
+    phone: doc.phone, email: doc.email, website: null, rating: doc.rating,
+    distanceKm: doc.distanceKm, lat: doc.lat, lng: doc.lng,
   }
 }
 
-function normalizeExternal(doc) {
+// Health centers (clinics/hospitals) have no appointment booking flow.
+function normalizeCenter(center, osmCategoryLabels) {
   return {
-    kind: 'medecin', source: 'med.tn', bookable: false,
-    id: doc.sourceUrl, name: doc.name, specialization: doc.specialization,
-    categoryLabel: 'med.tn', location: doc.location, phone: doc.phone,
-    email: null, website: null, rating: null, distanceKm: null,
-    lat: doc.lat, lng: doc.lng,
-  }
-}
-
-function normalizeOsm(doc, osmCategoryLabels) {
-  const isDoctor = doc.category === 'doctors'
-  return {
-    kind: isDoctor ? 'medecin' : 'centre', source: 'osm', bookable: false,
-    id: doc.id, name: doc.name, specialization: null,
-    categoryLabel: osmCategoryLabels[doc.category] || 'OpenStreetMap',
-    location: doc.address, phone: doc.phone, email: doc.email, website: doc.website,
-    rating: null, distanceKm: doc.distanceKm, lat: doc.lat, lng: doc.lng,
+    kind: 'centre', source: center.source, bookable: false,
+    id: center.uid, name: center.name, specialization: null,
+    categoryLabel: osmCategoryLabels[center.category] || 'OpenStreetMap',
+    location: center.location, phone: center.phone, email: center.email, website: center.website,
+    rating: null, distanceKm: center.distanceKm, lat: center.lat, lng: center.lng,
   }
 }
 
@@ -317,16 +311,8 @@ function DoctorAgentPage() {
   }
 
   const osmCategoryLabels = getOsmCategoryLabels(t)
-  const allDoctors = results
-    ? [
-        ...results.platform.map(normalizePlatform),
-        ...results.external.map(normalizeExternal),
-        ...results.osm.filter((d) => d.category === 'doctors').map((d) => normalizeOsm(d, osmCategoryLabels)),
-      ]
-    : []
-  const allCenters = results
-    ? results.osm.filter((d) => d.category !== 'doctors').map((d) => normalizeOsm(d, osmCategoryLabels))
-    : []
+  const allDoctors = results ? results.doctors.map(normalizeDoctor) : []
+  const allCenters = results ? results.centers.map((c) => normalizeCenter(c, osmCategoryLabels)) : []
   const totalResults = allDoctors.length + allCenters.length
 
   function renderPhaseContent() {

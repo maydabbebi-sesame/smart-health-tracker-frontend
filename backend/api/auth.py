@@ -445,15 +445,15 @@ def register():
 
     password_hash = generate_password_hash(password)
     role = data.get("role", "user")
-    allowed_roles = {"user", "doctor", "admin"}
+    allowed_roles = {"user", "admin"}
     if role not in allowed_roles:
-        return jsonify({"error": "Role must be one of user, doctor, admin"}), 400
+        return jsonify({"error": "Role must be one of user, admin"}), 400
 
     if role != "user":
         token = get_token_from_header()
         admin_payload = decode_auth_token(token) if token else None
         if not admin_payload or admin_payload.get("role") != "admin":
-            return jsonify({"error": "Only admin may register doctor or admin roles"}), 403
+            return jsonify({"error": "Only admin may register admin roles"}), 403
 
     conn = get_db_connection()
     cursor = conn.cursor()
