@@ -677,9 +677,18 @@ function ProfilePage() {
               </article>
 
               <article className="sht-card p-5">
-                <h2 className="font-semibold text-[#171d1a] dark:text-white">{t('profile.preferences.confidentialityTitle', 'Confidentialité')}</h2>
+                <h2 className="font-semibold text-[#171d1a] dark:text-white">{t('profile.preferences.healthSummaryTitle', 'Résumé santé')}</h2>
                 <p className="mt-2 text-sm leading-6 text-[#6d7a73]">
-                  {t('profile.preferences.confidentialityText', 'Données patient simulées côté front, contrat backend documenté.')}
+                  {profile?.data?.weight && profile?.data?.height
+                    ? t(
+                        'profile.preferences.healthSummaryText',
+                        'IMC estimé : {{bmi}} - Groupe sanguin : {{bloodGroup}}.',
+                        {
+                          bmi: (profile.data.weight / (Number(profile.data.height) / 100) ** 2).toFixed(1),
+                          bloodGroup: profile.data.blood_group || notAvailable,
+                        },
+                      )
+                    : t('profile.preferences.healthSummaryEmpty', 'Complétez votre poids et votre taille pour afficher votre IMC.')}
                 </p>
               </article>
 

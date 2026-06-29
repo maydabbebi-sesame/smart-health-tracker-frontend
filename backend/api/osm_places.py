@@ -9,9 +9,11 @@ search needs (one geocode call + one Overpass query).
 import math
 import re
 import time
+from datetime import datetime, timezone
 
 import requests
 
+from database import get_db_connection
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -33,7 +35,7 @@ _RETRY_DELAY_SECONDS = 1.2
 _CITY_ADDRESS_KEYS = ("city", "town", "municipality", "village", "county", "state")
 
 
-def _haversine_km(lat1, lng1, lat2, lng2):
+def haversine_km(lat1, lng1, lat2, lng2):
     r = 6371.0
     p1, p2 = math.radians(lat1), math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
@@ -107,12 +109,17 @@ def geocode_address(address: str):
     return float(match["lat"]), float(match["lon"]), city
 
 
-def search_nearby_doctors(lat, lng, keyword=None, radius=12000, max_results=8):
-    """Overpass query for doctors/clinics/hospitals around (lat, lng).
+def search_nearby_facilities(lat, lng, keyword=None, radius=12000, max_results=8):
+    """Overpass query for doctors/clinics/hospitals around (lat, lng), split
+    into individual practitioners (amenity=doctors) and facilities
+    (clinic/hospital) — the former are upserted into external_doctors, the
+    latter into health_centers (see upsert_osm_doctors/upsert_osm_health_centers).
 
     OSM rarely tags a precise medical specialty, so `keyword` isn't used to
     filter results (it would mostly return nothing) — it's accepted for
     symmetry with the rest of the nearby-search flow but currently unused.
+
+    Returns (doctors, centers), each a list of dicts.
     """
     query = (
         f"[out:json][timeout:15];"
@@ -143,9 +150,9 @@ def search_nearby_doctors(lat, lng, keyword=None, radius=12000, max_results=8):
             time.sleep(_RETRY_DELAY_SECONDS)
 
     if not data:
-        return []
+        return [], []
 
-    results = []
+    doctors, centers = [], []
     for element in data.get("elements", []):
         tags = element.get("tags", {})
         name = tags.get("name:fr") or tags.get("name") or tags.get("name:en")
@@ -155,18 +162,18 @@ def search_nearby_doctors(lat, lng, keyword=None, radius=12000, max_results=8):
         el_lat = element.get("lat") or element.get("center", {}).get("lat")
         el_lng = element.get("lon") or element.get("center", {}).get("lon")
         distance_km = (
-            round(_haversine_km(lat, lng, el_lat, el_lng), 1)
+            round(haversine_km(lat, lng, el_lat, el_lng), 1)
             if el_lat is not None and el_lng is not None
             else None
         )
 
         address_parts = [tags.get("addr:housenumber"), tags.get("addr:street"), tags.get("addr:city")]
         address = ", ".join(part for part in address_parts if part) or None
+        category = tags.get("amenity")
 
-        results.append({
-            "id": f"{element['type']}/{element['id']}",
+        entry = {
+            "osm_id": f"{element['type']}/{element['id']}",
             "name": name,
-            "category": tags.get("amenity"),
             "address": address,
             "phone": tags.get("phone") or tags.get("contact:phone"),
             "email": tags.get("email") or tags.get("contact:email"),
@@ -174,7 +181,83 @@ def search_nearby_doctors(lat, lng, keyword=None, radius=12000, max_results=8):
             "lat": el_lat,
             "lng": el_lng,
             "distanceKm": distance_km,
-        })
+        }
 
-    results.sort(key=lambda d: (d["distanceKm"] is None, d["distanceKm"]))
-    return results[:max_results]
+        if category == "doctors":
+            entry["specialization"] = tags.get("healthcare:speciality") or "Médecin"
+            doctors.append(entry)
+        else:
+            entry["category"] = category
+            centers.append(entry)
+
+    doctors.sort(key=lambda d: (d["distanceKm"] is None, d["distanceKm"]))
+    centers.sort(key=lambda d: (d["distanceKm"] is None, d["distanceKm"]))
+    return doctors[:max_results], centers[:max_results]
+
+
+def upsert_osm_doctors(doctors):
+    """Persist Overpass individual-practitioner results into external_doctors
+    (source='osm'), keyed by osm_id so repeated searches update rather than
+    duplicate the row."""
+    if not doctors:
+        return
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now = datetime.now(timezone.utc)
+    for doc in doctors:
+        cursor.execute(
+            """
+            INSERT INTO external_doctors (source, osm_id, name, specialization, location, phone, lat, lng, scraped_at)
+            VALUES ('osm', %s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                name = VALUES(name),
+                specialization = VALUES(specialization),
+                location = VALUES(location),
+                phone = VALUES(phone),
+                lat = VALUES(lat),
+                lng = VALUES(lng),
+                scraped_at = VALUES(scraped_at)
+            """,
+            (
+                doc["osm_id"], doc["name"], doc["specialization"], doc.get("address") or "",
+                doc.get("phone"), doc.get("lat"), doc.get("lng"), now,
+            )
+        )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def upsert_osm_health_centers(centers):
+    """Persist Overpass clinic/hospital results into health_centers
+    (source='osm'), keyed by osm_id."""
+    if not centers:
+        return
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now = datetime.now(timezone.utc)
+    for center in centers:
+        cursor.execute(
+            """
+            INSERT INTO health_centers (source, osm_id, name, category, location, phone, email, website, lat, lng, scraped_at)
+            VALUES ('osm', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                name = VALUES(name),
+                category = VALUES(category),
+                location = VALUES(location),
+                phone = VALUES(phone),
+                email = VALUES(email),
+                website = VALUES(website),
+                lat = VALUES(lat),
+                lng = VALUES(lng),
+                scraped_at = VALUES(scraped_at)
+            """,
+            (
+                center["osm_id"], center["name"], center["category"], center.get("address") or "",
+                center.get("phone"), center.get("email"), center.get("website"),
+                center.get("lat"), center.get("lng"), now,
+            )
+        )
+    conn.commit()
+    cursor.close()
+    conn.close()

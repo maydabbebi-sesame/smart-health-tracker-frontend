@@ -3,17 +3,19 @@ import {
   AlertCircle,
   CalendarCheck,
   CalendarDays,
+  CalendarPlus,
   CheckCircle2,
   Clock,
   Inbox,
   Stethoscope,
   XCircle,
 } from 'lucide-react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 
 import { getCurrentUser } from '../services/authService'
 import { cancelAppointment, confirmAppointment, getAppointments } from '../services/appointmentsService'
-import { getDoctorById } from '../services/doctorsService'
+import { NewAppointmentModal } from '../features/appointments/NewAppointmentModal'
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
 import { useTranslation } from '../i18n/useTranslation'
 
@@ -39,6 +41,7 @@ function AppointmentsPage() {
   const { t, localeTag } = useTranslation()
   const queryClient = useQueryClient()
   const userUid = getCurrentUser()?.uid || null
+  const [showNewAppointment, setShowNewAppointment] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['appointments', userUid],
@@ -48,20 +51,6 @@ function AppointmentsPage() {
 
   const appointments = data?.success ? data.data : []
   const appointmentsError = data?.success === false ? data.error : null
-  const doctorUids = [...new Set(appointments.map((a) => a.doctor_uid).filter(Boolean))]
-
-  const { data: doctorsMap = {} } = useQuery({
-    queryKey: ['appointments-doctors', doctorUids],
-    queryFn: async () => {
-      const results = await Promise.all(doctorUids.map((uid) => getDoctorById(uid)))
-      const map = {}
-      results.forEach((result, index) => {
-        if (result.success) map[doctorUids[index]] = result.data
-      })
-      return map
-    },
-    enabled: doctorUids.length > 0,
-  })
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['appointments', userUid] })
@@ -106,7 +95,22 @@ function AppointmentsPage() {
         <p className="mt-2 max-w-xl text-sm leading-6 text-white/85">
           {t('appointments.banner.subtitle', 'Retrouvez ici tous vos rendez-vous médicaux, à venir et passés.')}
         </p>
+        <button
+          className="relative mt-4 flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#00694c] shadow-md transition hover:bg-white/90"
+          type="button"
+          onClick={() => setShowNewAppointment(true)}
+        >
+          <CalendarPlus size={16} /> {t('appointments.newButton', 'Nouveau rendez-vous')}
+        </button>
       </div>
+
+      {showNewAppointment && (
+        <NewAppointmentModal
+          userUid={userUid}
+          onClose={() => setShowNewAppointment(false)}
+          onCreated={invalidate}
+        />
+      )}
 
       {appointmentsError ? (
         <section className="sht-card flex flex-col items-center gap-3 p-12 text-center">
@@ -129,7 +133,7 @@ function AppointmentsPage() {
       ) : (
         <div className="grid gap-4">
           {sortedAppointments.map((appointment) => {
-            const doctor = doctorsMap[appointment.doctor_uid]
+            const doctor = { name: appointment.doctor_name, specialization: appointment.doctor_specialization }
             const isPast = appointmentDateTime(appointment) < new Date()
             const canConfirm = appointment.status === 'scheduled' && !isPast
             const canCancel = (appointment.status === 'scheduled' || appointment.status === 'confirmed') && !isPast

@@ -5,7 +5,7 @@ from auth import token_required, roles_required
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
-ASSIGNABLE_ROLES = {"user", "doctor", "admin"}
+ASSIGNABLE_ROLES = {"user", "admin"}
 
 
 @admin_bp.route("/users", methods=["GET"])
@@ -88,7 +88,7 @@ def update_user_role(uid: str):
     """Change a user's role (admin only).
 
     PATCH /api/admin/users/<uid>/role
-    Body JSON: { role: "user" | "doctor" | "admin" }
+    Body JSON: { role: "user" | "admin" }
     """
     internal_id = decode_id(uid)
     if internal_id is None:
@@ -97,7 +97,7 @@ def update_user_role(uid: str):
     data = request.get_json(silent=True)
     role = data.get("role") if isinstance(data, dict) else None
     if role not in ASSIGNABLE_ROLES:
-        return jsonify({"error": "Role must be one of user, doctor, admin"}), 400
+        return jsonify({"error": "Role must be one of user, admin"}), 400
 
     if g.current_user.get("uid") == uid:
         return jsonify({"error": "You cannot change your own role"}), 400

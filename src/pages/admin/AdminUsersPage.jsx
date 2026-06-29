@@ -11,7 +11,7 @@ import {
 } from '../../services/adminService'
 import { useTranslation } from '../../i18n/useTranslation'
 
-const ROLES = ['user', 'doctor', 'admin']
+const ROLES = ['user', 'admin']
 
 const CONFIRM_COPY = {
   enable: {

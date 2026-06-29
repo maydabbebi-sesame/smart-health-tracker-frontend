@@ -6,7 +6,7 @@
 
 // ==================== Authentication ====================
 
-export type UserRole = 'user' | 'doctor' | 'admin';
+export type UserRole = 'user' | 'admin';
 
 export interface User {
   uid: string; // Base64 encoded user ID

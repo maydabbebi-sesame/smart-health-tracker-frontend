@@ -51,6 +51,30 @@ export async function searchNearbyDoctors(address, specialization = null) {
 }
 
 /**
+ * List scraped (med.tn) external doctors, for booking an appointment with
+ * an entry that has no platform account.
+ */
+export async function getExternalDoctors({ query, specialization, location } = {}) {
+  try {
+    const params = {}
+    if (query) params.query = query
+    if (specialization) params.specialization = specialization
+    if (location) params.location = location
+
+    const response = await apiClient.get(DOCTOR_ENDPOINTS.GET_EXTERNAL_DOCTORS, { params })
+    return { success: true, data: response.data }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Impossible de récupérer les médecins externes',
+    }
+  }
+}
+
+/**
  * Get specific doctor by ID
  */
 export async function getDoctorById(id) {

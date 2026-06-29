@@ -1,5 +1,5 @@
 -- mediassist_history previously stored the frontend's signed "uid" token
--- (see backend/api/security.py's encode_id) in user_uid VARCHAR(255); every
+-- (see backend/api/security.py's encode_id) in user_uid VARCHAR(255) -- every
 -- other per-user table (vitals, medical_history...) stores the numeric
 -- users.id instead, so this brings it in line and lets it join against
 -- users(id) directly. mediassist_service now decodes the token back into
