@@ -356,7 +356,14 @@ export async function requestMFA(uid) {
 export async function forgotPassword(email) {
   try {
     const response = await apiClient.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email })
-    return { success: true, message: response.data.message }
+    return {
+      success: true,
+      message: response.data.message,
+      data: {
+        verificationCode: response.data.verification_code,
+        devNote: response.data.dev_note,
+      },
+    }
   } catch (error) {
     return {
       success: false,

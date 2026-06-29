@@ -684,12 +684,16 @@ def forgot_password():
     cursor.execute("UPDATE users SET verification_code = %s, verification_expiry = %s WHERE id = %s", (reset_code, reset_expiry, user["id"]))
     conn.commit()
     try:
-        send_verification_email(email, encode_id(user["id"]), reset_code)
+        email_sent = send_verification_email(email, encode_id(user["id"]), reset_code)
     except Exception:
-        pass
+        email_sent = False
     cursor.close()
     conn.close()
-    return jsonify({"message": "If the email exists, a reset code has been sent"}), 200
+    response = {"message": "If the email exists, a reset code has been sent"}
+    if EMAIL_DEV_MODE and not email_sent:
+        response["verification_code"] = reset_code
+        response["dev_note"] = "SMTP not configured; use verification_code for local testing"
+    return jsonify(response), 200
 
 
 @auth_bp.route("/reset-password", methods=["POST"])

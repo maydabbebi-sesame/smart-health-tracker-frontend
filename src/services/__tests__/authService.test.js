@@ -251,7 +251,13 @@ describe('authService', () => {
 
   describe('forgotPassword', () => {
     it('sends email to forgot-password', async () => {
-      apiClient.post.mockResolvedValue({ data: { message: 'Reset email sent' } })
+      apiClient.post.mockResolvedValue({
+        data: {
+          message: 'Reset email sent',
+          verification_code: '123456',
+          dev_note: 'Development code',
+        },
+      })
 
       const result = await forgotPassword('test@test.com')
 
@@ -259,6 +265,10 @@ describe('authService', () => {
         email: 'test@test.com',
       })
       expect(result.success).toBe(true)
+      expect(result.data).toEqual({
+        verificationCode: '123456',
+        devNote: 'Development code',
+      })
     })
   })
 
