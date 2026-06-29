@@ -14,6 +14,7 @@ const AppointmentsPage = lazy(() => import('../../pages/AppointmentsPage'))
 const DashboardPage = lazy(() => import('../../pages/DashboardPage'))
 const HistoryPage = lazy(() => import('../../pages/HistoryPage'))
 const LoginPage = lazy(() => import('../../pages/LoginPage'))
+const ForgotPasswordPage = lazy(() => import('../../pages/ForgotPasswordPage'))
 const DoctorAgentPage = lazy(() => import('../../pages/DoctorAgentPage'))
 const ProfilePage = lazy(() => import('../../pages/ProfilePage'))
 const RegisterPage = lazy(() => import('../../pages/RegisterPage'))
@@ -40,6 +41,10 @@ const router = createBrowserRouter([
       {
         path: '/login',
         element: withSuspense(<LoginPage />),
+      },
+      {
+        path: '/forgot-password',
+        element: withSuspense(<ForgotPasswordPage />),
       },
       {
         path: '/register',

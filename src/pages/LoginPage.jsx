@@ -112,9 +112,9 @@ function LoginPage() {
             />
             {t('login.rememberMe', 'Se souvenir de moi')}
           </label>
-          <button className="font-semibold text-[#00694c] hover:text-[#008560]" type="button">
+          <Link className="font-semibold text-[#00694c] hover:text-[#008560]" to="/forgot-password">
             {t('login.forgotPassword', 'Mot de passe oublié ?')}
-          </button>
+          </Link>
         </div>
 
         {error ? (
