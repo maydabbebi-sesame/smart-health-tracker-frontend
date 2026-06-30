@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 320" role="img" aria-labelledby="logo-title logo-description">
+  <title id="logo-title">Smart Health Tracker</title>
+  <desc id="logo-description">Un cœur protecteur contenant un tracé cardiaque et un réseau intelligent.</desc>
+  <g transform="translate(24 24) scale(4.25)">
+    <path
+      d="M32 56C22 48 8 38 8 23C8 13 15 8 24 8C28 8 31 11 32 14C34 11 37 8 42 8C50 8 56 14 56 23C56 27 55 31 53 34"
+      fill="none"
+      stroke="#00694c"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="3.8"
+    />
+    <path
+      d="M8 32H18L22 25L27 43L33 19L38 35H46"
+      fill="none"
+      stroke="#9acbc1"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="3.2"
+    />
+    <path d="M32 56C37 43 48 41 56 32C55 43 48 52 32 56Z" fill="#9acbc1" />
+    <g stroke="#00694c" stroke-linecap="round" stroke-width="2">
+      <path d="M47 18L51 14" />
+      <path d="M47 20L53 21" />
+      <path d="M45 17L43 12" />
+    </g>
+    <circle cx="46" cy="19" r="3" fill="#142552" />
+    <circle cx="52" cy="13" r="2.5" fill="#00694c" />
+    <circle cx="55" cy="22" r="2.5" fill="#9acbc1" />
+    <circle cx="42" cy="10" r="2.5" fill="#9acbc1" />
+  </g>
+  <g
+    font-family="Inter, 'Segoe UI', Arial, sans-serif"
+    font-size="82"
+    font-weight="700"
+    letter-spacing="-2"
+  >
+    <text x="325" y="185" fill="#00694c">Smart</text>
+    <text x="560" y="185" fill="#9acbc1">Health</text>
+    <text x="815" y="185" fill="#00694c">Tracker</text>
+  </g>
+  <text
+    x="330"
+    y="228"
+    fill="#50645c"
+    font-family="Inter, 'Segoe UI', Arial, sans-serif"
+    font-size="22"
+    font-weight="500"
+    letter-spacing="4"
+  >SANTÉ CONNECTÉE · SUIVI INTELLIGENT</text>
+</svg>
