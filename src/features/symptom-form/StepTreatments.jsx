@@ -1,6 +1,7 @@
 import { AlertCircle, Plus, X } from 'lucide-react'
 import { useFieldArray } from 'react-hook-form'
 
+import { useTranslation } from '../../i18n/useTranslation'
 import { adherenceOptions } from './formOptions'
 
 function FieldError({ message }) {
@@ -14,20 +15,37 @@ function FieldError({ message }) {
 }
 
 export function StepTreatments({ control, errors, register, values }) {
+  const { t } = useTranslation()
   const { fields, append, remove } = useFieldArray({ control, name: 'currentMedications' })
+
+  const yesNoLabels = {
+    Oui: t('symptomForm.stepTreatments.yesOption', 'Oui'),
+    Non: t('symptomForm.stepTreatments.noOption', 'Non'),
+  }
+
+  const adherenceLabels = {
+    Toujours: t('symptomForm.stepTreatments.adherenceOption.always', 'Toujours'),
+    Parfois: t('symptomForm.stepTreatments.adherenceOption.sometimes', 'Parfois'),
+    Rarement: t('symptomForm.stepTreatments.adherenceOption.rarely', 'Rarement'),
+  }
 
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Traitements en cours</h2>
+        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">
+          {t('symptomForm.stepTreatments.title', 'Traitements en cours')}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Medicaments et complements actuels, indispensables pour detecter les interactions medicamenteuses.
+          {t(
+            'symptomForm.stepTreatments.subtitle',
+            'Medicaments et complements actuels, indispensables pour detecter les interactions medicamenteuses.',
+          )}
         </p>
       </div>
 
       <div>
         <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Medicaments actuels <span className="text-[#ba1a1a]">*</span>
+          {t('symptomForm.stepTreatments.currentMedicationsLabel', 'Medicaments actuels')} <span className="text-[#ba1a1a]">*</span>
         </span>
         <div className="mt-2 flex gap-2">
           {['Oui', 'Non'].map((option) => (
@@ -36,7 +54,7 @@ export function StepTreatments({ control, errors, register, values }) {
               key={option}
             >
               <input className="sr-only" type="radio" value={option} {...register('hasCurrentMedications')} />
-              {option}
+              {yesNoLabels[option]}
             </label>
           ))}
         </div>
@@ -46,14 +64,14 @@ export function StepTreatments({ control, errors, register, values }) {
       {values.hasCurrentMedications === 'Oui' && (
         <div className="mt-5">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-            Nom + dose + frequence
+            {t('symptomForm.stepTreatments.nameDoseFrequencyLabel', 'Nom + dose + fréquence')}
           </span>
           <div className="mt-3 space-y-2">
             {fields.map((field, index) => (
               <div className="flex items-center gap-2" key={field.id}>
                 <input
                   className="h-12 flex-1 rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
-                  placeholder="Ex: Metformine 1000mg 2x/j"
+                  placeholder={t('symptomForm.stepTreatments.medicationPlaceholder', 'Ex: Metformine 1000mg 2x/j')}
                   type="text"
                   {...register(`currentMedications.${index}.value`)}
                 />
@@ -75,7 +93,7 @@ export function StepTreatments({ control, errors, register, values }) {
             onClick={() => append({ value: '' })}
           >
             <Plus size={15} />
-            Ajouter un medicament
+            {t('symptomForm.stepTreatments.addMedicationButton', 'Ajouter un medicament')}
           </button>
           <FieldError message={errors.currentMedications?.message} />
         </div>
@@ -83,7 +101,7 @@ export function StepTreatments({ control, errors, register, values }) {
 
       <div className="mt-5">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Complements / phytotherapie
+          {t('symptomForm.stepTreatments.supplementsLabel', 'Complements / phytotherapie')}
         </span>
         <div className="mt-2 flex gap-2">
           {['Oui', 'Non'].map((option) => (
@@ -92,7 +110,7 @@ export function StepTreatments({ control, errors, register, values }) {
               key={option}
             >
               <input className="sr-only" type="radio" value={option} {...register('hasSupplements')} />
-              {option}
+              {yesNoLabels[option]}
             </label>
           ))}
         </div>
@@ -101,11 +119,11 @@ export function StepTreatments({ control, errors, register, values }) {
       {values.hasSupplements === 'Oui' && (
         <label className="mt-5 block">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-            Plantes, vitamines...
+            {t('symptomForm.stepTreatments.supplementsDetailLabel', 'Plantes, vitamines...')}
           </span>
           <input
             className="mt-2 h-12 w-full rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
-            placeholder="Ex: vitamine D, ginkgo, millepertuis..."
+            placeholder={t('symptomForm.stepTreatments.supplementsPlaceholder', 'Ex: vitamine D, ginkgo, millepertuis...')}
             type="text"
             {...register('supplements')}
           />
@@ -115,7 +133,9 @@ export function StepTreatments({ control, errors, register, values }) {
 
       {values.hasCurrentMedications === 'Oui' && (
         <div className="mt-5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">Observance du traitement</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
+            {t('symptomForm.stepTreatments.adherenceLabel', 'Observance du traitement')}
+          </span>
           <div className="mt-2 flex flex-wrap gap-2">
             {adherenceOptions.map((option) => (
               <label
@@ -123,7 +143,7 @@ export function StepTreatments({ control, errors, register, values }) {
                 key={option}
               >
                 <input className="sr-only" type="radio" value={option} {...register('treatmentAdherence')} />
-                {option}
+                {adherenceLabels[option]}
               </label>
             ))}
           </div>

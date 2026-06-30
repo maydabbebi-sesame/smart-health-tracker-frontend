@@ -1,6 +1,7 @@
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
 
+import { useTranslation } from '../../i18n/useTranslation'
 import { durationOptions, generalStateOptions, painLocationOptions, symptomOptions, triggerOptions } from './formOptions'
 
 function FieldError({ message }) {
@@ -16,7 +17,7 @@ function FieldError({ message }) {
   )
 }
 
-function TagGroup({ name, options, register, selected = [], setValue }) {
+function TagGroup({ name, optionLabels, options, register, selected = [], setValue, t }) {
   const [isAdding, setIsAdding] = useState(false)
   const [customValue, setCustomValue] = useState('')
   const mergedOptions = [...options, ...selected.filter((item) => !options.includes(item))]
@@ -52,7 +53,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
           >
             <input className="sr-only" type="checkbox" value={option} {...register(name)} />
             {isSelected && <CheckCircle2 size={14} />}
-            {option}
+            {optionLabels?.[option] ?? option}
           </label>
         )
       })}
@@ -60,7 +61,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
         <span className="inline-flex items-center gap-2">
           <input
             className="h-10 w-40 rounded-full border border-[#008560] bg-white px-4 text-sm outline-none ring-2 ring-[#008560]/20"
-            placeholder="Autre..."
+            placeholder={t('symptomForm.stepSymptoms.otherPlaceholder', 'Autre...')}
             type="text"
             value={customValue}
             onChange={(event) => setCustomValue(event.target.value)}
@@ -76,7 +77,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
             type="button"
             onClick={addCustomOption}
           >
-            Ajouter
+            {t('symptomForm.stepSymptoms.addButton', 'Ajouter')}
           </button>
         </span>
       ) : (
@@ -85,14 +86,14 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
           type="button"
           onClick={() => setIsAdding(true)}
         >
-          + Autre
+          {t('symptomForm.stepSymptoms.addOtherButton', '+ Autre')}
         </button>
       )}
     </div>
   )
 }
 
-function RadioGroup({ name, options, register }) {
+function RadioGroup({ name, optionLabels, options, register }) {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((option) => (
@@ -101,7 +102,7 @@ function RadioGroup({ name, options, register }) {
           key={option}
         >
           <input className="sr-only" type="radio" value={option} {...register(name)} />
-          {option}
+          {optionLabels?.[option] ?? option}
         </label>
       ))}
     </div>
@@ -109,25 +110,87 @@ function RadioGroup({ name, options, register }) {
 }
 
 export function StepSymptoms({ errors, register, selectedSymptoms = [], setValue, values }) {
+  const { t } = useTranslation()
+
+  const symptomLabels = {
+    Fatigue: t('symptomForm.stepSymptoms.symptomOption.fatigue', 'Fatigue'),
+    Douleur: t('symptomForm.stepSymptoms.symptomOption.pain', 'Douleur'),
+    Dyspnee: t('symptomForm.stepSymptoms.symptomOption.dyspnea', 'Dyspnee'),
+    Vertiges: t('symptomForm.stepSymptoms.symptomOption.dizziness', 'Vertiges'),
+    Nausees: t('symptomForm.stepSymptoms.symptomOption.nausea', 'Nausees'),
+    Fievre: t('symptomForm.stepSymptoms.symptomOption.fever', 'Fievre'),
+    Cephalees: t('symptomForm.stepSymptoms.symptomOption.headache', 'Cephalees'),
+    Toux: t('symptomForm.stepSymptoms.symptomOption.cough', 'Toux'),
+    'Douleur thoracique': t('symptomForm.stepSymptoms.symptomOption.chestPain', 'Douleur thoracique'),
+    Essoufflement: t('symptomForm.stepSymptoms.symptomOption.breathlessness', 'Essoufflement'),
+    'Maux de gorge': t('symptomForm.stepSymptoms.symptomOption.soreThroat', 'Maux de gorge'),
+    'Douleurs abdominales': t('symptomForm.stepSymptoms.symptomOption.abdominalPain', 'Douleurs abdominales'),
+  }
+
+  const durationLabels = {
+    '<24h': t('symptomForm.stepSymptoms.durationOption.under24h', '<24h'),
+    Jours: t('symptomForm.stepSymptoms.durationOption.days', 'Jours'),
+    Semaines: t('symptomForm.stepSymptoms.durationOption.weeks', 'Semaines'),
+    'Mois+': t('symptomForm.stepSymptoms.durationOption.monthsPlus', 'Mois+'),
+  }
+
+  const painLocationLabels = {
+    Tete: t('symptomForm.stepSymptoms.painLocationOption.head', 'Tete'),
+    Cou: t('symptomForm.stepSymptoms.painLocationOption.neck', 'Cou'),
+    Gorge: t('symptomForm.stepSymptoms.painLocationOption.throat', 'Gorge'),
+    Thorax: t('symptomForm.stepSymptoms.painLocationOption.chest', 'Thorax'),
+    Dos: t('symptomForm.stepSymptoms.painLocationOption.back', 'Dos'),
+    Abdomen: t('symptomForm.stepSymptoms.painLocationOption.abdomen', 'Abdomen'),
+    Bassin: t('symptomForm.stepSymptoms.painLocationOption.pelvis', 'Bassin'),
+    Bras: t('symptomForm.stepSymptoms.painLocationOption.arm', 'Bras'),
+    Main: t('symptomForm.stepSymptoms.painLocationOption.hand', 'Main'),
+    Jambe: t('symptomForm.stepSymptoms.painLocationOption.leg', 'Jambe'),
+    Genou: t('symptomForm.stepSymptoms.painLocationOption.knee', 'Genou'),
+    Pied: t('symptomForm.stepSymptoms.painLocationOption.foot', 'Pied'),
+  }
+
+  const triggerLabels = {
+    'Effort physique': t('symptomForm.stepSymptoms.triggerOption.physicalEffort', 'Effort physique'),
+    Repas: t('symptomForm.stepSymptoms.triggerOption.meal', 'Repas'),
+    Stress: t('symptomForm.stepSymptoms.triggerOption.stress', 'Stress'),
+    Froid: t('symptomForm.stepSymptoms.triggerOption.cold', 'Froid'),
+    Spontane: t('symptomForm.stepSymptoms.triggerOption.spontaneous', 'Spontane'),
+  }
+
+  const generalStateLabels = {
+    Excellent: t('symptomForm.stepSymptoms.generalStateOption.excellent', 'Excellent'),
+    Bon: t('symptomForm.stepSymptoms.generalStateOption.good', 'Bon'),
+    Moyen: t('symptomForm.stepSymptoms.generalStateOption.average', 'Moyen'),
+    Mauvais: t('symptomForm.stepSymptoms.generalStateOption.bad', 'Mauvais'),
+    'Tres mauvais': t('symptomForm.stepSymptoms.generalStateOption.veryBad', 'Tres mauvais'),
+  }
+
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Symptomes actuels</h2>
+        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">
+          {t('symptomForm.stepSymptoms.title', 'Symptômes actuels')}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Ressenti du patient au moment de la consultation, point d'entree principal de chaque session.
+          {t(
+            'symptomForm.stepSymptoms.subtitle',
+            "Ressenti du patient au moment de la consultation, point d'entree principal de chaque session.",
+          )}
         </p>
       </div>
 
       <div>
         <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Symptomes principaux
+          {t('symptomForm.stepSymptoms.mainSymptomsLabel', 'Symptômes principaux')}
         </label>
         <TagGroup
           name="symptoms"
+          optionLabels={symptomLabels}
           options={symptomOptions}
           register={register}
           selected={selectedSymptoms}
           setValue={setValue}
+          t={t}
         />
         <FieldError message={errors.symptoms?.message} />
       </div>
@@ -136,9 +199,11 @@ export function StepSymptoms({ errors, register, selectedSymptoms = [], setValue
         <div className="flex items-center justify-between gap-4">
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-              Intensite de la douleur
+              {t('symptomForm.stepSymptoms.painIntensityLabel', 'Intensité de la douleur')}
             </span>
-            <p className="mt-1 text-xs text-[#6d7a73]">EVA 0 a 10 - conditionnel si symptome douloureux.</p>
+            <p className="mt-1 text-xs text-[#6d7a73]">
+              {t('symptomForm.stepSymptoms.painIntensityHint', 'EVA 0 a 10 - conditionnel si symptome douloureux.')}
+            </p>
           </div>
           <span className="font-metric text-lg font-semibold text-[#00694c]">{values.painIntensity || 0}/10</span>
         </div>
@@ -148,11 +213,11 @@ export function StepSymptoms({ errors, register, selectedSymptoms = [], setValue
 
       <label className="mt-5 block">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Description courte des symptomes
+          {t('symptomForm.stepSymptoms.shortDescriptionLabel', 'Description courte des symptomes')}
         </span>
         <input
           className="mt-2 h-12 w-full rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
-          placeholder="Ex: fatigue intense, maux de tete..."
+          placeholder={t('symptomForm.stepSymptoms.shortDescriptionPlaceholder', 'Ex: fatigue intense, maux de tete...')}
           type="text"
           {...register('otherSymptoms')}
         />
@@ -161,23 +226,25 @@ export function StepSymptoms({ errors, register, selectedSymptoms = [], setValue
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <div>
           <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-            Duree des symptomes
+            {t('symptomForm.stepSymptoms.durationLabel', 'Duree des symptomes')}
           </label>
-          <RadioGroup name="symptomDuration" options={durationOptions} register={register} />
+          <RadioGroup name="symptomDuration" optionLabels={durationLabels} options={durationOptions} register={register} />
           <FieldError message={errors.symptomDuration?.message} />
         </div>
 
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-            Localisation de la douleur
+            {t('symptomForm.stepSymptoms.painLocationLabel', 'Localisation de la douleur')}
           </span>
           <div className="mt-2">
             <TagGroup
               name="painLocation"
+              optionLabels={painLocationLabels}
               options={painLocationOptions}
               register={register}
               selected={values.painLocation}
               setValue={setValue}
+              t={t}
             />
           </div>
         </div>
@@ -185,22 +252,24 @@ export function StepSymptoms({ errors, register, selectedSymptoms = [], setValue
 
       <div className="mt-6">
         <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Facteurs declenchants
+          {t('symptomForm.stepSymptoms.triggersLabel', 'Facteurs declenchants')}
         </label>
         <TagGroup
           name="triggers"
+          optionLabels={triggerLabels}
           options={triggerOptions}
           register={register}
           selected={values.triggers}
           setValue={setValue}
+          t={t}
         />
       </div>
 
       <div className="mt-6">
         <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Etat general subjectif
+          {t('symptomForm.stepSymptoms.generalStateLabel', 'Etat general subjectif')}
         </label>
-        <RadioGroup name="generalState" options={generalStateOptions} register={register} />
+        <RadioGroup name="generalState" optionLabels={generalStateLabels} options={generalStateOptions} register={register} />
       </div>
     </div>
   )

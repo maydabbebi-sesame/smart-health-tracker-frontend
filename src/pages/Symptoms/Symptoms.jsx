@@ -1,24 +1,36 @@
 import { BrainCircuit, ShieldCheck } from 'lucide-react'
 
 import { SymptomForm } from '../../features/symptom-form/SymptomForm'
+import { useTranslation } from '../../i18n/useTranslation'
 
-const helperCards = [
-  {
-    title: 'Securite des donnees',
-    text: 'Les donnees de sante sont simulees cote frontend et preparees pour un flux backend securise.',
-    icon: ShieldCheck,
-  },
-  {
-    title: 'Analyse IA',
-    text: 'Le formulaire produit un payload clair pour le futur modele IA via API/service.',
-    icon: BrainCircuit,
-  },
-]
+function useHelperCards(t) {
+  return [
+    {
+      title: t('symptomForm.page.helperCard.dataSecurity.title', 'Sécurité des données'),
+      text: t(
+        'symptomForm.page.helperCard.dataSecurity.text',
+        'Les données de santé sont simulées côté frontend et préparées pour un flux backend sécurisé.',
+      ),
+      icon: ShieldCheck,
+    },
+    {
+      title: t('symptomForm.page.helperCard.aiAnalysis.title', 'Analyse IA'),
+      text: t(
+        'symptomForm.page.helperCard.aiAnalysis.text',
+        'Le formulaire produit un payload clair pour le futur modele IA via API/service.',
+      ),
+      icon: BrainCircuit,
+    },
+  ]
+}
 
 function Symptoms() {
+  const { t } = useTranslation()
+  const helperCards = useHelperCards(t)
+
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col items-center py-4 sm:py-8">
-      <h1 className="sr-only">Suivi de Sante - Analyse des symptomes</h1>
+      <h1 className="sr-only">{t('symptomForm.page.heading', 'Suivi de Sante - Analyse des symptomes')}</h1>
       <SymptomForm />
 
       <aside className="mt-8 grid w-full gap-4 md:grid-cols-2">

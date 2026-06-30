@@ -36,6 +36,22 @@ export const USER_ENDPOINTS = {
   UPLOAD_PROFILE_PICTURE: '/api/users/profile-picture',
 };
 
+// ==================== Medical History Endpoints ====================
+export const MEDICAL_HISTORY_ENDPOINTS = {
+  GET_MEDICAL_HISTORY: '/api/medical-history',
+  CREATE_MEDICAL_HISTORY: '/api/medical-history',
+  UPDATE_MEDICAL_HISTORY: (id: string) => `/api/medical-history/${id}`,
+  DELETE_MEDICAL_HISTORY: (id: string) => `/api/medical-history/${id}`,
+};
+
+// ==================== Vaccinations Endpoints ====================
+export const VACCINATION_ENDPOINTS = {
+  GET_VACCINATIONS: '/api/vaccinations',
+  CREATE_VACCINATION: '/api/vaccinations',
+  UPDATE_VACCINATION: (id: string) => `/api/vaccinations/${id}`,
+  DELETE_VACCINATION: (id: string) => `/api/vaccinations/${id}`,
+};
+
 // ==================== Vital Signs Endpoints ====================
 export const VITAL_ENDPOINTS = {
   RECORD_VITAL: '/api/vitals',
@@ -46,6 +62,7 @@ export const VITAL_ENDPOINTS = {
   GET_VITAL_EVOLUTION: '/api/vitals/evolution',
   EXPORT_VITALS: '/api/vitals/export',
   GET_LATEST_VITAL: (type: string) => `/api/vitals/latest/${type}`,
+  EXPORT_ANALYSIS_PDF: '/api/vitals/analysis-pdf',
 };
 
 // ==================== Appointments Endpoints ====================
@@ -56,15 +73,14 @@ export const APPOINTMENT_ENDPOINTS = {
   UPDATE_APPOINTMENT: (id: string) => `/api/appointments/${id}`,
   CANCEL_APPOINTMENT: (id: string) => `/api/appointments/${id}/cancel`,
   DELETE_APPOINTMENT: (id: string) => `/api/appointments/${id}`,
-  GET_AVAILABLE_SLOTS: '/api/appointments/available-slots',
   CONFIRM_APPOINTMENT: (id: string) => `/api/appointments/${id}/confirm`,
-  SEND_REMINDER: (id: string) => `/api/appointments/${id}/reminder`,
   SEND_REMINDERS: '/api/appointments/send-reminders',
 };
 
 // ==================== Alerts Endpoints ====================
 export const ALERT_ENDPOINTS = {
   GET_ALERTS: '/api/alerts',
+  CREATE_ALERT: '/api/alerts',
   GET_ALERT_BY_ID: (id: string) => `/api/alerts/${id}`,
   MARK_AS_READ: (id: string) => `/api/alerts/${id}/read`,
   MARK_AS_UNREAD: (id: string) => `/api/alerts/${id}/unread`,
@@ -82,9 +98,9 @@ export const DOCTOR_ENDPOINTS = {
   GET_DOCTOR_AVAILABILITY: (id: string) => `/api/doctors/${id}/availability`,
   SEARCH_DOCTORS: '/api/doctors/search',
   SEARCH_NEARBY: '/api/doctors/nearby',
+  GET_EXTERNAL_DOCTORS: '/api/doctors/external',
   GET_DOCTOR_APPOINTMENTS: (id: string) => `/api/doctors/${id}/appointments`,
   RATE_DOCTOR: (id: string) => `/api/doctors/${id}/rate`,
-  CONFIRM_DOCTOR: (id: string) => `/api/doctors/${id}/confirm`,
   CREATE_DOCTOR: '/api/doctors',
 };
 
@@ -104,11 +120,19 @@ export const AI_ENDPOINTS = {
   GET_RECOMMENDATIONS: '/mediassist/api/mediassist/recommendations',
 };
 
+// ==================== Translations Endpoints ====================
+export const TRANSLATION_ENDPOINTS = {
+  GET_TRANSLATIONS: (locale: string) => `/api/translations/${locale}`,
+};
+
 // ==================== Admin Endpoints ====================
 export const ADMIN_ENDPOINTS = {
   GET_USERS: '/api/admin/users',
   GET_USER: (id: string) => `/api/admin/users/${id}`,
   DELETE_USER: (id: string) => `/api/admin/users/${id}`,
+  UPDATE_USER_STATUS: (id: string) => `/api/admin/users/${id}/status`,
+  UPDATE_USER_ROLE: (id: string) => `/api/admin/users/${id}/role`,
+  REGENERATE_USER_TOKEN: (id: string) => `/api/admin/users/${id}/regenerate-token`,
   GET_STATISTICS: '/api/admin/statistics',
   GET_ACTIVITY_LOG: '/api/admin/activity-log',
 };
@@ -134,7 +158,10 @@ export const getAllEndpoints = () => ({
   doctors: DOCTOR_ENDPOINTS,
   forms: FORM_ENDPOINTS,
   ai: AI_ENDPOINTS,
+  translations: TRANSLATION_ENDPOINTS,
   admin: ADMIN_ENDPOINTS,
+  medicalHistory: MEDICAL_HISTORY_ENDPOINTS,
+  vaccinations: VACCINATION_ENDPOINTS,
 });
 
 /**

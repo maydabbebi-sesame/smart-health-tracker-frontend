@@ -2,32 +2,50 @@ import { AlertTriangle, BrainCircuit, CheckCircle2, ListChecks, Loader2, Send, S
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
+import { useTranslation } from '../../i18n/useTranslation'
+import { createAlert } from '../../services/alertsService'
 import { getCurrentUser } from '../../services/authService'
-import { sendMediAssistMessage } from '../../services/mediAssistService'
+import { getRecommendationsHistory, sendMediAssistMessage } from '../../services/mediAssistService'
 import { useMedAssistStore } from '../../store/medAssistStore'
+import { queryClient } from '../../lib/queryClient'
 
 // ── Urgence config ────────────────────────────────────────────────────────────
-const URGENCE_CONFIG = {
-  normale:  { label: 'Normale',  bg: 'bg-[#e4eae4]',   text: 'text-[#3d4943]',  border: 'border-[#bccac1]'   },
-  moderee:  { label: 'Modérée',  bg: 'bg-[#fef3c7]',   text: 'text-[#92400e]',  border: 'border-[#fcd34d]'   },
-  elevee:   { label: 'Élevée',   bg: 'bg-[#ffdad6]',   text: 'text-[#7e2a27]',  border: 'border-[#ff8a80]'   },
-  critique: { label: 'CRITIQUE', bg: 'bg-[#93000a]',   text: 'text-white',       border: 'border-[#93000a]'   },
+function getUrgenceConfig(t) {
+  return {
+    normale:  { label: t('mediAssistChat.urgence.normale', 'Normale'),  bg: 'bg-[#e4eae4]',   text: 'text-[#3d4943]',  border: 'border-[#bccac1]'   },
+    moderee:  { label: t('mediAssistChat.urgence.moderee', 'Modérée'),  bg: 'bg-[#fef3c7]',   text: 'text-[#92400e]',  border: 'border-[#fcd34d]'   },
+    elevee:   { label: t('mediAssistChat.urgence.elevee', 'Élevée'),    bg: 'bg-[#ffdad6]',   text: 'text-[#7e2a27]',  border: 'border-[#ff8a80]'   },
+    critique: { label: t('mediAssistChat.urgence.critique', 'CRITIQUE'), bg: 'bg-[#93000a]',  text: 'text-white',     border: 'border-[#93000a]'   },
+  }
 }
 
-const ORIENTATION_LABELS = {
-  automedication:      'Automédication',
-  medecin_generaliste: 'Médecin généraliste',
-  specialiste:         'Spécialiste',
-  urgences:            'Urgences',
+function getOrientationLabels(t) {
+  return {
+    automedication:      t('mediAssistChat.orientation.automedication', 'Automédication'),
+    medecin_generaliste: t('mediAssistChat.orientation.medecinGeneraliste', 'Médecin généraliste'),
+    specialiste:         t('mediAssistChat.orientation.specialiste', 'Spécialiste'),
+    urgences:            t('mediAssistChat.orientation.urgences', 'Urgences'),
+  }
 }
 
 // Pre-built questions — sent through the same LLM turn as free-form input,
 // so a tap here can also create new recommendations/alerts.
-const QUICK_SUGGESTIONS = [
-  { label: 'Conseils sommeil', prompt: 'Donne-moi des conseils concrets pour améliorer mon sommeil ce soir.' },
-  { label: 'Menu du jour', prompt: 'Propose-moi un exemple de menu équilibré et adapté à mon profil pour aujourd’hui.' },
-  { label: 'Exercices doux', prompt: 'Quels exercices physiques doux me recommandes-tu vu mon état actuel ?' },
-]
+function getQuickSuggestions(t) {
+  return [
+    {
+      label: t('mediAssistChat.quickSuggestions.sleepAdviceLabel', 'Conseils sommeil'),
+      prompt: t('mediAssistChat.quickSuggestions.sleepAdvicePrompt', 'Donne-moi des conseils concrets pour améliorer mon sommeil ce soir.'),
+    },
+    {
+      label: t('mediAssistChat.quickSuggestions.dailyMenuLabel', 'Menu du jour'),
+      prompt: t('mediAssistChat.quickSuggestions.dailyMenuPrompt', 'Propose-moi un exemple de menu équilibré et adapté à mon profil pour aujourd’hui.'),
+    },
+    {
+      label: t('mediAssistChat.quickSuggestions.gentleExerciseLabel', 'Exercices doux'),
+      prompt: t('mediAssistChat.quickSuggestions.gentleExercisePrompt', 'Quels exercices physiques doux me recommandes-tu vu mon état actuel ?'),
+    },
+  ]
+}
 
 // ── Formatted text rendering ──────────────────────────────────────────────────
 // The model is asked to format "analyse" as short paragraphs (blank-line
@@ -42,7 +60,12 @@ function renderBoldSegments(line) {
 }
 
 function FormattedText({ content, className }) {
-  const paragraphs = (content || '').split(/\n\n+/)
+  // The model is expected to put a string here, but has been observed
+  // returning [] or {} for an empty field instead (truthy in JS, so
+  // `content || ''` doesn't catch it) — guard so a malformed reply degrades
+  // to an empty bubble instead of crashing the whole chat.
+  const text = typeof content === 'string' ? content : ''
+  const paragraphs = text.split(/\n\n+/)
   return paragraphs.map((para, i) => (
     <p className={className} key={i}>
       {para.split('\n').map((line, j, arr) => (
@@ -60,7 +83,10 @@ function FormattedText({ content, className }) {
 // as cards on the AI Recommendations page (left panel), not duplicated here —
 // the chat stays focused on the conversational summary, alerts and orientation.
 function AnalysisCard({ parsed }) {
-  const urg = URGENCE_CONFIG[parsed.urgence] || URGENCE_CONFIG.moderee
+  const { t } = useTranslation()
+  const urgenceConfig = getUrgenceConfig(t)
+  const orientationLabels = getOrientationLabels(t)
+  const urg = urgenceConfig[parsed.urgence] || urgenceConfig.moderee
   const recCount = parsed.recommandations?.length || 0
 
   return (
@@ -68,14 +94,14 @@ function AnalysisCard({ parsed }) {
       {/* Urgence banner */}
       <div className={`${urg.bg} ${urg.text} flex items-center gap-2 px-4 py-2 text-sm font-bold`}>
         <ShieldAlert size={16} />
-        Urgence : {urg.label}
+        {t('mediAssistChat.analysisCard.urgenceLabel', 'Urgence : {{label}}', { label: urg.label })}
       </div>
 
       <div className="space-y-4 bg-white p-4">
         {/* Alertes */}
         {parsed.alertes?.length > 0 && (
           <div className="rounded-lg border border-[#ffdad6] bg-[#fff8f7] p-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#93000a]">Alertes</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#93000a]">{t('mediAssistChat.analysisCard.alertsHeading', 'Alertes')}</p>
             <ul className="space-y-2.5">
               {parsed.alertes.map((a, i) => {
                 const isObj = a && typeof a === 'object'
@@ -94,7 +120,7 @@ function AnalysisCard({ parsed }) {
                 )
               })}
             </ul>
-            <p className="mt-2 text-xs text-[#7e2a27]/80">→ Ajoutées dans le panneau de gauche.</p>
+            <p className="mt-2 text-xs text-[#7e2a27]/80">{t('mediAssistChat.analysisCard.alertsAddedNote', '→ Ajoutées dans le panneau de gauche.')}</p>
           </div>
         )}
 
@@ -113,7 +139,12 @@ function AnalysisCard({ parsed }) {
           <div className="flex items-center gap-2 rounded-lg border border-[#dee4de] bg-[#f5fbf5] p-3 text-sm text-[#3d4943]">
             <ListChecks className="shrink-0 text-[#00694c]" size={18} />
             <span>
-              <strong>{recCount}</strong> recommandation{recCount > 1 ? 's' : ''} personnalisée{recCount > 1 ? 's' : ''} {recCount > 1 ? 'ont' : 'a'} été ajoutée{recCount > 1 ? 's' : ''} dans le panneau de gauche.
+              <strong>{recCount}</strong>{' '}
+              {t(
+                'mediAssistChat.analysisCard.recommendationsAddedNote',
+                'recommandation{{plural}} personnalisée{{plural}} {{verb}} été ajoutée{{plural}} dans le panneau de gauche.',
+                { plural: recCount > 1 ? 's' : '', verb: recCount > 1 ? 'ont' : 'a' },
+              )}
             </span>
           </div>
         )}
@@ -122,11 +153,11 @@ function AnalysisCard({ parsed }) {
         {parsed.orientation && (
           <div className="rounded-lg border border-[#d2e4ff] bg-[#f0f6ff] p-3 text-sm">
             <p className="font-semibold text-[#0060a8]">
-              {ORIENTATION_LABELS[parsed.orientation.niveau] || parsed.orientation.niveau}
+              {orientationLabels[parsed.orientation.niveau] || parsed.orientation.niveau}
               {parsed.orientation.specialite ? ` — ${parsed.orientation.specialite}` : ''}
             </p>
             <p className="mt-1 text-[#3d4943]">{parsed.orientation.raison}</p>
-            <p className="mt-1 text-xs font-medium text-[#0060a8]">Délai : {parsed.orientation.delai}</p>
+            <p className="mt-1 text-xs font-medium text-[#0060a8]">{t('mediAssistChat.analysisCard.delayLabel', 'Délai : {{delai}}', { delai: parsed.orientation.delai })}</p>
           </div>
         )}
 
@@ -140,7 +171,16 @@ function AnalysisCard({ parsed }) {
 }
 
 // ── Chat bubble ───────────────────────────────────────────────────────────────
-function AssistantBubble({ content }) {
+// Follow-up turns sometimes put the actual substance of the answer (e.g.
+// concrete diet/exercise advice) into "recommandations" rather than
+// "analyse" — by design those cards otherwise only surface later on the AI
+// Recommendations page, so a question asked directly in the chat ("donne-moi
+// des conseils pour...") could get a generic/empty-feeling bubble even
+// though the model did produce real content, just on the wrong field.
+// Rendering them inline guarantees the answer is visible right where the
+// patient asked for it, regardless of which field the model used.
+function AssistantBubble({ content, parsed }) {
+  const recommandations = parsed?.recommandations || []
   return (
     <div className="flex items-start gap-3">
       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#00694c] text-white shadow">
@@ -148,6 +188,19 @@ function AssistantBubble({ content }) {
       </div>
       <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[#dee4de] bg-white px-4 py-3 text-sm leading-6 text-[#3d4943] shadow-sm space-y-2">
         <FormattedText content={content} />
+        {recommandations.length > 0 && (
+          <ul className="space-y-2 border-t border-[#dee4de] pt-2">
+            {recommandations.map((r, i) => (
+              <li className="flex gap-2" key={i}>
+                <ListChecks className="mt-0.5 shrink-0 text-[#00694c]" size={14} />
+                <div>
+                  <p className="font-semibold">{r.titre}</p>
+                  {r.detail && <p className="text-xs leading-5 text-[#6d7a73]">{r.detail}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )
@@ -169,35 +222,54 @@ function UserBubble({ content }) {
 // Pull a handful of the patient's own data points to surface while the model
 // "thinks" — seeing their own info scroll by makes the wait feel like real
 // work being done on their case, not a generic spinner.
-function buildReviewItems(patientData) {
+function buildReviewItems(patientData, t) {
   if (!patientData) return []
   const items = []
 
   if (patientData.age || patientData.biologicalSex) {
-    items.push({ label: 'Profil', value: `${patientData.age || '–'} ans · ${patientData.biologicalSex || '–'}` })
+    items.push({
+      label: t('mediAssistChat.reviewItem.profileLabel', 'Profil'),
+      value: t('mediAssistChat.reviewItem.profileValue', '{{age}} ans · {{sex}}', {
+        age: patientData.age || '–',
+        sex: patientData.biologicalSex || '–',
+      }),
+    })
   }
   if (patientData.bloodPressureSys && patientData.bloodPressureDia) {
-    items.push({ label: 'Tension artérielle', value: `${patientData.bloodPressureSys}/${patientData.bloodPressureDia} mmHg` })
+    items.push({
+      label: t('mediAssistChat.reviewItem.bloodPressureLabel', 'Tension artérielle'),
+      value: `${patientData.bloodPressureSys}/${patientData.bloodPressureDia} mmHg`,
+    })
   }
   if (patientData.heartRate) {
-    items.push({ label: 'Fréquence cardiaque', value: `${patientData.heartRate} bpm` })
+    items.push({
+      label: t('mediAssistChat.reviewItem.heartRateLabel', 'Fréquence cardiaque'),
+      value: `${patientData.heartRate} bpm`,
+    })
   }
   const symptoms = [...(patientData.symptoms || []), patientData.otherSymptoms].filter(Boolean)
   if (symptoms.length) {
-    items.push({ label: 'Symptômes', value: symptoms.join(', ') })
+    items.push({ label: t('mediAssistChat.reviewItem.symptomsLabel', 'Symptômes'), value: symptoms.join(', ') })
   }
   if (patientData.chronicDiseases?.length) {
-    items.push({ label: 'Antécédents', value: patientData.chronicDiseases.join(', ') })
+    items.push({ label: t('mediAssistChat.reviewItem.historyLabel', 'Antécédents'), value: patientData.chronicDiseases.join(', ') })
   }
   if (patientData.sleepQuality || patientData.stressLevel) {
-    items.push({ label: 'Mode de vie', value: `Sommeil : ${patientData.sleepQuality || '–'} · Stress : ${patientData.stressLevel || '–'}/5` })
+    items.push({
+      label: t('mediAssistChat.reviewItem.lifestyleLabel', 'Mode de vie'),
+      value: t('mediAssistChat.reviewItem.lifestyleValue', 'Sommeil : {{sleep}} · Stress : {{stress}}/5', {
+        sleep: patientData.sleepQuality || '–',
+        stress: patientData.stressLevel || '–',
+      }),
+    })
   }
 
   return items.slice(0, 5)
 }
 
 function ThinkingBubble({ patientData }) {
-  const items = buildReviewItems(patientData)
+  const { t } = useTranslation()
+  const items = buildReviewItems(patientData, t)
 
   return (
     <div className="flex items-start gap-3">
@@ -207,7 +279,7 @@ function ThinkingBubble({ patientData }) {
       <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[#dee4de] bg-white px-4 py-3 text-sm shadow-sm">
         <div className="flex items-center gap-2 text-[#6d7a73]">
           <Loader2 className="animate-spin" size={15} />
-          MediAssist passe vos informations en revue...
+          {t('mediAssistChat.thinkingBubble.reviewingMessage', 'MediAssist passe vos informations en revue...')}
         </div>
         {items.length > 0 && (
           <ul className="mt-3 space-y-1.5 border-t border-[#dee4de] pt-3">
@@ -231,6 +303,7 @@ function ThinkingBubble({ patientData }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function MediAssistChat({ patientData }) {
+  const { t } = useTranslation()
   // Conversation lives in the MediAssist store (persisted) so leaving this
   // page and coming back resumes the discussion instead of wiping it.
   // Each message: { role: 'user'|'assistant', text: string, parsed: object|null, isInitial: bool }
@@ -275,6 +348,25 @@ export function MediAssistChat({ patientData }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isCurrentSession, isLoading])
 
+  // Backfills the recommendations panel from the patient's persisted history
+  // (see services/mediAssistService.getRecommendationsHistory) whenever it's
+  // empty — covers both a fresh turn whose LLM call just failed (called from
+  // sendToLLM below) and a *resumed* session that was left empty by an
+  // earlier failed attempt, before this fallback existed, and would
+  // otherwise never retry (the mount effect skips calling the LLM at all
+  // when resuming — see hasPersistedMessages below).
+  function loadFallbackIfEmpty() {
+    if (!userUid) return
+    if (useMedAssistStore.getState().recommendations.length > 0) return
+    const requestSessionKey = sessionKey
+    getRecommendationsHistory({ userUid }).then(({ success, recommendations }) => {
+      if (useMedAssistStore.getState().chatSessionKey !== requestSessionKey) return
+      if (success && recommendations.length > 0) {
+        useMedAssistStore.getState().loadFallbackRecommendations(recommendations)
+      }
+    })
+  }
+
   // Send initial automated analysis on mount — this is what populates the
   // "no recommendations yet" panel as soon as the model responds. If the
   // patient wrote their own question in the form, lead with that instead of
@@ -299,6 +391,7 @@ export function MediAssistChat({ patientData }) {
     hasInitializedRef.current = true
 
     if (hasPersistedMessages) {
+      loadFallbackIfEmpty()
       return // resume the persisted conversation as-is
     }
 
@@ -314,7 +407,11 @@ export function MediAssistChat({ patientData }) {
     }
 
     const ownQuestion = patientData?.description?.trim()
-    sendToLLM(ownQuestion || 'Analyse mes données et donne-moi tes recommandations.', true, Boolean(ownQuestion))
+    sendToLLM(
+      ownQuestion || t('mediAssistChat.defaultAnalysisPrompt', 'Analyse mes données et donne-moi tes recommandations.'),
+      true,
+      Boolean(ownQuestion),
+    )
   }, [])
 
   // ── Simple chat turn: hand the patient profile, the persisted conversation
@@ -348,7 +445,7 @@ export function MediAssistChat({ patientData }) {
       // Enforce a minimum visible loading time so the ThinkingBubble is always
       // perceptible — without this a fast error response (e.g. empty content
       // from the model) dismisses the loader before the user even sees it.
-      const [{ userContent, assistantContent, parsed }] = await Promise.all([
+      const [{ userContent, assistantContent, parsed, error }] = await Promise.all([
         sendMediAssistMessage({
           patientData,
           history: useMedAssistStore.getState().chatHistory,
@@ -366,9 +463,54 @@ export function MediAssistChat({ patientData }) {
         { role: 'assistant', content: assistantContent },
       ])
 
-      // New recommendations/alerts from this turn become cards on the AI
-      // Recommendations page (left panel) and entries in the Alerts center.
-      useMedAssistStore.getState().applyAnalysis(parsed)
+      // Only the initial analysis seeds the AI Recommendations page (left
+      // panel) and the Alerts center — a follow-up question's recommandations
+      // are shown inline in the chat bubble (see AssistantBubble) but never
+      // written to the store, so the left panel stays exactly as the initial
+      // analysis left it no matter how the conversation continues.
+      if (isInitial) {
+        useMedAssistStore.getState().applyAnalysis(parsed)
+
+        // mediassist_service persists this turn's recommendations server-side
+        // (see app.py's _save_recommendations) in the same request, so the
+        // dashboard's "Recommandation IA" card has fresh data to fetch — but
+        // its query stays cached for staleTime (queryClient.js) unless told
+        // otherwise, so without this it would keep showing whatever was
+        // current before this analysis ran.
+        queryClient.invalidateQueries({ queryKey: ['ai-recommendations'] })
+
+        // Unlike recommendations, alertes from a MediAssist analysis only
+        // ever lived in the client-side store (AI Analysis page) — the
+        // dashboard's "Alerte non lue" card and unread count only knew about
+        // vitals-threshold alerts (backend/api/vitals.py). Persist each one
+        // as a real alert too, so a severe MediAssist finding (e.g. "Douleur
+        // intense") surfaces there exactly like a vitals-threshold alert
+        // does.
+        const alertesToSave = (parsed.alertes || []).filter(Boolean)
+        if (alertesToSave.length > 0 && userUid) {
+          Promise.all(
+            alertesToSave.map((a) =>
+              createAlert({
+                userUid,
+                title: typeof a === 'string' ? a : a.titre || 'Alerte MediAssist',
+                message: typeof a === 'string' ? a : a.detail || a.action || '',
+                category: 'mediassist',
+              }),
+            ),
+          ).then(() => {
+            queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+          })
+        }
+
+        // `error` set means the LLM gateway call itself failed (timeout,
+        // unreachable...) — `parsed` is then just the generic, empty
+        // FALLBACK_RESPONSE, not a real "nothing to recommend" analysis. Back
+        // the panel with the patient's last known-good recommendations
+        // instead of leaving it empty.
+        if (error) {
+          loadFallbackIfEmpty()
+        }
+      }
 
       const displayText = parsed.analyse || parsed.resume_situation || ''
       setMessages((prev) => [
@@ -378,7 +520,7 @@ export function MediAssistChat({ patientData }) {
     } catch (err) {
       if (isStale()) return
 
-      const errText = err.message || "Une erreur est survenue. Vérifiez la connexion au serveur d'analyse."
+      const errText = err.message || t('mediAssistChat.error.analysisServerError', "Une erreur est survenue. Vérifiez la connexion au serveur d'analyse.")
       setMessages((prev) => [
         ...prev,
         {
@@ -420,12 +562,12 @@ export function MediAssistChat({ patientData }) {
           <BrainCircuit size={22} />
         </div>
         <div>
-          <h2 className="font-bold text-[#171d1a]">Assistant MediAssist</h2>
-          <p className="text-xs text-[#6d7a73]">Assistant médical IA — Propulsé par MedGemma 1.5</p>
+          <h2 className="font-bold text-[#171d1a]">{t('mediAssistChat.header.title', 'Assistant MediAssist')}</h2>
+          <p className="text-xs text-[#6d7a73]">{t('mediAssistChat.header.subtitle', 'Assistant médical IA — Propulsé par MedGemma 1.5')}</p>
         </div>
         <span className="ml-auto flex items-center gap-1.5 rounded-full bg-[#d1fae5] px-3 py-1 text-xs font-semibold text-[#065f46]">
           <CheckCircle2 size={12} />
-          CONNECTÉ
+          {t('mediAssistChat.header.connectedBadge', 'CONNECTÉ')}
         </span>
       </div>
 
@@ -445,13 +587,13 @@ export function MediAssistChat({ patientData }) {
                 <div className="flex-1">
                   <AnalysisCard parsed={msg.parsed} />
                   <p className="mt-2 px-1 text-xs text-[#6d7a73]">
-                    Vous pouvez me poser des questions sur votre santé ci-dessous.
+                    {t('mediAssistChat.analysisCard.followUpHint', 'Vous pouvez me poser des questions sur votre santé ci-dessous.')}
                   </p>
                 </div>
               </div>
             )
           }
-          return <AssistantBubble key={i} content={msg.text} />
+          return <AssistantBubble content={msg.text} key={i} parsed={msg.parsed} />
         })}
 
         {isLoading && <ThinkingBubble patientData={patientData} />}
@@ -460,7 +602,7 @@ export function MediAssistChat({ patientData }) {
 
       {/* ── Quick suggestions ── */}
       <div className="flex flex-wrap gap-2 border-t border-[#dee4de] bg-white px-4 pt-3">
-        {QUICK_SUGGESTIONS.map((s) => (
+        {getQuickSuggestions(t).map((s) => (
           <button
             className="rounded-full border border-[#bccac1] bg-[#f5fbf5] px-3 py-1.5 text-xs font-medium text-[#3d4943] transition hover:border-[#00694c] hover:text-[#00694c] disabled:cursor-not-allowed disabled:opacity-40"
             disabled={isLoading}
@@ -480,7 +622,7 @@ export function MediAssistChat({ patientData }) {
             className="flex-1 resize-none rounded-xl border border-[#bccac1] bg-[#f5fbf5] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]/20 disabled:opacity-50"
             disabled={isLoading}
             maxLength={600}
-            placeholder="Posez une question..."
+            placeholder={t('mediAssistChat.inputPlaceholder', 'Posez une question...')}
             rows={2}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -496,7 +638,7 @@ export function MediAssistChat({ patientData }) {
           </button>
         </div>
         <p className="mt-1.5 text-[11px] text-[#6d7a73]">
-          MediAssist ne remplace pas un avis médical. En cas d'urgence, appelez le 15 (SAMU).
+          {t('mediAssistChat.footer.disclaimer', "MediAssist ne remplace pas un avis médical. En cas d'urgence, appelez le 15 (SAMU).")}
         </p>
       </div>
     </div>

@@ -7,6 +7,20 @@ import { USER_ENDPOINTS } from '../constants/apiEndpoints'
  */
 
 /**
+ * Resolve a server-relative asset path (e.g. an uploaded profile picture)
+ * into an absolute URL against the API origin.
+ */
+export function resolveAssetUrl(path) {
+  if (!path) {
+    return ''
+  }
+  if (/^https?:\/\//i.test(path)) {
+    return path
+  }
+  return `${apiClient.defaults.baseURL}${path}`
+}
+
+/**
  * Get user profile
  */
 export async function getPatientProfile() {
@@ -19,7 +33,7 @@ export async function getPatientProfile() {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch profile',
+        'Impossible de récupérer le profil',
     }
   }
 }
@@ -37,7 +51,7 @@ export async function updateUserProfile(profileData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to update profile',
+        'Impossible de mettre à jour le profil',
     }
   }
 }
@@ -58,7 +72,7 @@ export async function changePassword(currentPassword, newPassword) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to change password',
+        'Impossible de modifier le mot de passe',
     }
   }
 }
@@ -87,7 +101,7 @@ export async function uploadProfilePicture(file) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to upload profile picture',
+        'Impossible de télécharger la photo de profil',
     }
   }
 }
@@ -105,7 +119,7 @@ export async function deleteAccount() {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to delete account',
+        'Impossible de supprimer le compte',
     }
   }
 }

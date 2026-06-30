@@ -16,6 +16,7 @@ import toast from 'react-hot-toast'
 
 import { DoctorDetailModal } from '../features/doctor-agent/DoctorDetailModal'
 import { Robot3D } from '../features/doctor-agent/Robot3D'
+import { useTranslation } from '../i18n/useTranslation'
 import { getCurrentUser } from '../services/authService'
 import { getDoctorAgentDecision } from '../services/mediAssistService'
 import { searchNearbyDoctors } from '../services/doctorsService'
@@ -62,38 +63,38 @@ function MotionBtn({ children, className, ...rest }) {
   )
 }
 
-// ── Normalize the 3 backend sources into one shape so Médecins/Centres can
-// be grouped by TYPE rather than by where the data came from ─────────────────
-const OSM_CATEGORY_LABELS = { doctors: 'Médecin', clinic: 'Clinique', hospital: 'Hôpital' }
-
-function normalizePlatform(doc) {
+// ── Normalize the two backend lists (doctors/centers, both real
+// external_doctors/health_centers rows — see GET /api/doctors/nearby) into
+// the shape the cards/detail modal render ──────────────────────────────────
+function getOsmCategoryLabels(t) {
   return {
-    kind: 'medecin', source: 'platform', bookable: true,
+    clinic: t('doctorAgent.osmCategory.clinic', 'Clinique'),
+    hospital: t('doctorAgent.osmCategory.hospital', 'Hôpital'),
+  }
+}
+
+const DOCTOR_SOURCE_LABELS = { platform: 'SmartHealth', 'med.tn': 'med.tn', osm: 'OpenStreetMap' }
+
+// Every doctor is a real external_doctors row (platform-added, med.tn-scraped,
+// or OSM-sourced), so every one of them can be booked via doctor_uid.
+function normalizeDoctor(doc) {
+  return {
+    kind: 'medecin', source: doc.source, bookable: true,
     id: doc.uid, name: doc.name, specialization: doc.specialization,
-    categoryLabel: 'SmartHealth', location: doc.location, phone: doc.phone,
-    email: doc.email, website: null, rating: doc.rating, distanceKm: null,
-    lat: null, lng: null,
+    categoryLabel: DOCTOR_SOURCE_LABELS[doc.source] || doc.source, location: doc.location,
+    phone: doc.phone, email: doc.email, website: null, rating: doc.rating,
+    distanceKm: doc.distanceKm, lat: doc.lat, lng: doc.lng,
   }
 }
 
-function normalizeExternal(doc) {
+// Health centers (clinics/hospitals) have no appointment booking flow.
+function normalizeCenter(center, osmCategoryLabels) {
   return {
-    kind: 'medecin', source: 'med.tn', bookable: false,
-    id: doc.sourceUrl, name: doc.name, specialization: doc.specialization,
-    categoryLabel: 'med.tn', location: doc.location, phone: doc.phone,
-    email: null, website: null, rating: null, distanceKm: null,
-    lat: doc.lat, lng: doc.lng,
-  }
-}
-
-function normalizeOsm(doc) {
-  const isDoctor = doc.category === 'doctors'
-  return {
-    kind: isDoctor ? 'medecin' : 'centre', source: 'osm', bookable: false,
-    id: doc.id, name: doc.name, specialization: null,
-    categoryLabel: OSM_CATEGORY_LABELS[doc.category] || 'OpenStreetMap',
-    location: doc.address, phone: doc.phone, email: doc.email, website: doc.website,
-    rating: null, distanceKm: doc.distanceKm, lat: doc.lat, lng: doc.lng,
+    kind: 'centre', source: center.source, bookable: false,
+    id: center.uid, name: center.name, specialization: null,
+    categoryLabel: osmCategoryLabels[center.category] || 'OpenStreetMap',
+    location: center.location, phone: center.phone, email: center.email, website: center.website,
+    rating: null, distanceKm: center.distanceKm, lat: center.lat, lng: center.lng,
   }
 }
 
@@ -108,6 +109,7 @@ const SOURCE_BADGE_CLASS = {
 // of which backend source they came from; all actions (booking, itinéraire,
 // téléphone, email) live in the in-app fiche modal, opened from here ────────
 function DoctorCard({ doctor, onOpenDetail }) {
+  const { t } = useTranslation()
   const accent = doctor.kind === 'centre' ? '#5b6cff' : SOURCE_ACCENT[doctor.source]
   const badgeClass = doctor.kind === 'centre' ? 'bg-gradient-to-r from-[#5b6cff] to-[#7c9cff]' : SOURCE_BADGE_CLASS[doctor.source]
 
@@ -146,7 +148,7 @@ function DoctorCard({ doctor, onOpenDetail }) {
         className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#e4eae4] px-3 py-1.5 text-xs font-semibold text-[#3d4943] dark:bg-slate-700 dark:text-slate-200"
         onClick={() => onOpenDetail(doctor)}
       >
-        Voir la fiche
+        {t('doctorAgent.doctorCard.viewProfileButton', 'Voir la fiche')}
       </MotionBtn>
     </motion.article>
   )
@@ -169,6 +171,7 @@ function ResultsSection({ title, icon, count, children }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 function DoctorAgentPage() {
+  const { t } = useTranslation()
   const alerts = useMedAssistStore((s) => s.alerts)
   const recommendations = useMedAssistStore((s) => s.recommendations)
   const lastOrientation = useMedAssistStore((s) => s.lastOrientation)
@@ -187,12 +190,27 @@ function DoctorAgentPage() {
     severeAlert || urgentRecommendation || (lastOrientation?.niveau && lastOrientation.niveau !== 'automedication'),
   )
   const fallbackMessage = severeAlert
-    ? `J'ai remarqué : ${severeAlert.titre}. Veux-tu que je te recommande un médecin ?`
+    ? t(
+        'doctorAgent.fallbackMessage.severeAlert',
+        "J'ai remarqué : {{title}}. Veux-tu que je te recommande un médecin ?",
+        { title: severeAlert.titre },
+      )
     : urgentRecommendation
-      ? `J'ai remarqué une recommandation prioritaire : "${urgentRecommendation.titre}". Veux-tu que je te recommande un médecin ?`
+      ? t(
+          'doctorAgent.fallbackMessage.urgentRecommendation',
+          'J\'ai remarqué une recommandation prioritaire : "{{title}}". Veux-tu que je te recommande un médecin ?',
+          { title: urgentRecommendation.titre },
+        )
       : fallbackShouldRecommend
-        ? `D'après mon analyse, ${lastOrientation?.raison || 'une consultation pourrait être utile'}. Veux-tu que je te recommande un médecin ?`
-        : "Tout va bien pour l'instant, aucune consultation ne semble nécessaire d'après mes dernières analyses."
+        ? t(
+            'doctorAgent.fallbackMessage.shouldRecommend',
+            "D'après mon analyse, {{reason}}. Veux-tu que je te recommande un médecin ?",
+            { reason: lastOrientation?.raison || t('doctorAgent.fallbackMessage.defaultReason', 'une consultation pourrait être utile') },
+          )
+        : t(
+            'doctorAgent.fallbackMessage.noNeed',
+            "Tout va bien pour l'instant, aucune consultation ne semble nécessaire d'après mes dernières analyses.",
+          )
 
   const [phase, setPhase] = useState('booting')
   const [robotMood, setRobotMood] = useState('off')
@@ -277,7 +295,7 @@ function DoctorAgentPage() {
 
   async function handleSearch() {
     if (!address.trim()) {
-      toast.error('Indiquez votre ville ou adresse.')
+      toast.error(t('doctorAgent.search.missingAddressError', 'Indiquez votre ville ou adresse.'))
       return
     }
     goToPhase('searching')
@@ -292,16 +310,9 @@ function DoctorAgentPage() {
     }
   }
 
-  const allDoctors = results
-    ? [
-        ...results.platform.map(normalizePlatform),
-        ...results.external.map(normalizeExternal),
-        ...results.osm.filter((d) => d.category === 'doctors').map(normalizeOsm),
-      ]
-    : []
-  const allCenters = results
-    ? results.osm.filter((d) => d.category !== 'doctors').map(normalizeOsm)
-    : []
+  const osmCategoryLabels = getOsmCategoryLabels(t)
+  const allDoctors = results ? results.doctors.map(normalizeDoctor) : []
+  const allCenters = results ? results.centers.map((c) => normalizeCenter(c, osmCategoryLabels)) : []
   const totalResults = allDoctors.length + allCenters.length
 
   function renderPhaseContent() {
@@ -309,7 +320,7 @@ function DoctorAgentPage() {
       return (
         <SpeechBubble tone="alert">
           <span className="flex items-center gap-2 text-[#6d7a73] dark:text-slate-400">
-            Initialisation du Doctor Agent...
+            {t('doctorAgent.phase.bootingMessage', "Initialisation de l'Agent Médecin...")}
           </span>
         </SpeechBubble>
       )
@@ -319,7 +330,7 @@ function DoctorAgentPage() {
       return (
         <SpeechBubble>
           <span className="flex items-center gap-2">
-            Je regarde ton dossier...<TypingDots />
+            {t('doctorAgent.phase.decidingMessage', 'Je regarde ton dossier...')}<TypingDots />
           </span>
         </SpeechBubble>
       )
@@ -335,8 +346,8 @@ function DoctorAgentPage() {
             </p>
           </SpeechBubble>
           <div className="flex gap-3">
-            <MotionBtn className={primaryBtn} onClick={() => goToPhase('asking-location')}>Oui</MotionBtn>
-            <MotionBtn className={secondaryBtn} onClick={() => goToPhase('declined')}>Non</MotionBtn>
+            <MotionBtn className={primaryBtn} onClick={() => goToPhase('asking-location')}>{t('doctorAgent.phase.yesButton', 'Oui')}</MotionBtn>
+            <MotionBtn className={secondaryBtn} onClick={() => goToPhase('declined')}>{t('doctorAgent.phase.noButton', 'Non')}</MotionBtn>
           </div>
         </>
       )
@@ -352,7 +363,7 @@ function DoctorAgentPage() {
             </p>
           </SpeechBubble>
           <MotionBtn className={secondaryBtn} onClick={() => goToPhase('asking-location')}>
-            Chercher un médecin quand même
+            {t('doctorAgent.phase.searchAnywayButton', 'Chercher un médecin quand même')}
           </MotionBtn>
         </>
       )
@@ -361,8 +372,8 @@ function DoctorAgentPage() {
     if (phase === 'declined') {
       return (
         <>
-          <SpeechBubble>Pas de problème, je reste disponible si tu changes d'avis.</SpeechBubble>
-          <MotionBtn className={primaryBtn} onClick={() => goToPhase('asking-location')}>Finalement, oui</MotionBtn>
+          <SpeechBubble>{t('doctorAgent.phase.declinedMessage', "Pas de problème, je reste disponible si tu changes d'avis.")}</SpeechBubble>
+          <MotionBtn className={primaryBtn} onClick={() => goToPhase('asking-location')}>{t('doctorAgent.phase.changedMindButton', 'Finalement, oui')}</MotionBtn>
         </>
       )
     }
@@ -373,10 +384,13 @@ function DoctorAgentPage() {
           <SpeechBubble>
             {phase === 'searching' ? (
               <span className="flex items-center gap-2">
-                Je cherche les médecins les plus proches de "{address}"<TypingDots />
+                {t('doctorAgent.phase.searchingMessage', 'Je cherche les médecins les plus proches de "{{address}}"', { address })}<TypingDots />
               </span>
             ) : (
-              "Où habites-tu ? Indique ta ville ou ton adresse pour que je trouve les médecins les plus proches."
+              t(
+                'doctorAgent.phase.askingLocationMessage',
+                'Où habites-tu ? Indique ta ville ou ton adresse pour que je trouve les médecins les plus proches.',
+              )
             )}
           </SpeechBubble>
           {searchError && <p className="text-xs text-[#ba1a1a]">{searchError}</p>}
@@ -384,7 +398,7 @@ function DoctorAgentPage() {
             <input
               className="flex-1 rounded-xl border border-[#bccac1] bg-white/80 px-3 py-2 text-sm outline-none backdrop-blur transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]/20 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
               disabled={phase === 'searching'}
-              placeholder="Ex : Sousse, ou Ariana Ville"
+              placeholder={t('doctorAgent.phase.addressPlaceholder', 'Ex : Sousse, ou Ariana Ville')}
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -392,7 +406,7 @@ function DoctorAgentPage() {
             />
             <MotionBtn className={`${primaryBtn} inline-flex items-center gap-1.5`} disabled={phase === 'searching'} onClick={handleSearch}>
               {phase === 'searching' ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />}
-              Rechercher
+              {t('doctorAgent.phase.searchButton', 'Rechercher')}
             </MotionBtn>
           </div>
         </>
@@ -404,12 +418,25 @@ function DoctorAgentPage() {
         <>
           <SpeechBubble>
             {totalResults > 0
-              ? `Voici ${totalResults} résultat${totalResults > 1 ? 's' : ''} ${specialty ? `(${specialty}) ` : ''}près de "${address}".`
-              : `Je n'ai trouvé aucun résultat près de "${address}" pour le moment.`}
+              ? t(
+                  'doctorAgent.phase.resultsFoundMessage',
+                  'Voici {{count}} résultat{{plural}} {{specialtyPart}}près de "{{address}}".',
+                  {
+                    count: totalResults,
+                    plural: totalResults > 1 ? 's' : '',
+                    specialtyPart: specialty ? `(${specialty}) ` : '',
+                    address,
+                  },
+                )
+              : t(
+                  'doctorAgent.phase.resultsEmptyMessage',
+                  'Je n\'ai trouvé aucun résultat près de "{{address}}" pour le moment.',
+                  { address },
+                )}
             {results?.warning && <span className="mt-1 block text-xs text-[#9a6700]">{results.warning}</span>}
           </SpeechBubble>
           <button className="text-xs font-medium text-[#00694c] underline dark:text-[#5eead4]" type="button" onClick={() => goToPhase('asking-location')}>
-            Nouvelle recherche
+            {t('doctorAgent.phase.newSearchButton', 'Nouvelle recherche')}
           </button>
         </>
       )
@@ -443,7 +470,7 @@ function DoctorAgentPage() {
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="bg-gradient-to-r from-[#00694c] via-[#00b894] to-[#0060a8] bg-clip-text text-[28px] font-bold leading-tight text-transparent">
-              Doctor Agent
+              {t('doctorAgent.header.title', 'Agent Médecin')}
             </h1>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#00f0a0]/15 to-[#0060a8]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#00694c] dark:text-[#5eead4]">
               <Sparkles size={11} />
@@ -451,11 +478,11 @@ function DoctorAgentPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00f0a0] opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#00b894]" />
               </span>
-              IA active
+              {t('doctorAgent.header.aiActiveBadge', 'IA active')}
             </span>
           </div>
           <p className="mt-1 text-sm text-[#6d7a73] dark:text-slate-400">
-            Votre assistant pour trouver un médecin adapté, près de chez vous.
+            {t('doctorAgent.header.subtitle', 'Votre assistant pour trouver un médecin adapté, près de chez vous.')}
           </p>
         </div>
 
@@ -482,13 +509,13 @@ function DoctorAgentPage() {
 
         {phase === 'results' && (
           <div className="space-y-6">
-            <ResultsSection count={allDoctors.length} icon={Stethoscope} title="Médecins">
+            <ResultsSection count={allDoctors.length} icon={Stethoscope} title={t('doctorAgent.results.doctorsTitle', 'Médecins')}>
               {allDoctors.map((doc) => (
                 <DoctorCard doctor={doc} key={`${doc.source}-${doc.id}`} onOpenDetail={setActiveDoctor} />
               ))}
             </ResultsSection>
 
-            <ResultsSection count={allCenters.length} icon={Building2} title="Centres de santé">
+            <ResultsSection count={allCenters.length} icon={Building2} title={t('doctorAgent.results.centersTitle', 'Centres de santé')}>
               {allCenters.map((doc) => (
                 <DoctorCard doctor={doc} key={`${doc.source}-${doc.id}`} onOpenDetail={setActiveDoctor} />
               ))}
@@ -497,7 +524,7 @@ function DoctorAgentPage() {
         )}
 
         <p className="flex items-center gap-1.5 text-[11px] text-[#6d7a73] dark:text-slate-500">
-          <Clock size={12} /> Doctor Agent ne remplace pas un avis médical. En cas d'urgence, appelez le 190 (SAMU).
+          <Clock size={12} /> {t('doctorAgent.footer.disclaimer', "L'Agent Médecin ne remplace pas un avis médical. En cas d'urgence, appelez le 190 (SAMU).")}
         </p>
       </div>
 

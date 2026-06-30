@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Lock, Mail, UserRound } from 'lucide-react'
 
+import SocialAuthButtons from '../components/auth/SocialAuthButtons'
 import { register } from '../features/auth/auth'
+import { useTranslation } from '../i18n/useTranslation'
 
 function RegisterPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -24,34 +27,42 @@ function RegisterPage() {
     setLoading(false)
 
     if (result.success) {
-      const verificationSession = {
-        uid: result.data.uid,
-        email,
-        verificationCode: result.data.verificationCode || '',
-        devNote: result.data.devNote || '',
-      }
-      sessionStorage.setItem('smart_health_verification', JSON.stringify(verificationSession))
       navigate('/verify-email', {
         replace: true,
-        state: verificationSession,
+        state: {
+          uid: result.data.uid,
+          email,
+          verificationCode: result.data.verificationCode,
+          devNote: result.data.devNote,
+        },
       })
     } else {
       setError(result.error)
     }
   }
 
+  function handleSocialSuccess() {
+    navigate('/dashboard', { replace: true })
+  }
+
+  function handleSocialError(message) {
+    setError(message)
+  }
+
   return (
     <div className="w-full max-w-md">
       <div className="mb-8">
-        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Creer un compte</h2>
+        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">{t('register.title', 'Créer un compte')}</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Creez votre compte patient. Un code vous sera envoye pour verifier votre adresse e-mail.
+          {t('register.subtitle', 'Démarrez avec un compte démo sécurisé pour explorer le tableau de bord.')}
         </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Nom complet</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+            {t('register.nameLabel', 'Nom complet')}
+          </span>
           <div className="relative mt-2">
             <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
@@ -65,7 +76,9 @@ function RegisterPage() {
         </label>
 
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Adresse e-mail</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+            {t('register.emailLabel', 'Adresse e-mail')}
+          </span>
           <div className="relative mt-2">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
@@ -79,13 +92,14 @@ function RegisterPage() {
         </label>
 
         <label className="block">
-          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">Mot de passe</span>
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">
+            {t('register.passwordLabel', 'Mot de passe')}
+          </span>
           <div className="relative mt-2">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
             <input
               className="w-full rounded-lg border border-[#bccac1] bg-[#eff5ef] py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
-              autoComplete="new-password"
-              defaultValue=""
+              defaultValue="password"
               minLength={6}
               name="password"
               required
@@ -103,14 +117,22 @@ function RegisterPage() {
           disabled={loading}
           type="submit"
         >
-          {loading ? 'Creation du compte...' : 'Creer mon compte'}
+          {loading ? t('register.submitting', 'Création du compte...') : t('register.submit', 'Créer mon compte')}
         </button>
       </form>
 
+      <div className="my-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-[#dce5df]" />
+        <span className="text-xs font-medium text-[#6d7a73]">{t('register.orContinueWith', 'Ou continuer avec')}</span>
+        <div className="h-px flex-1 bg-[#dce5df]" />
+      </div>
+
+      <SocialAuthButtons onError={handleSocialError} onSuccess={handleSocialSuccess} />
+
       <p className="mt-6 text-center text-sm text-[#3d4943]">
-        Deja inscrit ?{' '}
+        {t('register.alreadyRegistered', 'Déjà inscrit ?')}{' '}
         <Link className="font-semibold text-[#00694c] hover:text-[#008560]" to="/login">
-          Se connecter
+          {t('register.login', 'Se connecter')}
         </Link>
       </p>
     </div>

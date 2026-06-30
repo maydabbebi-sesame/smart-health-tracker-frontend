@@ -1,5 +1,6 @@
 import {
   BrainCircuit,
+  CalendarCheck,
   ClipboardList,
   HeartPulse,
   LayoutDashboard,
@@ -10,37 +11,50 @@ import {
 
 export const navigationItems = [
   {
-    label: 'Dashboard',
+    label: 'Tableau de bord',
+    labelKey: 'nav.dashboard',
     to: '/dashboard',
     icon: LayoutDashboard,
   },
   {
-    label: 'Profile',
+    label: 'Profil',
+    labelKey: 'nav.profile',
     to: '/profile',
     icon: UserRound,
   },
   {
     label: 'Suivi',
+    labelKey: 'nav.tracking',
     to: '/symptoms',
     icon: ClipboardList,
   },
   {
-    label: 'AI Recommendations',
+    label: 'Recommandations IA',
+    labelKey: 'nav.aiRecommendations',
     to: '/ai-analysis',
     icon: BrainCircuit,
   },
   {
-    label: 'Doctor Agent',
+    label: 'Agent Médecin',
+    labelKey: 'nav.doctorAgent',
     to: '/notifications',
     icon: Stethoscope,
   },
   {
+    label: 'Rendez-vous',
+    labelKey: 'nav.appointments',
+    to: '/appointments',
+    icon: CalendarCheck,
+  },
+  {
     label: 'Historique',
+    labelKey: 'nav.history',
     to: '/health-history',
     icon: HeartPulse,
   },
   {
-    label: 'Settings',
+    label: 'Paramètres',
+    labelKey: 'nav.settings',
     to: '/settings',
     icon: Settings,
   },

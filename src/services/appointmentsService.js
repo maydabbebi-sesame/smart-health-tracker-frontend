@@ -25,7 +25,7 @@ export async function createAppointment(appointmentData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to create appointment',
+        'Impossible de créer le rendez-vous',
     }
   }
 }
@@ -33,10 +33,11 @@ export async function createAppointment(appointmentData) {
 /**
  * Get user's appointments
  */
-export async function getAppointments(page = 1, pageSize = 20, status = null) {
+export async function getAppointments(page = 1, pageSize = 20, status = null, userUid = null) {
   try {
     const params = {}
     if (status) params.status = status
+    if (userUid) params.user_uid = userUid
 
     const response = await apiClient.get(APPOINTMENT_ENDPOINTS.GET_APPOINTMENTS, {
       params,
@@ -48,7 +49,7 @@ export async function getAppointments(page = 1, pageSize = 20, status = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch appointments',
+        'Impossible de récupérer les rendez-vous',
     }
   }
 }
@@ -68,7 +69,7 @@ export async function getAppointmentById(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch appointment',
+        'Impossible de récupérer le rendez-vous',
     }
   }
 }
@@ -89,7 +90,7 @@ export async function updateAppointment(id, appointmentData) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to update appointment',
+        'Impossible de mettre à jour le rendez-vous',
     }
   }
 }
@@ -113,31 +114,7 @@ export async function cancelAppointment(id, reason = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to cancel appointment',
-    }
-  }
-}
-
-/**
- * Get available appointment slots for a doctor
- */
-export async function getAvailableSlots(doctorId, date = null) {
-  try {
-    const params = { doctorId }
-    if (date) params.date = date
-
-    const response = await apiClient.get(
-      APPOINTMENT_ENDPOINTS.GET_AVAILABLE_SLOTS,
-      { params },
-    )
-    return { success: true, data: response.data }
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.error ||
-        error.message ||
-        'Failed to fetch available slots',
+        'Impossible d\'annuler le rendez-vous',
     }
   }
 }
@@ -158,28 +135,8 @@ export async function confirmAppointment(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to confirm appointment',
+        'Impossible de confirmer le rendez-vous',
     }
   }
 }
 
-/**
- * Send appointment reminder
- */
-export async function sendReminder(id) {
-  try {
-    const response = await apiClient.post(
-      APPOINTMENT_ENDPOINTS.SEND_REMINDER(id),
-      {},
-    )
-    return { success: true, data: response.data }
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.error ||
-        error.message ||
-        'Failed to send reminder',
-    }
-  }
-}

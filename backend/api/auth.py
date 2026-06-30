@@ -49,10 +49,11 @@ def decrypt_token(token: str) -> str | None:
         return None
 
 
-def create_access_token(user_id: int, role: str) -> str:
+def create_access_token(user_id: int, role: str, token_version: int = 0) -> str:
     payload = {
         "uid": encode_id(user_id),
         "role": role,
+        "tv": token_version,
         "exp": datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)
     }
     jwt_token = jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
@@ -180,8 +181,16 @@ def get_or_create_social_user(provider: str, provider_id: str, email: str, name:
 def social_login_response(user: dict):
     if not user:
         return jsonify({"error": "Unable to authenticate social login"}), 401
-    token = create_access_token(user["id"], user["role"])
-    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS})
+    if not user.get("is_active", 1):
+        return jsonify({"error": "Account disabled. Contact an administrator."}), 403
+    token = create_access_token(user["id"], user["role"], user.get("token_version", 0))
+    return jsonify({
+        "access_token": token,
+        "token_type": "Bearer",
+        "expires_in": JWT_EXP_DELTA_SECONDS,
+        "uid": encode_id(user["id"]),
+        "role": user["role"],
+    })
 
 
 def get_token_from_header():
@@ -213,6 +222,31 @@ def token_required(f):
         payload = decode_auth_token(token)
         if payload is None:
             return jsonify({"error": "Invalid or expired token"}), 401
+
+        internal_id = decode_id(payload.get("uid"))
+        if internal_id is None:
+            return jsonify({"error": "Invalid or expired token"}), 401
+
+        # The token's "tv" (token_version) and account status are checked
+        # against the DB on every request - not just at login - so that an
+        # admin disabling a user or regenerating their token immediately
+        # invalidates any session already in use, instead of waiting for it
+        # to expire naturally.
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT is_active, token_version FROM users WHERE id = %s", (internal_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if row is None:
+            return jsonify({"error": "Invalid or expired token"}), 401
+
+        if not row.get("is_active", 1):
+            return jsonify({"error": "Account disabled"}), 403
+
+        if row.get("token_version", 0) != payload.get("tv", 0):
+            return jsonify({"error": "Token has been revoked"}), 401
 
         g.current_user = payload
         return f(*args, **kwargs)
@@ -253,6 +287,11 @@ def login():
         cursor.close()
         conn.close()
         return jsonify({"error": "Invalid email or password"}), 401
+
+    if not user.get("is_active", 1):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Account disabled. Contact an administrator."}), 403
 
     # check locked_until
     locked_until = user.get("locked_until")
@@ -308,11 +347,17 @@ def login():
         conn.close()
         return jsonify({"mfa_required": True, "message": "MFA code sent"}), 200
 
-    token = create_access_token(user["id"], user["role"])
+    token = create_access_token(user["id"], user["role"], user.get("token_version", 0))
     uid = encode_id(user["id"])
     cursor.close()
     conn.close()
-    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS, "uid": uid})
+    return jsonify({
+        "access_token": token,
+        "token_type": "Bearer",
+        "expires_in": JWT_EXP_DELTA_SECONDS,
+        "uid": uid,
+        "role": user["role"],
+    })
 
 
 @auth_bp.route("/login/google", methods=["POST"])
@@ -400,15 +445,15 @@ def register():
 
     password_hash = generate_password_hash(password)
     role = data.get("role", "user")
-    allowed_roles = {"user", "doctor", "admin"}
+    allowed_roles = {"user", "admin"}
     if role not in allowed_roles:
-        return jsonify({"error": "Role must be one of user, doctor, admin"}), 400
+        return jsonify({"error": "Role must be one of user, admin"}), 400
 
     if role != "user":
         token = get_token_from_header()
         admin_payload = decode_auth_token(token) if token else None
         if not admin_payload or admin_payload.get("role") != "admin":
-            return jsonify({"error": "Only admin may register doctor or admin roles"}), 403
+            return jsonify({"error": "Only admin may register admin roles"}), 403
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -536,6 +581,11 @@ def verify_mfa():
         conn.close()
         return jsonify({"error": "Invalid credentials"}), 401
 
+    if not user.get("is_active", 1):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Account disabled. Contact an administrator."}), 403
+
     if not user.get("mfa_enabled") or not user.get("mfa_code"):
         cursor.close()
         conn.close()
@@ -555,11 +605,17 @@ def verify_mfa():
     # clear MFA fields and issue token
     cursor.execute("UPDATE users SET mfa_code = NULL, mfa_expiry = NULL WHERE id = %s", (user["id"],))
     conn.commit()
-    token = create_access_token(user["id"], user["role"])
+    token = create_access_token(user["id"], user["role"], user.get("token_version", 0))
     uid = encode_id(user["id"])
     cursor.close()
     conn.close()
-    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS, "uid": uid})
+    return jsonify({
+        "access_token": token,
+        "token_type": "Bearer",
+        "expires_in": JWT_EXP_DELTA_SECONDS,
+        "uid": uid,
+        "role": user["role"],
+    })
 
 
 @auth_bp.route("/enable-mfa", methods=["POST"])
@@ -799,5 +855,5 @@ def refresh_token():
     if old_token:
         revoke_token(old_token)
 
-    new_token = create_access_token(internal_id, requester.get("role"))
+    new_token = create_access_token(internal_id, requester.get("role"), requester.get("tv", 0))
     return jsonify({"access_token": new_token, "token_type": "Bearer", "expires_in": JWT_EXP_DELTA_SECONDS})

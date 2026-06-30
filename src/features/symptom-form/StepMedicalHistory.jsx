@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { useFieldArray } from 'react-hook-form'
 
+import { useTranslation } from '../../i18n/useTranslation'
 import { chronicDiseaseOptions, familyHistoryOptions } from './formOptions'
 
 const AUCUNE = 'Aucune pathologie connue'
@@ -16,7 +17,7 @@ function FieldError({ message }) {
   )
 }
 
-function ChronicDiseaseTagGroup({ name, options, selected = [], setValue }) {
+function ChronicDiseaseTagGroup({ name, optionLabels, options, selected = [], setValue, t }) {
   const [isAdding, setIsAdding] = useState(false)
   const [customValue, setCustomValue] = useState('')
   const mergedOptions = [...options, ...selected.filter((item) => !options.includes(item))]
@@ -65,7 +66,7 @@ function ChronicDiseaseTagGroup({ name, options, selected = [], setValue }) {
           >
             <input className="sr-only" type="checkbox" readOnly checked={isSelected} onChange={() => {}} />
             {isSelected && <CheckCircle2 size={14} />}
-            {option}
+            {optionLabels?.[option] ?? option}
           </label>
         )
       })}
@@ -74,7 +75,7 @@ function ChronicDiseaseTagGroup({ name, options, selected = [], setValue }) {
           <span className="inline-flex items-center gap-2">
             <input
               className="h-10 w-40 rounded-full border border-[#008560] bg-white px-4 text-sm outline-none ring-2 ring-[#008560]/20"
-              placeholder="Autre..."
+              placeholder={t('symptomForm.stepMedicalHistory.otherPlaceholder', 'Autre...')}
               type="text"
               value={customValue}
               onChange={(event) => setCustomValue(event.target.value)}
@@ -87,7 +88,7 @@ function ChronicDiseaseTagGroup({ name, options, selected = [], setValue }) {
               type="button"
               onClick={addCustomOption}
             >
-              Ajouter
+              {t('symptomForm.stepMedicalHistory.addButton', 'Ajouter')}
             </button>
           </span>
         ) : (
@@ -96,7 +97,7 @@ function ChronicDiseaseTagGroup({ name, options, selected = [], setValue }) {
             type="button"
             onClick={() => setIsAdding(true)}
           >
-            + Autre
+            {t('symptomForm.stepMedicalHistory.addOtherButton', '+ Autre')}
           </button>
         )
       )}
@@ -104,7 +105,7 @@ function ChronicDiseaseTagGroup({ name, options, selected = [], setValue }) {
   )
 }
 
-function TagGroup({ name, options, register, selected = [], setValue }) {
+function TagGroup({ name, optionLabels, options, register, selected = [], setValue, t }) {
   const [isAdding, setIsAdding] = useState(false)
   const [customValue, setCustomValue] = useState('')
   const mergedOptions = [...options, ...selected.filter((item) => !options.includes(item))]
@@ -135,7 +136,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
           >
             <input className="sr-only" type="checkbox" value={option} {...register(name)} />
             {isSelected && <CheckCircle2 size={14} />}
-            {option}
+            {optionLabels?.[option] ?? option}
           </label>
         )
       })}
@@ -143,7 +144,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
         <span className="inline-flex items-center gap-2">
           <input
             className="h-10 w-40 rounded-full border border-[#008560] bg-white px-4 text-sm outline-none ring-2 ring-[#008560]/20"
-            placeholder="Autre..."
+            placeholder={t('symptomForm.stepMedicalHistory.otherPlaceholder', 'Autre...')}
             type="text"
             value={customValue}
             onChange={(event) => setCustomValue(event.target.value)}
@@ -156,7 +157,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
             type="button"
             onClick={addCustomOption}
           >
-            Ajouter
+            {t('symptomForm.stepMedicalHistory.addButton', 'Ajouter')}
           </button>
         </span>
       ) : (
@@ -165,7 +166,7 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
           type="button"
           onClick={() => setIsAdding(true)}
         >
-          + Autre
+          {t('symptomForm.stepMedicalHistory.addOtherButton', '+ Autre')}
         </button>
       )}
     </div>
@@ -173,30 +174,77 @@ function TagGroup({ name, options, register, selected = [], setValue }) {
 }
 
 export function StepMedicalHistory({ control, errors, register, setValue, values }) {
+  const { t } = useTranslation()
   const {
     append: appendAllergy,
     fields: allergyFields,
     remove: removeAllergy,
   } = useFieldArray({ control, name: 'drugAllergies' })
 
+  const yesNoLabels = {
+    Oui: t('symptomForm.stepMedicalHistory.yesOption', 'Oui'),
+    Non: t('symptomForm.stepMedicalHistory.noOption', 'Non'),
+  }
+
+  const chronicDiseaseLabels = {
+    'Aucune pathologie connue': t('symptomForm.stepMedicalHistory.chronicDiseaseOption.none', 'Aucune pathologie connue'),
+    'Diabete T1/T2': t('symptomForm.stepMedicalHistory.chronicDiseaseOption.diabetes', 'Diabete T1/T2'),
+    HTA: t('symptomForm.stepMedicalHistory.chronicDiseaseOption.hypertension', 'HTA'),
+    Asthme: t('symptomForm.stepMedicalHistory.chronicDiseaseOption.asthma', 'Asthme'),
+    BPCO: t('symptomForm.stepMedicalHistory.chronicDiseaseOption.copd', 'BPCO'),
+    IRC: t('symptomForm.stepMedicalHistory.chronicDiseaseOption.ckd', 'IRC'),
+    Cancer: t('symptomForm.stepMedicalHistory.chronicDiseaseOption.cancer', 'Cancer'),
+    Cholesterol: t('symptomForm.stepMedicalHistory.chronicDiseaseOption.cholesterol', 'Cholesterol'),
+  }
+
+  const familyHistoryLabels = {
+    Cancer: t('symptomForm.stepMedicalHistory.familyHistoryOption.cancer', 'Cancer'),
+    Cardio: t('symptomForm.stepMedicalHistory.familyHistoryOption.cardio', 'Cardio'),
+    Diabete: t('symptomForm.stepMedicalHistory.familyHistoryOption.diabetes', 'Diabete'),
+    AVC: t('symptomForm.stepMedicalHistory.familyHistoryOption.stroke', 'AVC'),
+    Alzheimer: t('symptomForm.stepMedicalHistory.familyHistoryOption.alzheimer', 'Alzheimer'),
+  }
+
+  const habitRows = [
+    [
+      t('symptomForm.stepMedicalHistory.tobaccoLabel', 'Tabac'),
+      'tobacco',
+      'tobaccoQuantity',
+      t('symptomForm.stepMedicalHistory.tobaccoQuantityPlaceholder', 'cig/jour'),
+    ],
+    [
+      t('symptomForm.stepMedicalHistory.alcoholLabel', 'Alcool'),
+      'alcohol',
+      'alcoholQuantity',
+      t('symptomForm.stepMedicalHistory.alcoholQuantityPlaceholder', 'verres/semaine'),
+    ],
+  ]
+
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">Antecedents medicaux</h2>
+        <h2 className="text-[22px] font-bold leading-tight text-[#171d1a] dark:text-white">
+          {t('symptomForm.stepMedicalHistory.title', 'Antécédents médicaux')}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-          Historique medical du patient, utilise pour eviter les recommandations trop generiques.
+          {t(
+            'symptomForm.stepMedicalHistory.subtitle',
+            'Historique médical du patient, utilisé pour éviter les recommandations trop génériques.',
+          )}
         </p>
       </div>
 
       <div>
         <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Maladies chroniques <span className="text-[#ba1a1a]">*</span>
+          {t('symptomForm.stepMedicalHistory.chronicDiseasesLabel', 'Maladies chroniques')} <span className="text-[#ba1a1a]">*</span>
         </label>
         <ChronicDiseaseTagGroup
           name="chronicDiseases"
+          optionLabels={chronicDiseaseLabels}
           options={chronicDiseaseOptions}
           selected={values.chronicDiseases}
           setValue={setValue}
+          t={t}
         />
         <FieldError message={errors.chronicDiseases?.message} />
       </div>
@@ -204,7 +252,7 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
       <div className="mt-8 grid gap-5 md:grid-cols-2">
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-            Allergies medicamenteuses <span className="text-[#ba1a1a]">*</span>
+            {t('symptomForm.stepMedicalHistory.drugAllergiesLabel', 'Allergies médicamenteuses')} <span className="text-[#ba1a1a]">*</span>
           </span>
           <div className="mt-2 flex gap-2">
             {['Oui', 'Non'].map((option) => (
@@ -213,7 +261,7 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
                 key={option}
               >
                 <input className="sr-only" type="radio" value={option} {...register('hasDrugAllergies')} />
-                {option}
+                {yesNoLabels[option]}
               </label>
             ))}
           </div>
@@ -223,14 +271,14 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
         {values.hasDrugAllergies === 'Oui' && (
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-              Nom du / des medicaments
+              {t('symptomForm.stepMedicalHistory.drugAllergiesNameLabel', 'Nom du / des medicaments')}
             </span>
             <div className="mt-2 space-y-2">
               {allergyFields.map((field, index) => (
                 <div className="flex items-center gap-2" key={field.id}>
                   <input
                     className="h-12 flex-1 rounded-lg border border-[#bccac1] bg-white px-4 text-sm outline-none transition focus:border-[#008560] focus:ring-2 focus:ring-[#008560]"
-                    placeholder="Ex: Penicilline"
+                    placeholder={t('symptomForm.stepMedicalHistory.drugAllergyPlaceholder', 'Ex: Penicilline')}
                     type="text"
                     {...register(`drugAllergies.${index}.value`)}
                   />
@@ -250,7 +298,7 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
               onClick={() => appendAllergy({ value: '' })}
             >
               <Plus size={15} />
-              Ajouter une allergie
+              {t('symptomForm.stepMedicalHistory.addAllergyButton', 'Ajouter une allergie')}
             </button>
             <FieldError message={errors.drugAllergies?.message} />
           </div>
@@ -259,22 +307,21 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
 
       <div className="mt-8">
         <label className="mb-3 block text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
-          Antecedents familiaux
+          {t('symptomForm.stepMedicalHistory.familyHistoryLabel', 'Antécédents familiaux')}
         </label>
         <TagGroup
           name="familyHistory"
+          optionLabels={familyHistoryLabels}
           options={familyHistoryOptions}
           register={register}
           selected={values.familyHistory}
           setValue={setValue}
+          t={t}
         />
       </div>
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
-        {[
-          ['Tabac', 'tobacco', 'tobaccoQuantity', 'cig/jour'],
-          ['Alcool', 'alcohol', 'alcoholQuantity', 'verres/semaine'],
-        ].map(([label, name, quantityName, placeholder]) => (
+        {habitRows.map(([label, name, quantityName, placeholder]) => (
           <div key={name}>
             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#171d1a]">
               {label} <span className="text-[#ba1a1a]">*</span>
@@ -286,7 +333,7 @@ export function StepMedicalHistory({ control, errors, register, setValue, values
                   key={option}
                 >
                   <input className="sr-only" type="radio" value={option} {...register(name)} />
-                  {option}
+                  {yesNoLabels[option]}
                 </label>
               ))}
             </div>

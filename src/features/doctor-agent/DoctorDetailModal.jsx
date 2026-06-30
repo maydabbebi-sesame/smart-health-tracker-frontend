@@ -3,6 +3,7 @@ import { Building2, Calendar, ExternalLink, Globe, Mail, MapPin, Navigation, Pho
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
+import { useTranslation } from '../../i18n/useTranslation'
 import { createAppointment } from '../../services/appointmentsService'
 import { openDirections } from './geolocation'
 
@@ -17,6 +18,7 @@ const SOURCE_BADGE = {
 // (platform/med.tn/OSM all have different completeness) plus the relevant
 // actions (book, get directions from the user's real position).
 export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
+  const { t } = useTranslation()
   const [booking, setBooking] = useState(false)
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -35,7 +37,7 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
 
   async function handleConfirmBooking() {
     if (!date || !time) {
-      toast.error('Choisissez une date et une heure.')
+      toast.error(t('doctorDetail.booking.missingDateTimeError', 'Choisissez une date et une heure.'))
       return
     }
     setSubmitting(true)
@@ -48,7 +50,7 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
     })
     setSubmitting(false)
     if (result.success) {
-      toast.success(`Demande de rendez-vous envoyée à Dr ${doctor.name}.`)
+      toast.success(t('doctorDetail.booking.successMessage', 'RDV enregistré avec Dr {{name}}.', { name: doctor.name }))
       onClose()
     } else {
       toast.error(result.error)
@@ -75,7 +77,7 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              aria-label="Fermer"
+              aria-label={t('doctorDetail.closeButtonAriaLabel', 'Fermer')}
               className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-[#e4eae4] text-[#3d4943] transition hover:bg-[#dee4de] dark:bg-slate-800 dark:text-slate-200"
               type="button"
               onClick={onClose}
@@ -126,18 +128,18 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
               )}
               {doctor?.website && (
                 <a className="flex items-center gap-2 text-[#0060a8] underline-offset-2 hover:underline dark:text-[#7cb8ff]" href={doctor.website} rel="noreferrer" target="_blank">
-                  <Globe className="shrink-0" size={15} /> Site web <ExternalLink size={12} />
+                  <Globe className="shrink-0" size={15} /> {t('doctorDetail.websiteLink', 'Site web')} <ExternalLink size={12} />
                 </a>
               )}
               {!doctor?.location && !doctor?.phone && !doctor?.email && !doctor?.website && (
-                <p className="text-xs italic text-[#6d7a73] dark:text-slate-500">Aucune information de contact disponible pour cette fiche.</p>
+                <p className="text-xs italic text-[#6d7a73] dark:text-slate-500">{t('doctorDetail.noContactInfo', 'Aucune information de contact disponible pour cette fiche.')}</p>
               )}
             </div>
 
             {booking ? (
               <div className="mt-5 flex flex-wrap items-end gap-2 rounded-xl border border-[#dee4de] bg-[#f5fbf5]/80 p-3 dark:border-white/10 dark:bg-slate-800/60">
                 <label className="text-xs text-[#3d4943] dark:text-slate-300">
-                  Date
+                  {t('doctorDetail.booking.dateLabel', 'Date')}
                   <input
                     className="mt-1 block rounded-lg border border-[#bccac1] px-2 py-1 text-xs dark:border-white/10 dark:bg-slate-900"
                     type="date"
@@ -146,7 +148,7 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
                   />
                 </label>
                 <label className="text-xs text-[#3d4943] dark:text-slate-300">
-                  Heure
+                  {t('doctorDetail.booking.timeLabel', 'Heure')}
                   <input
                     className="mt-1 block rounded-lg border border-[#bccac1] px-2 py-1 text-xs dark:border-white/10 dark:bg-slate-900"
                     type="time"
@@ -160,10 +162,10 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
                   type="button"
                   onClick={handleConfirmBooking}
                 >
-                  {submitting ? 'Envoi...' : 'Confirmer'}
+                  {submitting ? t('doctorDetail.booking.sendingStatus', 'Envoi...') : t('doctorDetail.booking.confirmButton', 'Confirmer')}
                 </button>
                 <button className="rounded-lg bg-[#e4eae4] px-3 py-1.5 text-xs font-medium text-[#3d4943] dark:bg-slate-700 dark:text-slate-200" type="button" onClick={() => setBooking(false)}>
-                  Annuler
+                  {t('doctorDetail.booking.cancelButton', 'Annuler')}
                 </button>
               </div>
             ) : (
@@ -174,16 +176,16 @@ export function DoctorDetailModal({ doctor, userUid, reason, onClose }) {
                     type="button"
                     onClick={() => setBooking(true)}
                   >
-                    <Calendar size={15} /> Demander un rendez-vous
+                    <Calendar size={15} /> {t('doctorDetail.requestAppointmentButton', 'Enregistrer un RDV')}
                   </button>
                 )}
-                {doctor?.lat != null && doctor?.lng != null && (
+                {(doctor?.lat != null && doctor?.lng != null || doctor?.location) && (
                   <button
                     className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#0060a8] to-[#5b9cff] px-4 py-2 text-sm font-semibold text-white shadow-md"
                     type="button"
-                    onClick={() => openDirections(doctor.lat, doctor.lng)}
+                    onClick={() => openDirections(doctor.lat, doctor.lng, doctor.location)}
                   >
-                    <Navigation size={15} /> Itinéraire
+                    <Navigation size={15} /> {t('doctorDetail.directionsButton', 'Itinéraire')}
                   </button>
                 )}
               </div>

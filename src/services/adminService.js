@@ -19,7 +19,7 @@ export async function getAdminStatistics() {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch statistics',
+        'Impossible de récupérer les statistiques',
     }
   }
 }
@@ -37,7 +37,7 @@ export async function getUsers(page = 1, pageSize = 20) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch users',
+        'Impossible de récupérer les utilisateurs',
     }
   }
 }
@@ -55,7 +55,7 @@ export async function getUser(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch user',
+        'Impossible de récupérer l\'utilisateur',
     }
   }
 }
@@ -73,7 +73,61 @@ export async function deleteUser(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to delete user',
+        'Impossible de supprimer l\'utilisateur',
+    }
+  }
+}
+
+/**
+ * Enable or disable a user account (admin only)
+ */
+export async function updateUserStatus(id, isActive) {
+  try {
+    const response = await apiClient.patch(ADMIN_ENDPOINTS.UPDATE_USER_STATUS(id), { is_active: isActive })
+    return { success: true, data: response.data }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        "Impossible de mettre à jour le statut de l'utilisateur",
+    }
+  }
+}
+
+/**
+ * Change a user's role (admin only)
+ */
+export async function updateUserRole(id, role) {
+  try {
+    const response = await apiClient.patch(ADMIN_ENDPOINTS.UPDATE_USER_ROLE(id), { role })
+    return { success: true, data: response.data }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        "Impossible de mettre à jour le rôle de l'utilisateur",
+    }
+  }
+}
+
+/**
+ * Invalidate a user's existing sessions, forcing them to log in again (admin only)
+ */
+export async function regenerateUserToken(id) {
+  try {
+    const response = await apiClient.post(ADMIN_ENDPOINTS.REGENERATE_USER_TOKEN(id))
+    return { success: true, data: response.data }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        'Impossible de régénérer le jeton de session',
     }
   }
 }
@@ -91,7 +145,7 @@ export async function getActivityLog(page = 1, pageSize = 20) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch activity log',
+        'Impossible de récupérer le journal d\'activité',
     }
   }
 }

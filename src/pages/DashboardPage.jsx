@@ -5,6 +5,7 @@ import {
   Bell,
   BrainCircuit,
   CalendarCheck,
+  CalendarClock,
   CalendarDays,
   CheckCircle2,
   HeartPulse,
@@ -13,8 +14,6 @@ import {
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -25,16 +24,27 @@ import {
 } from 'recharts'
 
 import { LoadingSkeleton } from '../shared/ui/LoadingSkeleton'
-import { getDashboardCharts, getDashboardSummary } from '../services/dashboardService'
+import { formatShortDate, getDashboardCharts, getDashboardSummary } from '../services/dashboardService'
 import { getProfile } from '../services/userService'
-import { getRecommendations } from '../services/aiService'
-import { getCurrentUser } from '../features/auth/auth'
+import { getCurrentUser } from '../services/authService'
+import { getLatestRecommendation } from '../services/mediAssistService'
+import { useTranslation } from '../i18n/useTranslation'
 
 const statIcons = {
   activity: Activity,
   bell: Bell,
+  calendar: CalendarClock,
   heart: HeartPulse,
   temperature: Thermometer,
+}
+
+// Mirrors AIAnalysisPage's PRIORITY_THEME so the dashboard's recommendation
+// card reads the same visual language (URGENT/IMPORTANT/INFORMATIF) as the
+// full Recommandations IA page it links to.
+const RECOMMENDATION_PRIORITY_THEME = {
+  haute:   { badge: 'URGENT',     badgeBg: 'bg-[#ba1a1a]', border: 'border-l-[#ba1a1a]', iconBox: 'bg-[#ffdad6] text-[#ba1a1a]' },
+  moyenne: { badge: 'IMPORTANT',  badgeBg: 'bg-[#0060a8]', border: 'border-l-[#0060a8]', iconBox: 'bg-[#d2e4ff] text-[#0060a8]' },
+  basse:   { badge: 'INFORMATIF', badgeBg: 'bg-[#00694c]', border: 'border-l-[#00694c]', iconBox: 'bg-[#86f8c9]/40 text-[#00694c]' },
 }
 
 function ChartTooltip({ active, label, payload }) {
@@ -44,7 +54,7 @@ function ChartTooltip({ active, label, payload }) {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-lg shadow-slate-900/10">
-      <p className="font-semibold text-slate-950">{label}</p>
+      <p className="font-semibold text-slate-950">{formatShortDate(label)}</p>
       <div className="mt-1 space-y-1">
         {payload.map((item) => (
           <p className="text-slate-600" key={item.dataKey}>
@@ -70,20 +80,22 @@ function ChartCard({ children, subtitle, title }) {
 }
 
 function DashboardPage() {
-  const currentUser = getCurrentUser()
+  const { t, localeTag } = useTranslation()
   const { data: summary, isLoading: isSummaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: getDashboardSummary,
   })
   const { data: charts, isLoading: isChartsLoading } = useQuery({
-    queryKey: ['dashboard-charts'],
+    queryKey: ['dashboard-charts', localeTag],
     queryFn: getDashboardCharts,
   })
-  const { data: profileData } = useQuery({
-    queryKey: ['profile', currentUser?.uid || 'anonymous'],
-    queryFn: getProfile,
+  const { data: profileData } = useQuery({ queryKey: ['patient-profile'], queryFn: getProfile })
+  const currentUser = getCurrentUser()
+  const { data: recommendationsData } = useQuery({
+    queryKey: ['ai-recommendations', currentUser?.uid],
+    queryFn: () => getLatestRecommendation({ userUid: currentUser?.uid }),
+    enabled: !!currentUser?.uid,
   })
-  const { data: recommendationsData } = useQuery({ queryKey: ['ai-recommendations'], queryFn: getRecommendations })
 
   if (isSummaryLoading || isChartsLoading) {
     return <LoadingSkeleton />
@@ -92,9 +104,31 @@ function DashboardPage() {
   if (!summary || !charts) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-lg text-slate-600">Failed to load dashboard data. Please try again.</p>
+        <p className="text-lg text-slate-600">
+          {t('dashboard.loadError', 'Impossible de charger les données du tableau de bord. Veuillez réessayer.')}
+        </p>
       </div>
     )
+  }
+
+  const topRecommendation = recommendationsData?.success ? recommendationsData.recommendation : null
+  const recommendationTheme = topRecommendation
+    ? RECOMMENDATION_PRIORITY_THEME[topRecommendation.priorite] || RECOMMENDATION_PRIORITY_THEME.basse
+    : null
+
+  const wellnessStat = summary?.stats?.find((s) => s.key === 'wellnessScore')
+  const wellnessRaw = wellnessStat?.value ?? null
+  const wellnessNum = wellnessRaw !== null ? parseInt(String(wellnessRaw).replace('%', ''), 10) : null
+  const scoreCircleRadius = 34
+  const scoreCircleCircumference = 2 * Math.PI * scoreCircleRadius
+  const scoreCircleProgress = wellnessNum !== null ? Math.min(Math.max(wellnessNum, 0), 100) : 0
+  const scoreCircleOffset = scoreCircleCircumference * (1 - scoreCircleProgress / 100)
+  let wellnessSubtitle = t('dashboard.noData', 'Aucune donnée disponible maintenant')
+  if (wellnessNum !== null) {
+    if (wellnessNum >= 80) wellnessSubtitle = t('dashboard.wellness.excellent', 'Excellente progression')
+    else if (wellnessNum >= 60) wellnessSubtitle = t('dashboard.wellness.good', 'Bonne progression')
+    else if (wellnessNum >= 40) wellnessSubtitle = t('dashboard.wellness.average', 'Progression moyenne')
+    else wellnessSubtitle = t('dashboard.wellness.low', 'Progression faible')
   }
 
   return (
@@ -102,51 +136,41 @@ function DashboardPage() {
       <section className="grid gap-6 md:grid-cols-12">
         <div className="flex flex-col justify-center md:col-span-8">
           <h1 className="text-[32px] font-semibold leading-tight text-[#171d1a] dark:text-white">
-            Bonjour {profileData?.data?.first_name || profileData?.data?.name || currentUser?.email || 'Utilisateur'}
+            {t('dashboard.greeting', 'Bonjour {{name}}', {
+              name:
+                profileData?.data?.first_name ||
+                profileData?.data?.name ||
+                t('dashboard.defaultUser', 'Utilisateur'),
+            })}
           </h1>
           <p className="mt-3 flex items-center gap-2 text-base text-[#6d7a73]">
             <CalendarDays size={19} />
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date().toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
         <article className="sht-card flex items-center justify-between p-5 md:col-span-4">
           <div>
-            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Score Sante</h2>
-            {(() => {
-              const wellnessStat = summary?.stats?.find((s) => s.label.toLowerCase().includes('wellness'))
-              const raw = wellnessStat?.value ?? null
-              const num = raw !== null ? parseInt(String(raw).replace('%', ''), 10) : null
-              let subtitle = 'Aucune donnée disponible maintenant'
-              if (num !== null) {
-                if (num >= 80) subtitle = 'Excellente progression'
-                else if (num >= 60) subtitle = 'Bonne progression'
-                else if (num >= 40) subtitle = 'Progression moyenne'
-                else subtitle = 'Progression faible'
-              }
-
-              return <p className="mt-1 text-sm text-[#6d7a73]">{subtitle}</p>
-            })()}
+            <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">{t('dashboard.healthScore', 'Score Santé')}</h2>
+            <p className="mt-1 text-sm text-[#6d7a73]">{wellnessSubtitle}</p>
           </div>
           <div className="relative grid h-20 w-20 place-items-center">
             <svg className="h-full w-full -rotate-90">
-              <circle cx="40" cy="40" fill="transparent" r="34" stroke="#dee4de" strokeWidth="8" />
+              <circle cx="40" cy="40" fill="transparent" r={scoreCircleRadius} stroke="#dee4de" strokeWidth="8" />
               <circle
                 cx="40"
                 cy="40"
                 fill="transparent"
-                r="34"
+                r={scoreCircleRadius}
                 stroke="#00694c"
-                strokeDasharray="213.6"
-                strokeDashoffset="47"
+                strokeDasharray={scoreCircleCircumference}
+                strokeDashoffset={scoreCircleOffset}
                 strokeLinecap="round"
                 strokeWidth="8"
               />
             </svg>
-            <span className="font-metric absolute text-lg font-semibold text-[#00694c]">{(() => {
-              const wellnessStat = summary?.stats?.find((s) => s.label.toLowerCase().includes('wellness'))
-              const raw = wellnessStat?.value ?? null
-              return raw !== null ? String(raw).replace('%', '') : '--'
-            })()}</span>
+            <span className="font-metric absolute text-lg font-semibold text-[#00694c]">
+              {wellnessRaw !== null ? String(wellnessRaw).replace('%', '') : '--'}
+            </span>
           </div>
         </article>
       </section>
@@ -157,20 +181,14 @@ function DashboardPage() {
           const hasValue = stat.value !== null && stat.value !== undefined
 
           return (
-            <article key={stat.label} className="sht-card p-5">
-              <div className="mb-5 flex items-start justify-between gap-4">
-                <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
-                  <StatIcon size={23} />
-                </div>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${hasValue ? 'bg-[#86f8c9]/35 text-[#00513a]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
-                  <CheckCircle2 size={14} />
-                  {hasValue ? 'Normal' : 'Indisponible'}
-                </span>
+            <article key={stat.key || stat.label} className="sht-card p-5">
+              <div className="mb-5 grid h-12 w-12 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
+                <StatIcon size={23} />
               </div>
               <div>
-                <p className="text-sm text-slate-500">{stat.label}</p>
+                <p className="text-sm text-slate-500">{t(`dashboard.stats.${stat.key}`, stat.label)}</p>
                 <p className={`font-metric mt-2 text-[28px] font-semibold leading-none ${hasValue ? 'text-[#171d1a]' : 'text-slate-500'}`}>
-                  {hasValue ? stat.value : 'Aucune donnée disponible maintenant'}
+                  {hasValue ? stat.value : t('dashboard.noData', 'Aucune donnée disponible maintenant')}
                 </p>
               </div>
             </article>
@@ -179,52 +197,105 @@ function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <article className="sht-card overflow-hidden border-l-4 border-l-[#ba1a1a]">
-          <div className="flex flex-col gap-5 p-5 md:flex-row md:items-start md:justify-between">
-            <div className="flex gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[#ffdad6] text-[#ba1a1a]">
-                <AlertTriangle size={24} />
+        {summary.recentAlert ? (
+          <article className="sht-card overflow-hidden border-l-4 border-l-[#ba1a1a]">
+            <div className="flex flex-col gap-5 p-5 md:flex-row md:items-start md:justify-between">
+              <div className="flex gap-4">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[#ffdad6] text-[#ba1a1a]">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded bg-[#ba1a1a] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                      {t('dashboard.alert.unread', 'Alerte non lue')}
+                    </span>
+                    <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">
+                      {t(summary.recentAlert.title, summary.recentAlert.title)}
+                    </h2>
+                  </div>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
+                    {t(summary.recentAlert.message, summary.recentAlert.message)}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-medium text-[#6d7a73]">
+                {summary.recentAlert.created_at ? new Date(summary.recentAlert.created_at).toLocaleString(localeTag) : ''}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-3 border-t border-[#bccac1]/30 px-5 py-4">
+              <a className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white" href="/ai-analysis">
+                {t('dashboard.alert.viewAll', 'Voir les alertes')}
+              </a>
+            </div>
+          </article>
+        ) : (
+          <article className="sht-card overflow-hidden border-l-4 border-l-[#00694c]">
+            <div className="flex gap-4 p-5">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
+                <CheckCircle2 size={24} />
               </div>
               <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded bg-[#ba1a1a] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
-                    Alerte critique
-                  </span>
-                  <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">Symptomes inhabituels detectes</h2>
-                </div>
+                <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">
+                  {t('dashboard.alert.noneTitle', 'Aucune alerte active')}
+                </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
-                  Le front signale une fatigue repetee combinee a un sommeil court. Cette alerte est mockee et devra
-                  etre confirmee par le moteur IA prive et les endpoints backend.
+                  {t('dashboard.alert.noneText', "Aucune alerte non lue n'a été détectée sur vos données récentes.")}
                 </p>
               </div>
             </div>
-            <span className="text-xs font-medium text-[#6d7a73]">Il y a 2 h</span>
-          </div>
-          <div className="flex flex-wrap gap-3 border-t border-[#bccac1]/30 px-5 py-4">
-            <a className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white" href="/notifications">
-              Voir les alertes
-            </a>
-            <a className="rounded-lg bg-[#e4eae4] px-4 py-2 text-sm font-medium text-[#3d4943]" href="/ai-analysis">
-              Ouvrir analyse IA
-            </a>
-          </div>
-        </article>
+          </article>
+        )}
 
-        <article className="rounded-xl border border-dashed border-[#68dbae] bg-[#eff5ef] p-5">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
-            <BrainCircuit size={21} />
-          </div>
-          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">AI Recommendation</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-700">
-            {recommendationsData?.success && recommendationsData?.data?.summary
-              ? recommendationsData.data.summary
-              : 'Les recommandations du dashboard sont propulsees par l\'IA.'}
-          </p>
-        </article>
+        {topRecommendation ? (
+          <article className={`sht-card overflow-hidden border-l-4 ${recommendationTheme.border}`}>
+            <div className="flex flex-col gap-5 p-5 md:flex-row md:items-start md:justify-between">
+              <div className="flex gap-4">
+                <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${recommendationTheme.iconBox}`}>
+                  <BrainCircuit size={24} />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white ${recommendationTheme.badgeBg}`}>
+                      {recommendationTheme.badge}
+                    </span>
+                    <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">{topRecommendation.titre}</h2>
+                  </div>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
+                    {topRecommendation.detail || topRecommendation.pourquoi || ''}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 border-t border-[#bccac1]/30 px-5 py-4">
+              <a className="rounded-lg bg-[#00694c] px-4 py-2 text-sm font-semibold text-white" href="/ai-analysis">
+                {t('dashboard.aiRecommendation.viewAll', 'Voir les recommandations')}
+              </a>
+            </div>
+          </article>
+        ) : (
+          <article className="sht-card overflow-hidden border-l-4 border-l-[#00694c]">
+            <div className="flex gap-4 p-5">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[#eff5ef] text-[#00694c]">
+                <BrainCircuit size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-[#171d1a] dark:text-white">
+                  {t('dashboard.aiRecommendation.title', 'Recommandation IA')}
+                </h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#3d4943]">
+                  {t('dashboard.noData', 'Aucune donnée disponible maintenant')}
+                </p>
+              </div>
+            </div>
+          </article>
+        )}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <ChartCard subtitle="Average resting BPM over the last 7 days" title="Evolution de sante (7 jours)">
+        <ChartCard
+          subtitle={t('dashboard.charts.heartRate.subtitle', 'Fréquence cardiaque mesurée (données réelles)')}
+          title={t('dashboard.charts.heartRate.title', 'Évolution du rythme cardiaque')}
+        >
           {charts.heartRateData?.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <AreaChart data={charts.heartRateData} margin={{ left: -18, right: 8, top: 8 }}>
@@ -235,13 +306,8 @@ function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                <XAxis axisLine={false} dataKey="day" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
-                <YAxis
-                  axisLine={false}
-                  domain={[60, 90]}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                  tickLine={false}
-                />
+                <XAxis axisLine={false} dataKey="date" tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={formatShortDate} tickLine={false} />
+                <YAxis axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#99f6e4', strokeWidth: 2 }} />
                 <Area
                   dataKey="bpm"
@@ -254,22 +320,20 @@ function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="grid h-full place-items-center text-sm text-slate-500">Aucune donnée disponible maintenant</div>
+            <div className="grid h-full place-items-center text-sm text-slate-500">{t('dashboard.noData', 'Aucune donnée disponible maintenant')}</div>
           )}
         </ChartCard>
 
-        <ChartCard subtitle="Weekly trend based on mock weigh-ins" title="Progression du poids">
+        <ChartCard
+          subtitle={t('dashboard.charts.weight.subtitle', 'Poids mesuré (données réelles)')}
+          title={t('dashboard.charts.weight.title', 'Progression du poids')}
+        >
           {charts.weightData?.length > 0 ? (
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={charts.weightData} margin={{ left: -18, right: 8, top: 8 }}>
                 <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                <XAxis axisLine={false} dataKey="week" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
-                <YAxis
-                  axisLine={false}
-                  domain={[70, 73]}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                  tickLine={false}
-                />
+                <XAxis axisLine={false} dataKey="date" tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={formatShortDate} tickLine={false} />
+                <YAxis axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#bae6fd', strokeWidth: 2 }} />
                 <Line
                   activeDot={{ r: 6, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 3 }}
@@ -283,94 +347,50 @@ function DashboardPage() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="grid h-full place-items-center text-sm text-slate-500">Aucune donnée disponible maintenant</div>
+            <div className="grid h-full place-items-center text-sm text-slate-500">{t('dashboard.noData', 'Aucune donnée disponible maintenant')}</div>
           )}
         </ChartCard>
       </section>
 
-      <ChartCard subtitle="Mock weekly steps with sleep context" title="Activite sante hebdomadaire">
-        {charts.activityData?.length > 0 ? (
-          <ResponsiveContainer height="100%" width="100%">
-            <BarChart data={charts.activityData} margin={{ left: -18, right: 8, top: 8 }}>
-              <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-              <XAxis axisLine={false} dataKey="day" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
-              <YAxis axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f1f5f9' }} />
-              <Bar dataKey="steps" fill="#14b8a6" name="Steps" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="sleep" fill="#38bdf8" name="Sleep hrs" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="grid h-full place-items-center text-sm text-slate-500">Aucune donnée disponible maintenant</div>
-        )}
-      </ChartCard>
-
-      <section className="grid gap-4 xl:grid-cols-[1fr_360px]">
-        <article className="sht-card p-5">
+      <section className="grid gap-4">
+        <article className="sht-card overflow-hidden p-5">
           <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-950">
             <CalendarCheck className="text-[#00694c]" size={22} />
-            Prochains rendez-vous
+            {t('dashboard.appointments.title', 'Prochains rendez-vous')}
           </h2>
           <div className="mt-4 divide-y divide-slate-100">
-            {summary.healthPlanItems && summary.healthPlanItems.length > 0 ? (
-              summary.healthPlanItems.map((item) => (
-                <div key={item.id || item} className="flex items-center justify-between gap-4 py-3">
+            {summary.upcomingAppointments && summary.upcomingAppointments.length > 0 ? (
+              summary.upcomingAppointments.map((appointment) => (
+                <div key={appointment.uid} className="flex items-center justify-between gap-4 py-3">
                   <div>
-                    <p className="font-medium text-slate-900">{typeof item === 'string' ? item : item.title}</p>
-                    <p className="text-sm text-slate-500">{typeof item === 'string' ? `Recommendation` : item.description}</p>
+                    <p className="font-medium text-slate-900">
+                      {appointment.reason || t('dashboard.appointments.defaultReason', 'Rendez-vous médical')}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {new Date(appointment.appointment_date).toLocaleDateString(localeTag, {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                      })}{' '}
+                      {t('dashboard.appointments.at', 'à')} {appointment.appointment_time?.slice(0, 5)}
+                    </p>
                   </div>
                   <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                    Planifie
+                    {appointment.status === 'confirmed'
+                      ? t('dashboard.appointments.confirmed', 'Confirmé')
+                      : t('dashboard.appointments.scheduled', 'Planifié')}
                   </span>
                 </div>
               ))
             ) : (
-              <p className="py-3 text-sm text-slate-500">No recommendations at this time.</p>
+              <p className="py-3 text-sm text-slate-500">{t('dashboard.noData', 'Aucune donnée disponible maintenant')}</p>
             )}
           </div>
-        </article>
-
-        <article className="rounded-xl border border-dashed border-[#68dbae] bg-[#eff5ef] p-5">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#00694c] text-white">
-            <BrainCircuit size={21} />
+          <div className="-mx-5 -mb-5 mt-4 border-t border-slate-100 px-5 py-4">
+            <a className="text-sm font-semibold text-[#00694c] hover:underline" href="/appointments">
+              {t('dashboard.appointments.viewAll', 'Voir tous les rendez-vous')}
+            </a>
           </div>
-          <h2 className="mt-4 text-sm font-bold uppercase tracking-wider text-[#00694c]">Resume IA</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-700">
-            Les donnees recentes suggerent une fatigue plus frequente apres des nuits courtes.
-          </p>
-        </article>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-3">
-        <article className="sht-card border-l-4 border-l-[#ba1a1a] p-5">
-          <div className="flex gap-4">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#ffdad6] text-[#ba1a1a]">
-              <AlertTriangle size={22} />
-            </div>
-            <div>
-              <h2 className="font-semibold text-[#171d1a] dark:text-white">Alerte a verifier</h2>
-              <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-                Fatigue repetee et sommeil court detectes dans les donnees mockees de la semaine.
-              </p>
-            </div>
-          </div>
-        </article>
-
-        <article className="sht-card p-5">
-          <p className="sht-kicker">Objectif</p>
-          <h2 className="mt-2 font-semibold text-[#171d1a] dark:text-white">Hydratation quotidienne</h2>
-          <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#dce5df]">
-            <div className="h-full w-[72%] rounded-full bg-[#00694c]" />
-          </div>
-          <p className="mt-3 text-sm text-[#6d7a73]">72% de l'objectif journalier atteint.</p>
-        </article>
-
-        <article className="sht-card p-5">
-          <p className="sht-kicker">Backend</p>
-          <h2 className="mt-2 font-semibold text-[#171d1a] dark:text-white">Contrats API prets</h2>
-          <p className="mt-2 text-sm leading-6 text-[#3d4943]">
-            Les donnees du dashboard passent par des services frontend mockes et pourront etre remplacees par Axios.
-          </p>
         </article>
       </section>
     </div>

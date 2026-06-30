@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { MediAssistChat } from '../features/chatbot/MediAssistChat'
+import { useTranslation } from '../i18n/useTranslation'
 import { useMedAssistStore } from '../store/medAssistStore'
 import { formatRelativeTime } from '../utils/time'
 
@@ -84,6 +85,7 @@ const ALERT_THEME = {
 }
 
 function AlertItem({ alert }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const theme = ALERT_THEME[alert.urgence] || ALERT_THEME.moderee
   const { Icon } = theme
@@ -101,7 +103,7 @@ function AlertItem({ alert }) {
             <span className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${theme.badge}`}>
               {theme.label}
             </span>
-            {!alert.read && <span className="h-2 w-2 rounded-full bg-[#ba1a1a]" title="Non lu" />}
+            {!alert.read && <span className="h-2 w-2 rounded-full bg-[#ba1a1a]" title={t('aiAnalysis.alertItem.unreadTitle', 'Non lu')} />}
             <span className="ml-auto text-xs text-[#6d7a73]">{formatRelativeTime(alert.createdAt)}</span>
           </div>
           <h3 className="mt-2 font-semibold text-[#171d1a] dark:text-white">{alert.titre}</h3>
@@ -110,7 +112,7 @@ function AlertItem({ alert }) {
           )}
           {expanded && alert.action && (
             <div className="mt-2 rounded-lg border border-[#dee4de] bg-[#f5fbf5] p-3 text-sm text-[#3d4943]">
-              <span className="font-semibold">Action recommandée : </span>{alert.action}
+              <span className="font-semibold">{t('aiAnalysis.alertItem.recommendedActionLabel', 'Action recommandée : ')}</span>{alert.action}
             </div>
           )}
           <div className="mt-3 flex flex-wrap gap-3">
@@ -121,7 +123,7 @@ function AlertItem({ alert }) {
                 onClick={() => setExpanded((v) => !v)}
               >
                 {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                {expanded ? 'Masquer' : 'Que faire ?'}
+                {expanded ? t('aiAnalysis.alertItem.hideButton', 'Masquer') : t('aiAnalysis.alertItem.whatToDoButton', 'Que faire ?')}
               </button>
             )}
             {!alert.read && (
@@ -130,7 +132,7 @@ function AlertItem({ alert }) {
                 type="button"
                 onClick={() => markRead(alert.id)}
               >
-                Marquer comme lu
+                {t('aiAnalysis.alertItem.markReadButton', 'Marquer comme lu')}
               </button>
             )}
             <button
@@ -138,7 +140,7 @@ function AlertItem({ alert }) {
               type="button"
               onClick={() => dismiss(alert.id)}
             >
-              Ignorer
+              {t('aiAnalysis.alertItem.dismissButton', 'Ignorer')}
             </button>
           </div>
         </div>
@@ -149,6 +151,7 @@ function AlertItem({ alert }) {
 
 // ── Recommendation card ───────────────────────────────────────────────────────
 function RecommendationCard({ rec }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const toggleDone = useMedAssistStore((s) => s.toggleRecommendationDone)
   const theme = PRIORITY_THEME[rec.priorite] || PRIORITY_THEME.basse
@@ -178,16 +181,16 @@ function RecommendationCard({ rec }) {
             <div className="mt-3 space-y-1.5 rounded-lg border border-[#dee4de] bg-[#f5fbf5] p-3 text-xs leading-5 text-[#3d4943]">
               {rec.pourquoi && (
                 <p>
-                  <span className="font-semibold">Pourquoi cette recommandation : </span>
+                  <span className="font-semibold">{t('aiAnalysis.recommendationCard.whyLabel', 'Pourquoi cette recommandation : ')}</span>
                   {rec.pourquoi}
                 </p>
               )}
               <p>
-                <span className="font-semibold">Niveau d'urgence au moment de l'analyse : </span>
+                <span className="font-semibold">{t('aiAnalysis.recommendationCard.urgencyAtAnalysisLabel', "Niveau d'urgence au moment de l'analyse : ")}</span>
                 {URGENCE_LABELS[rec.urgence] || rec.urgence}
               </p>
               <p>
-                <span className="font-semibold">Priorité : </span>
+                <span className="font-semibold">{t('aiAnalysis.recommendationCard.priorityLabel', 'Priorité : ')}</span>
                 {theme.badge.charAt(0) + theme.badge.slice(1).toLowerCase()}
               </p>
             </div>
@@ -200,7 +203,7 @@ function RecommendationCard({ rec }) {
               onClick={() => setExpanded((v) => !v)}
             >
               {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-              Voir détails
+              {t('aiAnalysis.recommendationCard.viewDetailsButton', 'Voir détails')}
             </button>
             <button
               className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
@@ -211,7 +214,7 @@ function RecommendationCard({ rec }) {
               type="button"
               onClick={() => toggleDone(rec.id)}
             >
-              {rec.done ? '✓ Fait' : 'Marquer comme fait'}
+              {rec.done ? t('aiAnalysis.recommendationCard.doneStatus', '✓ Fait') : t('aiAnalysis.recommendationCard.markDoneButton', 'Marquer comme fait')}
             </button>
           </div>
         </div>
@@ -221,16 +224,19 @@ function RecommendationCard({ rec }) {
 }
 
 function EmptyRecommendations() {
+  const { t } = useTranslation()
   return (
     <div className="flex h-full min-h-[420px] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[#bccac1] bg-white/60 px-8 py-16 text-center">
       <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#e4eae4] text-[#3d4943]">
         <Sparkles size={28} />
       </div>
       <div>
-        <h2 className="text-lg font-semibold text-[#171d1a] dark:text-white">Aucune recommandation pour le moment</h2>
+        <h2 className="text-lg font-semibold text-[#171d1a] dark:text-white">{t('aiAnalysis.emptyRecommendations.title', 'Aucune recommandation pour le moment')}</h2>
         <p className="mt-2 max-w-sm text-sm leading-6 text-[#6d7a73]">
-          MediAssist analyse vos indicateurs de santé. Vos recommandations personnalisées
-          apparaîtront ici dès que l'analyse sera prête.
+          {t(
+            'aiAnalysis.emptyRecommendations.body',
+            "MediAssist analyse vos indicateurs de santé. Vos recommandations personnalisées apparaîtront ici dès que l'analyse sera prête.",
+          )}
         </p>
       </div>
     </div>
@@ -238,11 +244,13 @@ function EmptyRecommendations() {
 }
 
 function AIAnalysisPage() {
+  const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
   const storedPatientData = useMedAssistStore((s) => s.patientData)
   const patientData = location.state?.patientData ?? storedPatientData
   const storeRecommendations = useMedAssistStore((s) => s.recommendations)
+  const recommendationsAreFallback = useMedAssistStore((s) => s.recommendationsAreFallback)
   const storeAlerts = useMedAssistStore((s) => s.alerts)
   const recommendations = useMemo(() => [...storeRecommendations].sort(byPrioriteDesc), [storeRecommendations])
   const alerts = useMemo(() => [...storeAlerts].sort(byUrgenceDesc), [storeAlerts])
@@ -257,11 +265,13 @@ function AIAnalysisPage() {
         </div>
         <div>
           <h1 className="text-2xl font-semibold text-[#171d1a] dark:text-white">
-            Aucune donnée patient disponible
+            {t('aiAnalysis.noPatientData.title', 'Aucune donnée patient disponible')}
           </h1>
           <p className="mt-2 max-w-md text-sm leading-6 text-[#6d7a73]">
-            Pour consulter MediAssist, veuillez d'abord renseigner vos indicateurs de santé
-            dans le formulaire de symptômes.
+            {t(
+              'aiAnalysis.noPatientData.body',
+              "Pour consulter MediAssist, veuillez d'abord renseigner vos indicateurs de santé dans le formulaire de symptômes.",
+            )}
           </p>
         </div>
         <button
@@ -270,7 +280,7 @@ function AIAnalysisPage() {
           onClick={() => navigate('/symptoms')}
         >
           <ClipboardList size={18} />
-          Remplir le formulaire
+          {t('aiAnalysis.noPatientData.fillFormButton', 'Remplir le formulaire')}
         </button>
       </div>
     )
@@ -281,15 +291,15 @@ function AIAnalysisPage() {
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div>
           <h1 className="text-[28px] font-semibold leading-tight text-[#171d1a] dark:text-white">
-            Recommandations Personnalisées
+            {t('aiAnalysis.header.title', 'Recommandations Personnalisées')}
           </h1>
           <p className="mt-1 text-sm text-[#6d7a73]">
-            Analyse de vos données de santé en temps réel.
+            {t('aiAnalysis.header.subtitle', 'Analyse de vos données de santé en temps réel.')}
           </p>
         </div>
         <div className="flex w-fit items-center gap-2 rounded-full bg-[#008560] px-4 py-2 text-sm font-semibold text-white shadow-sm">
           <BrainCircuit size={18} />
-          Propulsé par l'IA MediAssist
+          {t('aiAnalysis.header.poweredByBadge', "Propulsé par l'IA MediAssist")}
         </div>
       </div>
 
@@ -301,7 +311,7 @@ function AIAnalysisPage() {
             "Recommandations (0)" placeholder. order-* keeps the live
             feedback first on mobile while leaving the lg+ side-by-side
             layout untouched. */}
-        <section aria-label="Analyse" className="order-2 space-y-6 lg:order-none">
+        <section aria-label={t('aiAnalysis.section.analysisAriaLabel', 'Analyse')} className="order-2 space-y-6 lg:order-none">
           {alerts.length > 0 && (
             <div className="space-y-3">
               <button
@@ -311,7 +321,7 @@ function AIAnalysisPage() {
               >
                 <AlertTriangle size={15} className="text-[#ba1a1a]" />
                 <span className="text-sm font-semibold uppercase tracking-wide text-[#ba1a1a]">
-                  Alertes détectées ({alerts.length})
+                  {t('aiAnalysis.section.alertsDetected', 'Alertes détectées ({{count}})', { count: alerts.length })}
                 </span>
                 <span className="ml-auto text-[#ba1a1a]">
                   {alertsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -331,12 +341,20 @@ function AIAnalysisPage() {
             >
               <Sparkles size={15} className="text-[#3d4943]" />
               <span className="text-sm font-semibold uppercase tracking-wide text-[#3d4943]">
-                Recommandations ({recommendations.length})
+                {t('aiAnalysis.section.recommendations', 'Recommandations ({{count}})', { count: recommendations.length })}
               </span>
               <span className="ml-auto text-[#3d4943]">
                 {recsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </span>
             </button>
+            {recsOpen && recommendationsAreFallback && (
+              <div className="rounded-lg border border-[#fcd34d] bg-[#fef3c7] px-3 py-2 text-xs leading-5 text-[#92400e]">
+                {t(
+                  'aiAnalysis.section.fallbackNotice',
+                  "Le service d'analyse en direct est momentanément indisponible — voici vos dernières recommandations connues.",
+                )}
+              </div>
+            )}
             {recsOpen && (
               recommendations.length === 0 ? (
                 <EmptyRecommendations />

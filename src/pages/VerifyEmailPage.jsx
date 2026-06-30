@@ -1,243 +1,144 @@
-import { ArrowLeft, CheckCircle2, Mail, RefreshCw, ShieldCheck } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Mail, ShieldCheck } from 'lucide-react'
 
 import { resendVerificationCode, verifyEmail } from '../features/auth/auth'
-
-const SESSION_KEY = 'smart_health_verification'
-const CODE_LENGTH = 6
-
-function readVerificationSession(locationState) {
-  if (locationState?.uid && locationState?.email) {
-    return locationState
-  }
-
-  try {
-    return JSON.parse(sessionStorage.getItem(SESSION_KEY)) || {}
-  } catch {
-    return {}
-  }
-}
+import { useTranslation } from '../i18n/useTranslation'
 
 function VerifyEmailPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const session = readVerificationSession(location.state)
-  const [uid] = useState(session.uid || '')
-  const [email] = useState(session.email || '')
-  const [digits, setDigits] = useState(() => {
-    const initialCode = String(session.verificationCode || '').slice(0, CODE_LENGTH)
-    return Array.from({ length: CODE_LENGTH }, (_, index) => initialCode[index] || '')
-  })
-  const [devCode, setDevCode] = useState(session.verificationCode || '')
-  const [devNote, setDevNote] = useState(session.devNote || '')
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const uid = location.state?.uid
+  const email = location.state?.email
+  const [devCode, setDevCode] = useState(location.state?.verificationCode || '')
+  const devNote = location.state?.devNote
+  const [code, setCode] = useState(location.state?.verificationCode || '')
+  const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [resendSeconds, setResendSeconds] = useState(0)
-  const inputRefs = useRef([])
-
-  const code = digits.join('')
-  const hasValidSession = Boolean(uid && email)
-
-  useEffect(() => {
-    if (resendSeconds <= 0) return undefined
-    const timer = window.setInterval(() => {
-      setResendSeconds((seconds) => Math.max(0, seconds - 1))
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [resendSeconds])
-
-  function persistSession(nextValues = {}) {
-    const nextSession = {
-      uid,
-      email,
-      verificationCode: nextValues.verificationCode ?? devCode,
-      devNote: nextValues.devNote ?? devNote,
-    }
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSession))
-  }
-
-  function updateDigit(index, value) {
-    const digit = value.replace(/\D/g, '').slice(-1)
-    setDigits((current) => {
-      const next = [...current]
-      next[index] = digit
-      return next
-    })
-    setError('')
-
-    if (digit && index < CODE_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  function handleKeyDown(index, event) {
-    if (event.key === 'Backspace' && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
-    if (event.key === 'ArrowLeft' && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
-    if (event.key === 'ArrowRight' && index < CODE_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  function handlePaste(event) {
-    const pastedCode = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, CODE_LENGTH)
-    if (!pastedCode) return
-    event.preventDefault()
-    setDigits(Array.from({ length: CODE_LENGTH }, (_, index) => pastedCode[index] || ''))
-    inputRefs.current[Math.min(pastedCode.length, CODE_LENGTH) - 1]?.focus()
-  }
+  const [resent, setResent] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
-    setError('')
-    setSuccess('')
+    setError(null)
 
-    if (!hasValidSession) {
-      setError('Session de verification invalide. Veuillez recommencer l inscription.')
-      return
-    }
-    if (code.length !== CODE_LENGTH) {
-      setError('Saisissez les 6 chiffres du code de verification.')
+    if (!uid) {
+      setError(t('verifyEmail.errors.invalidSession', 'Session invalide. Veuillez vous inscrire a nouveau.'))
       return
     }
 
     setLoading(true)
-    const result = await verifyEmail(uid, code)
+    const result = await verifyEmail(uid, code.trim())
     setLoading(false)
 
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
-
-    sessionStorage.removeItem(SESSION_KEY)
-    setSuccess('Votre adresse e-mail est verifiee. Redirection vers la connexion...')
-    window.setTimeout(() => {
+    if (result.success) {
       navigate('/login', {
         replace: true,
-        state: { message: 'Email verifie. Vous pouvez maintenant vous connecter.' },
+        state: { message: t('verifyEmail.success.emailVerified', 'Email verifie. Vous pouvez vous connecter.') },
       })
-    }, 1200)
+    } else {
+      setError(result.error)
+    }
   }
 
   async function handleResend() {
-    if (!email || resendSeconds > 0) return
+    if (!email) {
+      setError(t('verifyEmail.errors.missingEmail', 'Adresse e-mail manquante. Veuillez vous inscrire a nouveau.'))
+      return
+    }
 
-    setError('')
-    setSuccess('')
+    setError(null)
+    setResent(false)
     setLoading(true)
     const result = await resendVerificationCode(email)
     setLoading(false)
 
-    if (!result.success) {
+    if (result.success) {
+      setResent(true)
+      if (result.data?.verificationCode) {
+        setDevCode(result.data.verificationCode)
+        setCode(result.data.verificationCode)
+      }
+    } else {
       setError(result.error)
-      return
     }
-
-    const nextCode = result.data?.verificationCode || ''
-    const nextNote = result.data?.devNote || ''
-    setDevCode(nextCode)
-    setDevNote(nextNote)
-    setDigits(Array.from({ length: CODE_LENGTH }, (_, index) => nextCode[index] || ''))
-    persistSession({ verificationCode: nextCode, devNote: nextNote })
-    setResendSeconds(60)
-    setSuccess('Un nouveau code de verification a ete envoye.')
   }
 
   return (
     <div className="w-full max-w-md">
       <div className="mb-8">
-        <div className="mb-4 grid h-12 w-12 place-items-center rounded-lg bg-[#00694c] text-white">
-          <ShieldCheck size={24} />
+        <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-[#00694c] text-white">
+          <ShieldCheck size={22} />
         </div>
-        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">Verifier votre e-mail</h2>
+        <h2 className="text-[32px] font-semibold leading-tight text-[#171d1a]">{t('verifyEmail.title', 'Verifier votre e-mail')}</h2>
         <p className="mt-2 text-sm leading-6 text-[#3d4943]">
           {email
-            ? <>Nous avons envoye un code a <strong>{email}</strong>. Saisissez-le pour activer votre compte.</>
-            : 'Votre session a expire. Revenez a l inscription pour recevoir un nouveau code.'}
+            ? t('verifyEmail.subtitleWithEmail', 'Un code de verification a ete envoye a {{email}}. Saisissez-le ci-dessous pour activer votre compte.', { email })
+            : t('verifyEmail.subtitleNoEmail', 'Saisissez le code de verification recu par e-mail pour activer votre compte.')}
         </p>
       </div>
 
-      {devCode && (
-        <div className="mb-5 rounded-lg border border-[#d2e4ff] bg-[#eff5ef] p-4 text-sm text-[#3d4943]">
-          <p className="font-semibold text-[#171d1a]">Mode developpement</p>
-          <p className="mt-1">{devNote || 'SMTP non configure : utilisez temporairement ce code local.'}</p>
-          <p className="mt-2 font-mono text-xl font-bold tracking-[0.35em] text-[#00694c]">{devCode}</p>
+      {devCode ? (
+        <div className="mb-4 rounded-lg border border-[#d2e4ff] bg-[#eff5ef] px-3 py-3 text-sm text-[#3d4943]">
+          <p className="font-semibold text-[#171d1a]">{t('verifyEmail.devMode.title', 'Mode developpement')}</p>
+          <p className="mt-1">
+            {devNote || t('verifyEmail.devMode.note', "SMTP n'est pas configure. Utilisez ce code pour verifier votre compte :")}
+          </p>
+          <p className="mt-2 font-mono text-lg font-bold tracking-widest text-[#00694c]">{devCode}</p>
         </div>
-      )}
+      ) : null}
 
-      {hasValidSession ? (
-        <>
-          <form onSubmit={handleSubmit}>
-            <fieldset disabled={loading || Boolean(success)}>
-              <legend className="text-xs font-semibold uppercase text-[#3d4943]">Code de verification</legend>
-              <div className="mt-3 grid grid-cols-6 gap-2" onPaste={handlePaste}>
-                {digits.map((digit, index) => (
-                  <input
-                    aria-label={`Chiffre ${index + 1} du code`}
-                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
-                    className="aspect-square min-w-0 rounded-lg border border-[#bccac1] bg-[#eff5ef] text-center text-xl font-bold text-[#171d1a] outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
-                    inputMode="numeric"
-                    key={index}
-                    maxLength={1}
-                    ref={(element) => { inputRefs.current[index] = element }}
-                    value={digit}
-                    onChange={(event) => updateDigit(index, event.target.value)}
-                    onKeyDown={(event) => handleKeyDown(index, event)}
-                  />
-                ))}
-              </div>
-            </fieldset>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <label className="block">
+          <span className="ml-1 text-xs font-semibold uppercase tracking-wide text-[#3d4943]">{t('verifyEmail.form.codeLabel', 'Code de verification')}</span>
+          <div className="relative mt-2">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a73]" size={17} />
+            <input
+              className="w-full rounded-lg border border-[#bccac1] bg-[#eff5ef] py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[#00694c] focus:ring-2 focus:ring-[#00694c]"
+              inputMode="numeric"
+              maxLength={6}
+              name="code"
+              onChange={(event) => setCode(event.target.value)}
+              placeholder="123456"
+              required
+              type="text"
+              value={code}
+            />
+          </div>
+        </label>
 
-            {error && (
-              <p className="mt-4 rounded-lg border border-[#ffdad6] bg-[#fff5f4] px-3 py-2 text-sm text-[#7e2a27]">
-                {error}
-              </p>
-            )}
-            {success && (
-              <p className="mt-4 flex items-center gap-2 rounded-lg border border-[#68dbae] bg-[#eff5ef] px-3 py-2 text-sm text-[#00513a]">
-                <CheckCircle2 size={17} />
-                {success}
-              </p>
-            )}
+        {error ? (
+          <p className="rounded-lg border border-[#ffdad6] bg-[#fff5f4] px-3 py-2 text-sm text-[#7e2a27]">{error}</p>
+        ) : null}
 
-            <button
-              className="mt-5 w-full rounded-lg bg-[#00694c] px-4 py-3 text-sm font-bold text-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:bg-[#008560] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={loading || code.length !== CODE_LENGTH || Boolean(success)}
-              type="submit"
-            >
-              {loading ? 'Verification...' : 'Verifier mon compte'}
-            </button>
-          </form>
+        {resent ? (
+          <p className="rounded-lg border border-[#d2e4ff] bg-[#eff5ef] px-3 py-2 text-sm text-[#3d4943]">
+            {t('verifyEmail.resentNotice', 'Un nouveau code a ete envoye.')}
+          </p>
+        ) : null}
 
-          <button
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm font-semibold text-[#171d1a] transition hover:border-[#00694c] hover:text-[#00694c] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={loading || resendSeconds > 0 || Boolean(success)}
-            type="button"
-            onClick={handleResend}
-          >
-            <RefreshCw size={17} />
-            {resendSeconds > 0 ? `Renvoyer dans ${resendSeconds}s` : 'Renvoyer le code'}
-          </button>
-        </>
-      ) : (
-        <Link
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#00694c] px-4 py-3 text-sm font-bold text-white"
-          to="/register"
+        <button
+          className="w-full rounded-lg bg-[#00694c] px-4 py-3 text-sm font-bold text-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:bg-[#008560] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={loading}
+          type="submit"
         >
-          <ArrowLeft size={17} />
-          Recommencer l inscription
-        </Link>
-      )}
+          {loading ? t('verifyEmail.form.submitting', 'Verification...') : t('verifyEmail.form.submit', 'Verifier mon e-mail')}
+        </button>
+      </form>
 
-      <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs leading-5 text-[#6d7a73]">
-        <Mail size={15} />
-        Le code expire apres une heure.
+      <button
+        className="mt-4 w-full rounded-lg border border-[#bccac1] bg-white px-4 py-3 text-sm font-semibold text-[#171d1a] transition hover:border-[#00694c] hover:text-[#00694c] disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={loading || !email}
+        onClick={handleResend}
+        type="button"
+      >
+        {t('verifyEmail.resendButton', 'Renvoyer le code')}
+      </button>
+
+      <p className="mt-6 text-center text-sm text-[#3d4943]">
+        <Link className="font-semibold text-[#00694c] hover:text-[#008560]" to="/register">
+          {t('verifyEmail.backToRegister', "Retour a l'inscription")}
+        </Link>
       </p>
     </div>
   )

@@ -482,13 +482,9 @@ class ApiValidationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("reminder_days must be between 0 and 30", response.get_json()["error"])
 
-    @patch("appointments._get_user_doctor_emails", return_value=(
-        {"email": "patient@example.com", "name": "Jane Doe"},
-        {"email": "doctor@example.com", "name": "Dr. Ahmed"}
-    ))
     @patch("appointments._send_appointment_email")
     @patch("appointments.get_db_connection")
-    def test_delete_appointment_returns_200(self, mock_db_connection, mock_send_email, mock_get_emails):
+    def test_delete_appointment_returns_200(self, mock_db_connection, mock_send_email):
         mock_conn, mock_cursor = self.make_db_mock()
         mock_db_connection.return_value = mock_conn
         mock_cursor.fetchone.return_value = {
@@ -504,7 +500,7 @@ class ApiValidationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["message"], "Appointment deleted successfully!")
         self.assertTrue(any(call.args[0].startswith("DELETE FROM appointments WHERE") for call in mock_cursor.execute.call_args_list))
-        self.assertEqual(mock_get_emails.call_count, 2)
+        self.assertEqual(mock_send_email.call_count, 1)
 
     def test_get_doctor_not_found_returns_404(self):
         with patch("doctors.get_db_connection") as mock_db_connection:
@@ -530,7 +526,7 @@ class ApiValidationTests(unittest.TestCase):
     @patch("auth.decode_auth_token")
     def test_create_alert_missing_required_returns_400(self, mock_decode_auth, mock_db_connection):
         mock_db_connection.return_value = MagicMock()
-        mock_decode_auth.return_value = {"uid": encode_id(1), "role": "doctor"}
+        mock_decode_auth.return_value = {"uid": encode_id(1), "role": "user"}
 
         response = self.client.post(
             "/api/alerts",

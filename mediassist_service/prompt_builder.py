@@ -4,29 +4,32 @@ patient's submitted data (profile, measures, symptoms, lifestyle).
 """
 
 import json
+import re
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 
 
 def calc_imc(weight, height):
     try:
         w, h = float(weight), float(height)
     except (TypeError, ValueError):
-        return "N/R", "Non renseigne"
+        return "N/R", "Non renseigné"
     if not w or not h:
-        return "N/R", "Non renseigne"
+        return "N/R", "Non renseigné"
 
     value = w / (h / 100) ** 2
     if value < 18.5:
-        categorie = "Insuffisance ponderale"
+        categorie = "Insuffisance pondérale"
     elif value < 25:
         categorie = "Poids normal"
     elif value < 30:
         categorie = "Surpoids"
     elif value < 35:
-        categorie = "Obesite classe I"
+        categorie = "Obésité classe I"
     elif value < 40:
-        categorie = "Obesite classe II"
+        categorie = "Obésité classe II"
     else:
-        categorie = "Obesite classe III"
+        categorie = "Obésité classe III"
     return f"{value:.1f}", categorie
 
 
@@ -34,9 +37,9 @@ def categorie_tension(systolique, diastolique):
     try:
         s, d = float(systolique), float(diastolique)
     except (TypeError, ValueError):
-        return "Non mesuree"
+        return "Non mesurée"
     if not systolique or not diastolique:
-        return "Non mesuree"
+        return "Non mesurée"
 
     if s >= 180 or d >= 120:
         return "HTA grade 3 - crise hypertensive"
@@ -45,7 +48,7 @@ def categorie_tension(systolique, diastolique):
     if s >= 130 or d >= 80:
         return "HTA grade 1"
     if s >= 120:
-        return "Tension elevee"
+        return "Tension élevée"
     return "Normale"
 
 
@@ -67,27 +70,27 @@ def _build_vars(p):
     imc, categorie_imc = calc_imc(p.get("weight"), p.get("height"))
 
     allergies = (
-        (p.get("drugAllergies") or "Non precisees")
+        (p.get("drugAllergies") or "Non précisées")
         if p.get("hasDrugAllergies") == "Oui"
         else "Aucune allergie connue"
     )
     medicaments = (
-        (p.get("currentMedications") or "Non precises")
+        (p.get("currentMedications") or "Non précisés")
         if p.get("hasCurrentMedications") == "Oui"
         else "Aucun traitement en cours"
     )
     complements = (
-        (p.get("supplements") or "Non precises")
+        (p.get("supplements") or "Non précisés")
         if p.get("hasSupplements") == "Oui"
         else "Aucun"
     )
     tabac = (
-        f"Oui ({p.get('tobaccoQuantity') or 'quantite non precisee'})"
+        f"Oui ({p.get('tobaccoQuantity') or 'quantité non précisée'})"
         if p.get("tobacco") == "Oui"
         else "Non"
     )
     alcool = (
-        f"Oui ({p.get('alcoholQuantity') or 'frequence non precisee'})"
+        f"Oui ({p.get('alcoholQuantity') or 'fréquence non précisée'})"
         if p.get("alcohol") == "Oui"
         else "Non"
     )
@@ -100,9 +103,9 @@ def _build_vars(p):
         "{allergies}": allergies,
         "{medicaments}": medicaments,
         "{complements}": complements,
-        "{observance}": p.get("treatmentAdherence") or "Non renseignee",
+        "{observance}": p.get("treatmentAdherence") or "Non renseignée",
         "{maladies_chroniques}": _join(p.get("chronicDiseases"), "Aucune"),
-        "{antecedents_familiaux}": _join(p.get("familyHistory"), "Non renseignes"),
+        "{antecedents_familiaux}": _join(p.get("familyHistory"), "Non renseignés"),
         "{tabac}": tabac,
         "{alcool}": alcool,
         "{age}": _falsy(p.get("age")),
@@ -119,16 +122,16 @@ def _build_vars(p):
         "{spo2}": _falsy(p.get("spo2")),
         "{temperature}": _falsy(p.get("temperature")),
         "{glycemie}": _falsy(p.get("glycemia")),
-        "{variation_poids}": p.get("weightVariation") or "Non renseignee",
-        "{symptomes}": _join(symptomes, "Non renseignes"),
+        "{variation_poids}": p.get("weightVariation") or "Non renseignée",
+        "{symptomes}": _join(symptomes, "Non renseignés"),
         "{intensite}": _nullish(p.get("painIntensity")),
-        "{duree}": p.get("symptomDuration") or "Non renseignee",
-        "{localisation}": _join(p.get("painLocation"), "Non precisee"),
-        "{declenchants}": _join(p.get("triggers"), "Non precises"),
-        "{etat_general}": p.get("generalState") or "Non renseigne",
-        "{activite_physique}": p.get("physicalActivity") or "Non renseignee",
-        "{alimentation}": _join(p.get("diet"), "Non renseignee"),
-        "{sommeil}": p.get("sleepQuality") or "Non renseignee",
+        "{duree}": p.get("symptomDuration") or "Non renseignée",
+        "{localisation}": _join(p.get("painLocation"), "Non précisée"),
+        "{declenchants}": _join(p.get("triggers"), "Non précisés"),
+        "{etat_general}": p.get("generalState") or "Non renseigné",
+        "{activite_physique}": p.get("physicalActivity") or "Non renseignée",
+        "{alimentation}": _join(p.get("diet"), "Non renseignée"),
+        "{sommeil}": p.get("sleepQuality") or "Non renseignée",
         "{stress}": _falsy(p.get("stressLevel")),
     }
 
@@ -253,6 +256,13 @@ pas redonné à chaque message. Distingue deux types de message utilisateur :
   suivre", donne des conseils concrets de sommeil/activité/alimentation/stress
   adaptés au profil — pas un résumé clinique).
 
+  INTERDICTION ABSOLUE : ne termine JAMAIS le champ "analyse" par une phrase
+  qui annonce une liste ou des explications à venir ("Voici les principes
+  généraux :", "Voici quelques conseils :"...) sans écrire cette liste dans
+  la foulée, dans la même réponse. Si tu annonces "Voici X :", le contenu de
+  X doit immédiatement suivre, intégré aux paragraphes — une "analyse" qui se
+  termine sur ":" est toujours une erreur, quelle que soit sa longueur.
+
 ### [9] FORMAT DE RÉPONSE — RAPPEL FINAL ###
 
 Rappel des règles critiques :
@@ -308,19 +318,25 @@ UNIQUEMENT : "haute", "moyenne", "basse".
   - "basse"   → conseil général, prévention à long terme
 Trie les recommandations par priorité décroissante (haute → moyenne → basse).
 
+Les valeurs ci-dessous (XXX/YY, ZZ.Z...) sont des PLACEHOLDERS purement illustratifs
+du format attendu — elles ne décrivent aucun patient réel. Ne les recopie JAMAIS
+dans une vraie réponse : remplace-les toujours par les valeurs réelles du patient
+données en [5]/[6], et si une mesure n'a pas été fournie, ne crée aucune alerte ou
+phrase à son sujet plutôt que d'inventer un chiffre plausible.
+
 Structure JSON obligatoire :
 {
   "urgence": "normale",
   "alertes": [
     {
       "titre": "Tension artérielle élevée",
-      "detail": "148/92 mmHg — HTA grade 2 confirmée.",
+      "detail": "XXX/YY mmHg — HTA grade 2 confirmée.",
       "action": "Consultez votre médecin généraliste dans la semaine.",
       "urgence": "moderee"
     }
   ],
   "resume_situation": "...",
-  "analyse": "Votre **tension artérielle (148/92 mmHg)** et votre **IMC de 31.6** forment ensemble un facteur de risque cardiovasculaire significatif.\n\nVos vertiges peuvent être liés à une **hypotension orthostatique**, favorisée par votre sommeil de mauvaise qualité.\n\nCette combinaison justifie une consultation rapide pour ajuster votre suivi.",
+  "analyse": "Votre **tension artérielle (XXX/YY mmHg)** et votre **IMC de ZZ.Z** forment ensemble un facteur de risque cardiovasculaire significatif.\n\nVos vertiges peuvent être liés à une **hypotension orthostatique**, favorisée par votre sommeil de mauvaise qualité.\n\nCette combinaison justifie une consultation rapide pour ajuster votre suivi.",
   "recommandations": [
     {
       "titre": "...",
@@ -430,3 +446,295 @@ def build_doctor_agent_messages(alerts, recommendations, orientation):
         {"role": "system", "content": DOCTOR_AGENT_SYSTEM_PROMPT},
         {"role": "user", "content": user_content},
     ]
+
+
+# ── Trend analysis (health-history "Analyser mes tendances") ────────────────
+# Reasons over the patient's raw vitals/symptom entries across a date range —
+# closer to the full clinical reasoning of the main chat than to the Doctor
+# Agent's distilled-signal decision, hence the default medgemma1.5 model
+# (see mediassist_service/app.py's analyze_trends route).
+TREND_ANALYSIS_SYSTEM_PROMPT = """Tu es MediAssist, assistant médical intelligent de l'application Smart Health Tracker.
+
+On te donne la liste chronologique des relevés de santé (signes vitaux, symptômes,
+antécédents) qu'un patient a soumis sur une période donnée. Ta tâche : analyser
+l'ÉVOLUTION de ces données dans le temps — pas un relevé isolé — et identifier les
+tendances, les points de vigilance qui se dégagent sur la durée, et des
+recommandations adaptées.
+
+Limites absolues — toujours respectées :
+- Tu ne poses jamais de diagnostic médical définitif.
+- Tu ne remplaces jamais une consultation médicale.
+- Si les données sont trop rares ou stables pour dégager une tendance, dis-le
+  clairement plutôt que d'inventer une évolution.
+- INTERDICTION ABSOLUE d'inventer une donnée absente des relevés : si un champ
+  (localisation de la douleur, antécédent, allergie...) n'est pas renseigné dans
+  les relevés fournis, ne le mentionne JAMAIS, même de façon plausible ou générique
+  (ex : ne dis pas "douleur thoracique" si aucune localisation de douleur n'a été
+  fournie — parle seulement de "douleur" sans préciser de localisation inventée).
+  Cite uniquement les valeurs et libellés exacts présents dans les relevés.
+- RÈGLE SPÉCIFIQUE, particulièrement stricte : ne mentionne JAMAIS une localisation
+  anatomique de la douleur (thoracique, abdominale, dorsale, lombaire...) que tu
+  n'as pas lue mot pour mot dans le champ localisation d'un relevé. Une localisation
+  de douleur inventée est une erreur clinique grave (ex: une "douleur thoracique"
+  inventée évoque une cause cardiaque que rien dans les données ne permet
+  d'affirmer). En l'absence de localisation fournie, utilise uniquement le mot
+  "douleur" seul, sans qualificatif anatomique de ton invention.
+
+Adresse-toi directement au patient avec "vous". Langue : détecte celle des
+données textuelles (symptômes, notes) ; à défaut, réponds en français.
+
+Réponds STRICTEMENT en JSON valide, sans aucun texte avant ou après, selon ce schéma :
+{
+  "periode": "string décrivant la période couverte",
+  "synthese": "Minimum 3 phrases, raisonnement sur l'évolution globale, adressé au patient (vous).",
+  "tendances": [
+    {
+      "indicateur": "ex: Tension artérielle systolique",
+      "valeur_debut": 142,
+      "valeur_fin": 120,
+      "evolution": "hausse|baisse|stable|irreguliere",
+      "detail": "Valeurs précises au début et à la fin de la période, ampleur du changement."
+    }
+  ],
+  "points_attention": [
+    {
+      "titre": "string",
+      "detail": "Explication factuelle avec valeurs précises.",
+      "urgence": "normale|moderee|elevee|critique"
+    }
+  ],
+  "recommandations": [
+    {
+      "titre": "string",
+      "detail": "Action concrète.",
+      "priorite": "haute|moyenne|basse"
+    }
+  ],
+  "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale."
+}
+
+Règles :
+- "tendances" : un objet par indicateur pour lequel au moins deux mesures permettent
+  de comparer une évolution — couvre TOUS les indicateurs chiffrés présents dans les
+  relevés (tension systolique ET diastolique, fréquence cardiaque, fréquence
+  respiratoire, température, SpO2, glycémie, poids, intensité de douleur...). Un
+  indicateur présent dans au moins deux relevés ne doit jamais être omis du tableau,
+  même si son évolution paraît secondaire par rapport aux autres.
+- "valeur_debut" et "valeur_fin" DOIVENT être des nombres bruts (pas de texte, pas
+  d'unité) correspondant exactement à la mesure du relevé le PLUS ANCIEN et du
+  relevé le PLUS RÉCENT de la période pour cet indicateur. "evolution" sera
+  recalculé automatiquement à partir de ces deux nombres — assure-toi donc qu'ils
+  reflètent fidèlement les deux extrémités chronologiques (ne les inverse jamais),
+  car "detail" doit raconter exactement la même direction que ces deux valeurs.
+- Ne compare jamais uniquement le premier et le dernier relevé : examine aussi les
+  points intermédiaires. Si la dégradation/amélioration est déjà visible avant le
+  dernier relevé, dis-le explicitement ("detail" doit refléter une tendance
+  progressive sur plusieurs relevés, pas seulement un écart début/fin) — distingue
+  toujours une évolution progressive d'un évènement isolé sur un seul relevé.
+- Pour chaque symptôme mentionné dans la synthèse ou les points d'attention, vérifie
+  à QUELLE(S) DATE(S) PRÉCISE(S) il apparaît réellement dans les relevés fournis.
+  N'écris jamais qu'un symptôme "persiste" ou "continue" à une date donnée s'il
+  n'est pas explicitement listé dans le relevé de cette date exacte — s'il a
+  disparu au dernier relevé, dis qu'il a disparu/régressé, pas qu'il persiste.
+- Croise les symptômes rapportés avec l'évolution des mesures chiffrées UNIQUEMENT
+  quand un lien clinique est réellement plausible et direct (ex: fièvre + fréquence
+  respiratoire élevée). Ne crée JAMAIS de lien causal entre deux faits qui n'ont pas
+  de rapport physiologique établi (ex: ne dis pas qu'une baisse de fréquence
+  cardiaque "explique" des vertiges, ou l'inverse) — décris les faits séparément
+  plutôt que d'inventer une corrélation non justifiée.
+- Seuils cliniques de référence pour fixer "urgence" (ne classe jamais "normale" un
+  point qui dépasse ces seuils) :
+  - SpO2 < 95% → au moins "moderee" (hypoxémie significative en dessous de ce seuil) ;
+    < 90% → au moins "elevee".
+  - Température >= 38.0°C → fièvre avérée, au moins "moderee" ; >= 39.5°C → "elevee".
+  - Fréquence cardiaque < 50 ou > 100 bpm → au moins "moderee".
+  - Tension systolique > 140 ou < 90 mmHg, ou diastolique > 90 ou < 60 mmHg → au
+    moins "moderee" ; systolique >= 180 ou diastolique >= 120 → "critique".
+  - Fréquence respiratoire > 20 ou < 12 /min → au moins "moderee".
+  Une valeur qui s'aggrave ET franchit un de ces seuils combinée à des symptômes
+  cohérents (ex: SpO2 basse + toux + fièvre) justifie au minimum "elevee".
+- "points_attention" : uniquement des constats basés sur les données fournies, jamais
+  d'hypothèse non étayée. Tableau vide si rien ne le justifie.
+- "recommandations" : maximum 5, triées par priorité décroissante.
+- S'il n'y a qu'un seul relevé sur la période, "tendances" reste vide et "synthese"
+  l'explique au patient plutôt que d'inventer une évolution.
+- "synthese" est un paragraphe de RAPPORT MEDICAL destiné à être imprimé, pas un
+  message de chat : commence directement par le raisonnement clinique sur
+  l'évolution des données. N'utilise JAMAIS de formule de politesse ou d'ouverture
+  conversationnelle ("Bonjour", "Cher patient", "J'ai analysé...") ni de clôture
+  ("N'hésitez pas...") — uniquement le constat clinique factuel.
+- Une amélioration globale ne doit JAMAIS être présentée comme "tout va bien" si le
+  point de départ de la période franchissait un des seuils cliniques ci-dessus :
+  rappelle explicitement dans "synthese" que la valeur de départ était hors norme,
+  même si la tendance est positive — une trajectoire qui s'améliore en partant d'un
+  état préoccupant reste un état qui a été préoccupant, pas un non-évènement."""
+
+TREND_ANALYSIS_USER_TEMPLATE = """Période analysée : {periode_label}
+Nombre de relevés : {nombre_releves}
+
+Relevés chronologiques (du plus ancien au plus récent) :
+{releves_texte}
+
+Analyse l'évolution de ces données sur la période et réponds selon le format JSON demandé."""
+
+_TREND_FIELDS = [
+    ("heart_rate", "FC", "bpm"),
+    ("systolic_bp", "TA sys", "mmHg"),
+    ("diastolic_bp", "TA dia", "mmHg"),
+    ("temperature", "Temp", "°C"),
+    ("oxygen_saturation", "SpO2", "%"),
+    ("respiratory_rate", "FR", "/min"),
+    ("glycemia", "Glycemie", "g/L"),
+    ("weight", "Poids", "kg"),
+    ("pain_intensity", "Douleur", "/10"),
+]
+_TREND_TEXT_FIELDS = [
+    ("symptoms", "Symptomes"),
+    ("pain_location", "Localisation douleur"),
+    ("health_issues_history", "Antecedents"),
+    ("drug_allergies", "Allergies"),
+    ("family_health_issues", "Antecedents familiaux"),
+    ("notes", "Notes"),
+]
+
+
+def _parse_vital_date(value):
+    """Parse recorded_at/created_at into a datetime for chronological sorting.
+
+    Flask serializes MySQL datetimes as RFC1123 strings (e.g. "Thu, 18 Jun
+    2026 14:20:12 GMT"), but tolerate ISO-ish strings too in case the shape
+    of the data feeding this changes upstream.
+    """
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    text = str(value)
+    try:
+        return parsedate_to_datetime(text)
+    except (TypeError, ValueError):
+        pass
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text[:19], fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _format_vital_entry(vital):
+    date = vital.get("recorded_at") or vital.get("created_at") or "Date inconnue"
+    parts = [
+        f"{label}={vital[field]}{unit}"
+        for field, label, unit in _TREND_FIELDS
+        if vital.get(field) is not None
+    ]
+    line = f"- {date} : " + (", ".join(parts) if parts else "aucune mesure chiffree")
+    for field, label in _TREND_TEXT_FIELDS:
+        value = vital.get(field)
+        if value:
+            line += f" | {label}: {value}"
+    return line
+
+
+def build_trend_analysis_messages(vitals, period_label):
+    # The backend returns vitals newest-first (ORDER BY recorded_at DESC);
+    # re-sort oldest-first here since the prompt below explicitly tells the
+    # model the list is chronological, and the model otherwise reads
+    # "first line" as the start of the trend instead of the most recent entry.
+    entries = sorted(vitals or [], key=lambda v: _parse_vital_date(v.get("recorded_at") or v.get("created_at")) or datetime.min)
+    releves_texte = "\n".join(_format_vital_entry(v) for v in entries) or "Aucun relevé sur cette période."
+    user_content = TREND_ANALYSIS_USER_TEMPLATE.format(
+        periode_label=period_label or "non précisée",
+        nombre_releves=len(entries),
+        releves_texte=releves_texte,
+    )
+    return [
+        {"role": "system", "content": TREND_ANALYSIS_SYSTEM_PROMPT},
+        {"role": "user", "content": user_content},
+    ]
+
+
+_GREETING_OPENER = re.compile(r"^\s*(bonjour|cher(?:e)?\s+patient(?:e)?)[.,!\s]*", re.IGNORECASE)
+_SELF_REFERENTIAL_OPENER = re.compile(
+    r"^\s*j['’]ai analys[ée].*?[.!?](?:\s+|$)", re.IGNORECASE,
+)
+
+
+def clean_trend_synthese(text):
+    """Strip a leading chat-style greeting/self-reference the model sometimes
+    adds despite the system prompt forbidding it (e.g. "Bonjour. J'ai
+    analysé..."), since this is rendered into a printed medical report, not a
+    conversation. Best-effort: falls back to the original text if stripping
+    would leave nothing."""
+    if not text:
+        return text
+    cleaned = _GREETING_OPENER.sub("", text).strip()
+    cleaned = _SELF_REFERENTIAL_OPENER.sub("", cleaned, count=1).strip()
+    return cleaned or text
+
+
+def normalize_tendances(tendances):
+    """Recompute each tendance's "evolution" from its valeur_debut/valeur_fin
+    instead of trusting the model's own label. The model has been observed
+    writing a "hausse"/"baisse" tag that contradicts the very values (and even
+    the synthese) in the same response — this makes the displayed badge
+    deterministically consistent with the numbers, regardless of what the
+    model's free text says."""
+    normalized = []
+    for t in tendances or []:
+        item = dict(t)
+        start, end = item.get("valeur_debut"), item.get("valeur_fin")
+        try:
+            start_f, end_f = float(start), float(end)
+        except (TypeError, ValueError):
+            normalized.append(item)
+            continue
+        if abs(end_f - start_f) < 1e-9:
+            item["evolution"] = "stable"
+        else:
+            item["evolution"] = "hausse" if end_f > start_f else "baisse"
+        normalized.append(item)
+    return normalized
+
+
+def _as_text(value):
+    """Coerce a field the model should have written as a string but
+    sometimes emits as [] or {} (observed: it omits "analyse" entirely and
+    leaves "resume_situation"/"orientation"/"disclaimer" as empty arrays
+    instead — see mediassist_service/app.py's chat route). [] and {} are
+    truthy in JS, so passing them through as-is crashes the chat UI, which
+    calls .split() on whatever it receives expecting a string."""
+    if isinstance(value, str):
+        return value
+    if value in (None, [], {}):
+        return ""
+    return str(value)
+
+
+_LIST_PROMISE_RE = re.compile(r"[:：]\s*$")
+
+
+def response_is_incomplete(parsed):
+    """True if "analyse" ends on a colon — the model has been observed
+    planning a detailed list in its own reasoning (e.g. 9 bullet points on
+    managing obesity) and then closing the JSON string right after
+    announcing it ("Voici les principes generaux :") without ever writing
+    the list. Cheap, reliable signal that the turn needs a retry."""
+    analyse = (parsed or {}).get("analyse") or ""
+    return bool(_LIST_PROMISE_RE.search(analyse.rstrip()))
+
+
+def normalize_chat_response(parsed):
+    """Guarantees the fields the chat UI renders as text/lists/dict are
+    actually of that type, regardless of what the model put in them."""
+    parsed["analyse"] = _as_text(parsed.get("analyse"))
+    parsed["resume_situation"] = _as_text(parsed.get("resume_situation"))
+    parsed["disclaimer"] = _as_text(parsed.get("disclaimer"))
+    if not isinstance(parsed.get("alertes"), list):
+        parsed["alertes"] = []
+    if not isinstance(parsed.get("recommandations"), list):
+        parsed["recommandations"] = []
+    if not isinstance(parsed.get("orientation"), dict):
+        parsed["orientation"] = None
+    return parsed

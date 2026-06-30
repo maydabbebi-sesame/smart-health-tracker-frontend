@@ -29,7 +29,7 @@ export async function submitForm(formType, answers) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to submit form',
+        'Impossible de soumettre le formulaire',
     }
   }
 }
@@ -56,7 +56,7 @@ export async function getForms(page = 1, pageSize = 20, formType = null) {
 
     return {
       success: false,
-      error: response.data.error || 'Failed to fetch forms',
+      error: response.data.error || 'Impossible de récupérer les formulaires',
     }
   } catch (error) {
     return {
@@ -64,7 +64,7 @@ export async function getForms(page = 1, pageSize = 20, formType = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch forms',
+        'Impossible de récupérer les formulaires',
     }
   }
 }
@@ -82,7 +82,7 @@ export async function getFormById(id) {
 
     return {
       success: false,
-      error: response.data.error || 'Failed to fetch form',
+      error: response.data.error || 'Impossible de récupérer le formulaire',
     }
   } catch (error) {
     return {
@@ -90,7 +90,7 @@ export async function getFormById(id) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch form',
+        'Impossible de récupérer le formulaire',
     }
   }
 }
@@ -119,7 +119,7 @@ export async function getFormHistory(page = 1, pageSize = 20, formType = null) {
 
     return {
       success: false,
-      error: response.data.error || 'Failed to fetch form history',
+      error: response.data.error || 'Impossible de récupérer l\'historique des formulaires',
     }
   } catch (error) {
     return {
@@ -127,7 +127,7 @@ export async function getFormHistory(page = 1, pageSize = 20, formType = null) {
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to fetch form history',
+        'Impossible de récupérer l\'historique des formulaires',
     }
   }
 }
@@ -152,7 +152,7 @@ export async function exportForms(format = 'csv', dateFrom = null, dateTo = null
 
     return {
       success: false,
-      error: response.data.error || 'Failed to export forms',
+      error: response.data.error || 'Impossible d\'exporter les formulaires',
     }
   } catch (error) {
     return {
@@ -160,7 +160,7 @@ export async function exportForms(format = 'csv', dateFrom = null, dateTo = null
       error:
         error.response?.data?.error ||
         error.message ||
-        'Failed to export forms',
+        'Impossible d\'exporter les formulaires',
     }
   }
 }

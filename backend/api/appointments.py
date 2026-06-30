@@ -82,42 +82,37 @@ def _send_appointment_email(subject: str, body: str, to_email: str):
         send_email(to_email, subject, body)
 
 
-def _get_user_doctor_emails(conn, user_id: int, doctor_id: int):
+def _send_patient_confirmation(conn, appointment: dict):
+    """Send a confirmation email to the patient only — the app is a personal
+    reminder tool; the doctor is not notified through it."""
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT email, name FROM users WHERE id = %s", (user_id,))
+    cursor.execute("SELECT email FROM users WHERE id = %s", (appointment["user_id"],))
     user = cursor.fetchone()
-    cursor.execute("SELECT email, name FROM doctors WHERE id = %s", (doctor_id,))
-    doctor = cursor.fetchone()
     cursor.close()
-    return user, doctor
-
-
-def _send_confirmation_emails(conn, user_id: int, doctor_id: int, appointment_date: str, appointment_time: str):
-    user, doctor = _get_user_doctor_emails(conn, user_id, doctor_id)
-    if not user or not doctor:
+    if not user:
         return
+    doctor_name = appointment.get("doctor_name") or "votre médecin"
+    appointment_date = appointment.get("appointment_date")
+    appointment_time = appointment.get("appointment_time")
     body = (
-        f"Your appointment with Dr. {doctor.get('name')} is scheduled for {appointment_date} at {appointment_time}.\n"
-        f"Thank you for choosing SmartHealth."
+        f"Votre rendez-vous avec Dr. {doctor_name} est enregistré pour le {appointment_date} à {appointment_time}.\n"
+        f"Merci d'utiliser SmartHealth."
     )
-    _send_appointment_email(
-        "Appointment Confirmation",
-        body,
-        user.get("email")
-    )
-    _send_appointment_email(
-        "New Appointment Scheduled",
-        f"A new appointment has been booked with {user.get('name')} on {appointment_date} at {appointment_time}.",
-        doctor.get("email")
-    )
+    _send_appointment_email("Confirmation de rendez-vous", body, user.get("email"))
 
 
 def _send_reminder_email(conn, appointment):
-    user, doctor = _get_user_doctor_emails(conn, appointment["user_id"], appointment["doctor_id"])
-    if not user or not doctor:
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT email, name FROM users WHERE id = %s", (appointment["user_id"],))
+    user = cursor.fetchone()
+    cursor.close()
+    if not user:
+        return
+    doctor_name, _ = _resolve_doctor_contact(conn, appointment)
+    if not doctor_name:
         return
     body = (
-        f"Reminder: You have an appointment with Dr. {doctor.get('name')} on {appointment.get('appointment_date')} at {appointment.get('appointment_time')}.\n"
+        f"Reminder: You have an appointment with Dr. {doctor_name} on {appointment.get('appointment_date')} at {appointment.get('appointment_time')}.\n"
         "Please arrive 10 minutes early."
     )
     _send_appointment_email("Appointment Reminder", body, user.get("email"))
@@ -126,7 +121,8 @@ def _send_reminder_email(conn, appointment):
 @appointments_bp.route("", methods=["POST"])
 @token_required
 def add_appointment():
-    """Create a new appointment.
+    """Create a new appointment with a doctor from external_doctors
+    (platform-added, med.tn-scraped, or OSM-sourced alike).
 
     POST /api/appointments
     Body JSON: { user_uid, doctor_uid, appointment_date, appointment_time, reason?, reminder_days? }
@@ -137,9 +133,10 @@ def add_appointment():
         return error
 
     user_id = decode_id(data["user_uid"])
-    doctor_id = decode_id(data["doctor_uid"])
     if user_id is None:
         return jsonify({"error": "Invalid user UID"}), 400
+
+    doctor_id = decode_id(data["doctor_uid"])
     if doctor_id is None:
         return jsonify({"error": "Invalid doctor UID"}), 400
 
@@ -154,12 +151,28 @@ def add_appointment():
         return jsonify({"error": "reminder_days must be between 0 and 30"}), 400
 
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
     cursor.execute(
-        "INSERT INTO appointments (user_id, doctor_id, appointment_date, appointment_time, reason, status, reminder_days, reminder_sent) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+        "SELECT name, specialization, location FROM external_doctors WHERE id = %s",
+        (doctor_id,)
+    )
+    doctor = cursor.fetchone()
+    cursor.close()
+    if not doctor:
+        conn.close()
+        return jsonify({"error": "Doctor not found"}), 404
+
+    insert_cursor = conn.cursor()
+    insert_cursor.execute(
+        "INSERT INTO appointments "
+        "(user_id, doctor_id, doctor_name, doctor_specialization, doctor_location, appointment_date, appointment_time, reason, status, reminder_days, reminder_sent) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
         (
             user_id,
             doctor_id,
+            doctor.get("name"),
+            doctor.get("specialization"),
+            doctor.get("location"),
             data["appointment_date"],
             data["appointment_time"],
             data.get("reason", ""),
@@ -169,9 +182,15 @@ def add_appointment():
         )
     )
     conn.commit()
-    appointment_id = cursor.lastrowid
-    _send_confirmation_emails(conn, user_id, doctor_id, data["appointment_date"], data["appointment_time"])
-    cursor.close()
+    appointment_id = insert_cursor.lastrowid
+    insert_cursor.close()
+
+    _send_patient_confirmation(conn, {
+        "user_id": user_id,
+        "doctor_name": doctor.get("name"),
+        "appointment_date": data["appointment_date"],
+        "appointment_time": data["appointment_time"],
+    })
     conn.close()
     return jsonify({"message": "Appointment created successfully!", "uid": encode_id(appointment_id)}), 201
 
@@ -248,13 +267,9 @@ def update_appointment(uid: str):
         return jsonify({"error": "Appointment not found or no changes applied"}), 404
 
     conn.commit()
-    _send_confirmation_emails(
-        conn,
-        existing["user_id"],
-        existing["doctor_id"],
-        fields.get("appointment_date", existing["appointment_date"]),
-        fields.get("appointment_time", existing["appointment_time"])
-    )
+    updated_appointment = dict(existing)
+    updated_appointment.update(fields)
+    _send_patient_confirmation(conn, updated_appointment)
     cursor.close()
     conn.close()
     return jsonify({"message": "Appointment updated successfully!"})
@@ -287,10 +302,14 @@ def delete_appointment(uid: str):
 
     cursor.execute("DELETE FROM appointments WHERE id = %s", (internal_id,))
     conn.commit()
+    user_cursor = conn.cursor(dictionary=True)
+    user_cursor.execute("SELECT email FROM users WHERE id = %s", (appointment["user_id"],))
+    user = user_cursor.fetchone()
+    user_cursor.close()
     _send_appointment_email(
         "Appointment Cancelled",
         f"Your appointment scheduled on {appointment.get('appointment_date')} at {appointment.get('appointment_time')} has been cancelled.",
-        _get_user_doctor_emails(conn, appointment["user_id"], appointment["doctor_id"])[0].get("email") if _get_user_doctor_emails(conn, appointment["user_id"], appointment["doctor_id"])[0] else None
+        user.get("email") if user else None
     )
     cursor.close()
     conn.close()
@@ -362,47 +381,6 @@ def cancel_appointment(uid: str):
     conn.close()
     return jsonify({"message": "Appointment cancelled successfully"})
 
-
-@appointments_bp.route("/available-slots", methods=["GET"])
-@token_required
-def get_available_slots():
-    """Get available appointment slots for a doctor on a specific date."""
-    doctor_uid = request.args.get("doctorId")
-    date_str = request.args.get("date")
-    if not doctor_uid or not date_str:
-        return jsonify({"error": "Missing required parameters: doctorId, date"}), 400
-
-    doctor_id = decode_id(doctor_uid)
-    if doctor_id is None:
-        return jsonify({"error": "Invalid doctor UID"}), 400
-
-    try:
-        target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    except ValueError:
-        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    # Get existing appointments for this doctor on this date
-    cursor.execute(
-        "SELECT appointment_time FROM appointments WHERE doctor_id = %s AND appointment_date = %s AND status != 'cancelled'",
-        (doctor_id, target_date)
-    )
-    booked_times = [row["appointment_time"] for row in cursor.fetchall()]
-
-    # Generate available slots (9:00-17:00, 30 min intervals)
-    all_slots = []
-    for hour in range(9, 17):
-        for minute in [0, 30]:
-            slot_time = f"{hour:02d}:{minute:02d}"
-            all_slots.append(slot_time)
-
-    available_slots = [slot for slot in all_slots if slot not in [str(t)[:5] if hasattr(t, 'seconds') else str(t)[:5] for t in booked_times]]
-
-    cursor.close()
-    conn.close()
-    return jsonify({"date": date_str, "doctor_uid": doctor_uid, "available_slots": available_slots})
 
 
 @appointments_bp.route("/<uid>/confirm", methods=["POST"])

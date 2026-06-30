@@ -20,7 +20,7 @@ Align frontend React app with backend APIs by replacing all in-memory mock data 
 - **JWT Authentication** with email verification and MFA
 - **6 Database Tables** with full data persistence
 - **Auto-Alert Generation** from vitals and form submissions
-- **Role-Based Access** (user, doctor, admin)
+- **Role-Based Access** (user, admin)
 - **Postman Collection** available for testing
 
 ---
@@ -116,7 +116,7 @@ Update components to use new services:
   uid: string,              // from auth
   name: string,
   email: string,
-  role: "user" | "doctor" | "admin",
+  role: "user" | "admin",
   verified: boolean,
   mfaEnabled: boolean,
   profilePicture: string,   // optional, not in backend

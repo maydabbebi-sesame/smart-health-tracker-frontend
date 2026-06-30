@@ -1,19 +1,23 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, Menu, Search, Settings, ShieldPlus, X } from 'lucide-react'
+import { Bell, Menu, Settings, ShieldPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
-import { clearToken } from '../features/auth/auth'
+import { getCurrentUser, logout } from '../features/auth/auth'
 import { useQuery } from '@tanstack/react-query'
 import { getProfile } from '../services/userService'
-import { getCurrentUser } from '../features/auth/auth'
 import { navigationItems } from '../shared/navigation'
 import { ThemeToggle } from '../shared/ui/ThemeToggle'
+import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher'
+import { useTranslation } from '../i18n/useTranslation'
 
 const linkBase =
   'relative flex items-center gap-3 rounded-r-lg border-l-4 px-4 py-3 text-sm font-medium transition-all hover:translate-x-1 hover:bg-[#eff5ef] hover:text-[#00694c] dark:hover:bg-teal-500/10 dark:hover:text-cyan-100'
 
 function SidebarContent({ onNavigate }) {
+  const { t } = useTranslation()
+  const isAdmin = getCurrentUser()?.role === 'admin'
+
   return (
     <>
       <div className="flex h-16 items-center gap-3 px-5">
@@ -23,14 +27,16 @@ function SidebarContent({ onNavigate }) {
         <div>
           <p className="text-sm font-bold text-[#171d1a] dark:text-white">SmartHealth</p>
           <p className="text-xs font-semibold uppercase tracking-wider text-[#00694c] dark:text-teal-300">
-            Precision Care
+            {t('layout.tagline', 'Soins de Précision')}
           </p>
         </div>
       </div>
 
       <div className="px-6 py-6">
-        <h2 className="text-lg font-black text-slate-950 dark:text-white">Health Hub</h2>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#6d7a73]">Personal wellness</p>
+        <h2 className="text-lg font-black text-slate-950 dark:text-white">{t('layout.spaceTitle', 'Espace Santé')}</h2>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#6d7a73]">
+          {t('layout.spaceSubtitle', 'Bien-être personnel')}
+        </p>
       </div>
 
       <nav className="flex-1 space-y-1 px-2">
@@ -49,21 +55,41 @@ function SidebarContent({ onNavigate }) {
           >
             <motion.span className="flex items-center gap-3" whileHover={{ x: 2 }} transition={{ duration: 0.18 }}>
               <item.icon size={19} />
-              {item.label}
+              {t(item.labelKey, item.label)}
             </motion.span>
           </NavLink>
         ))}
+        {isAdmin && (
+          <NavLink
+            to="/admin"
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              `${linkBase} ${
+                isActive
+                  ? 'border-[#00694c] bg-[#eff5ef] text-[#00694c] font-semibold dark:border-teal-300 dark:bg-teal-900/20 dark:text-teal-200'
+                  : 'border-transparent text-slate-600 dark:text-slate-400'
+              }`
+            }
+          >
+            <motion.span className="flex items-center gap-3" whileHover={{ x: 2 }} transition={{ duration: 0.18 }}>
+              <ShieldPlus size={19} />
+              {t('layout.administration', 'Administration')}
+            </motion.span>
+          </NavLink>
+        )}
       </nav>
 
       <div className="mt-auto p-5">
         <div className="rounded-xl bg-[#008560] p-4 text-white shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-          <p className="text-xs font-bold uppercase tracking-wider">Pro Plan</p>
-          <p className="mt-2 text-sm leading-6">Accedez a des analyses sante avancees.</p>
+          <p className="text-xs font-bold uppercase tracking-wider">{t('layout.proPlan.title', 'Forfait Pro')}</p>
+          <p className="mt-2 text-sm leading-6">
+            {t('layout.proPlan.text', 'Accédez à des analyses santé avancées.')}
+          </p>
           <button
             className="mt-4 w-full rounded-lg bg-white px-4 py-2 text-sm font-bold text-[#00694c]"
             type="button"
           >
-            Ameliorer
+            {t('layout.proPlan.cta', 'Améliorer')}
           </button>
         </div>
       </div>
@@ -75,15 +101,12 @@ export function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const currentUser = getCurrentUser()
+  const { t } = useTranslation()
 
-  const { data: profileData } = useQuery({
-    queryKey: ['profile-header', currentUser?.uid || 'anonymous'],
-    queryFn: getProfile,
-  })
+  const { data: profileData } = useQuery({ queryKey: ['patient-profile'], queryFn: getProfile })
 
-  function handleLogout() {
-    clearToken()
+  async function handleLogout() {
+    await logout()
     navigate('/login', { replace: true })
   }
 
@@ -102,7 +125,7 @@ export function AppLayout() {
             initial={{ opacity: 0 }}
           >
             <button
-              aria-label="Close navigation"
+              aria-label={t('layout.closeNav', 'Fermer la navigation')}
               className="absolute inset-0 bg-slate-950/40"
               type="button"
               onClick={() => setIsSidebarOpen(false)}
@@ -115,7 +138,7 @@ export function AppLayout() {
               transition={{ duration: 0.24, ease: 'easeOut' }}
             >
               <button
-                aria-label="Close navigation"
+                aria-label={t('layout.closeNav', 'Fermer la navigation')}
                 className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
                 type="button"
                 onClick={() => setIsSidebarOpen(false)}
@@ -133,7 +156,7 @@ export function AppLayout() {
           <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <motion.button
-                aria-label="Open navigation"
+                aria-label={t('layout.openNav', 'Ouvrir la navigation')}
                 className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 text-slate-700 lg:hidden"
                 type="button"
                 whileHover={{ scale: 1.03 }}
@@ -142,16 +165,13 @@ export function AppLayout() {
               >
                 <Menu size={20} />
               </motion.button>
-              <div className="hidden w-[min(42vw,520px)] items-center gap-2 rounded-lg border border-transparent bg-[#eff5ef] px-4 py-2 text-sm text-[#6d7a73] md:flex">
-                <Search size={17} />
-                Rechercher des donnees...
-              </div>
             </div>
 
             <div className="flex items-center gap-3">
+              <LanguageSwitcher />
               <ThemeToggle />
               <button
-                aria-label="Ouvrir les notifications"
+                aria-label={t('layout.openNotifications', 'Ouvrir les notifications')}
                 className="relative grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-[#eff5ef] hover:text-[#00694c] focus:outline-none focus:ring-2 focus:ring-[#00694c]/30"
                 type="button"
                 onClick={() => navigate('/notifications')}
@@ -160,7 +180,7 @@ export function AppLayout() {
                 <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#ba1a1a]" />
               </button>
               <button
-                aria-label="Ouvrir les parametres"
+                aria-label={t('layout.openSettings', 'Ouvrir les paramètres')}
                 className="grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-[#eff5ef] hover:text-[#00694c] focus:outline-none focus:ring-2 focus:ring-[#00694c]/30"
                 type="button"
                 onClick={() => navigate('/settings')}
@@ -172,8 +192,10 @@ export function AppLayout() {
                 type="button"
                 onClick={() => navigate('/profile')}
               >
-                <p className="text-sm font-semibold text-slate-900">{profileData?.data?.first_name || profileData?.data?.name || currentUser?.email || 'Utilisateur'}</p>
-                <p className="text-xs text-slate-500">Patient account</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  {profileData?.data?.first_name || profileData?.data?.name || t('layout.defaultUser', 'Utilisateur')}
+                </p>
+                <p className="text-xs text-slate-500">{t('layout.accountType', 'Compte patient')}</p>
               </button>
               <motion.button
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00694c]/30"
@@ -182,7 +204,7 @@ export function AppLayout() {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleLogout}
               >
-                Logout
+                {t('layout.logout', 'Déconnexion')}
               </motion.button>
             </div>
           </div>

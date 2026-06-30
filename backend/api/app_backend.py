@@ -1,5 +1,5 @@
 import importlib.util
-from pathlib import Path
+import os
 import pkgutil
 
 from flask import Flask, send_from_directory
@@ -13,6 +13,9 @@ from alerts import alerts_bp
 from forms import forms_bp
 from vitals import vitals_bp
 from admin import admin_bp
+from translations import translations_bp
+from medical_history import medical_history_bp
+from vaccinations import vaccinations_bp
 
 if not hasattr(pkgutil, "get_loader"):
     def _fallback_get_loader(name):
@@ -31,12 +34,16 @@ app.register_blueprint(alerts_bp)
 app.register_blueprint(forms_bp)
 app.register_blueprint(vitals_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(translations_bp)
+app.register_blueprint(medical_history_bp)
+app.register_blueprint(vaccinations_bp)
 
-UPLOADS_DIR = Path(__file__).resolve().parents[1] / "uploads"
+UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
 
 
 @app.route("/uploads/<path:filename>")
-def uploaded_file(filename):
+def serve_upload(filename):
+    """Serve files saved by the profile picture upload endpoint."""
     return send_from_directory(UPLOADS_DIR, filename)
 
 
