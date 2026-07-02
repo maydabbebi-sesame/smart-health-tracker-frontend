@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SmartHealth — Microservices Architecture Analysis</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161922;
+    --border: #2a2f3a;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --accent: #4f9dff;
+    --bad: #ff6b6b;
+    --good: #4cd97b;
+    --code-bg: #1c2030;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 1.8rem; margin-bottom: 4px; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  h3 { font-size: 1.05rem; color: var(--accent); margin-top: 1.6rem; }
+  .subtitle { color: var(--muted); margin-top: 0; margin-bottom: 2rem; }
+  .verdict {
+    background: linear-gradient(135deg, #2a1620, #1c1320);
+    border: 1px solid #5a2333;
+    border-left: 4px solid var(--bad);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 1.5rem 0;
+  }
+  .verdict strong { color: var(--bad); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.95rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--panel); color: var(--accent); }
+  td code, p code, li code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #c9d6ff;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  ul { padding-left: 1.3rem; }
+  li { margin-bottom: 0.6rem; }
+  .missing-list li::marker { color: var(--bad); }
+  .summary-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-top: 1.5rem;
+  }
+  .pill {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-right: 6px;
+  }
+  .pill.bad { background: #3a1a22; color: var(--bad); }
+  .pill.good { background: #163326; color: var(--good); }
+  footer { margin-top: 3rem; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>SmartHealth — Is this a Microservices Architecture?</h1>
+  <p class="subtitle">Analysis of <code>smart-health-tracker-frontend</code> together with <code>backend/api</code> and <code>mediassist_service</code></p>
+
+  <div class="verdict">
+    <strong>Verdict: No.</strong> The system is a <strong>modular monolith</strong> (<code>backend/api</code>) plus a
+    <strong>tightly-coupled satellite service</strong> (<code>mediassist_service</code>) that share a single MySQL database,
+    called directly from a single-page frontend. This pattern is often called a
+    <em>"distributed monolith"</em> — arguably worse than a clean monolith, since it has network calls
+    without the isolation benefits microservices are supposed to provide.
+  </div>
+
+  <h2>What actually exists</h2>
+  <table>
+    <thead>
+      <tr><th>Component</th><th>What it actually is</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>smart-health-tracker-frontend</code></td>
+        <td>One React/Vite SPA, calling two hardcoded base URLs (<code>VITE_API_BASE_URL</code>, <code>VITE_MEDIASSIST_URL</code>)
+          — see <code>src/services/apiClient.js</code> and <code>src/services/mediAssistService.js</code>.</td>
+      </tr>
+      <tr>
+        <td><code>backend/api</code></td>
+        <td><strong>One</strong> Flask process (<code>app_backend.py</code>) registering 11 blueprints —
+          users, auth, doctors, appointments, vitals, alerts, medical_history, vaccinations, admin, translations, forms —
+          all in one codebase, one deploy unit, one shared <code>mysql.connector</code> connection to a single
+          <code>smarthealth</code> database.</td>
+      </tr>
+      <tr>
+        <td><code>mediassist_service</code></td>
+        <td>A second Flask process (port 5001) for the LLM symptom-analysis chat relay.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Why <code>mediassist_service</code> doesn't count as a real microservice either</h2>
+  <p>
+    It reads <code>backend/api/.env</code> directly and connects to the <strong>same MySQL database</strong>
+    (<code>app.py</code>), querying tables like <code>mediassist_history</code> that the main backend owns.
+    It even <strong>copy-pastes</strong> the auth-token decoding logic from <code>backend/api/security.py</code>
+    instead of calling an endpoint — the code itself admits this:
+  </p>
+  <blockquote style="border-left:3px solid var(--border); margin-left:0; padding-left:14px; color:var(--muted);">
+    "Duplicated from security.py's decode_id rather than imported because mediassist_service is a standalone
+    Flask app with no dependency on the backend/api package; keep the two in sync if either changes."
+  </blockquote>
+  <p>
+    That's the textbook anti-pattern microservices are designed to avoid: <strong>shared database + duplicated logic</strong>
+    instead of a contract-based API call between services.
+  </p>
+
+  <h2>What's missing to call this microservices</h2>
+  <ul class="missing-list">
+    <li><span class="pill bad">missing</span><strong>Database-per-service</strong> — both backend processes share one MySQL schema; no service exclusively owns its data.</li>
+    <li><span class="pill bad">missing</span><strong>Independent deployability per domain</strong> — <code>backend/api</code> is one deployable unit for 11 business domains; shipping a change to one means redeploying all of them.</li>
+    <li><span class="pill bad">missing</span><strong>Service-to-service contracts</strong> — <code>mediassist_service</code> talks to the DB and duplicates auth code instead of calling <code>backend/api</code>'s endpoints over HTTP/gRPC.</li>
+    <li><span class="pill bad">missing</span><strong>API gateway / service discovery</strong> — the frontend hardcodes two <code>localhost</code> ports; there's no routing layer, load balancer, or registry.</li>
+    <li><span class="pill bad">missing</span><strong>Containerization / orchestration</strong> — no Dockerfile, docker-compose, or Kubernetes manifests anywhere in the repo.</li>
+    <li><span class="pill bad">missing</span><strong>Resilience patterns</strong> — no retries, timeouts, circuit breakers, or health checks between the two Python processes.</li>
+    <li><span class="pill bad">missing</span><strong>Independent scaling / tech-stack isolation</strong> — both processes are Flask + mysql-connector; nothing is built to scale or evolve independently.</li>
+    <li><span class="pill bad">missing</span><strong>Distributed observability</strong> — no correlation IDs or tracing tying a frontend request across both backends.</li>
+  </ul>
+
+  <div class="summary-box">
+    <p><span class="pill bad">Distributed monolith</span> is the most accurate label today.</p>
+    <p style="margin-bottom:0; color:var(--muted);">
+      A real split would mean extracting domains like auth, vitals, and appointments into independently
+      deployable services behind a gateway, giving each its own datastore, and having
+      <code>mediassist_service</code> call <code>backend/api</code>'s API instead of reaching into its database directly.
+    </p>
+  </div>
+
+  <footer>
+    Generated from a direct inspection of <code>backend/api/app_backend.py</code>, <code>backend/api/database.py</code>,
+    <code>mediassist_service/app.py</code>, and the frontend's <code>src/services</code> / <code>src/constants/apiEndpoints.ts</code>.
+  </footer>
+
+</div>
+</body>
+</html>

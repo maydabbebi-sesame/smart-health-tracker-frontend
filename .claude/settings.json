@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(tasklist)",
+      "Bash(cd \"/c/Docs Youssef/Youssef/SESAME/2eme/PFA/smarthealth_may/smart-health-tracker-frontend\" && cat package.json | grep -A5 '\"scripts\"')",
+      "Read(//c/c/Docs Youssef/Youssef/SESAME/2eme/PFA/smarthealth_may/smart-health-tracker-frontend/**)",
+      "Bash(npx vite *)",
+      "Bash(python -c \"import mysql.connector\")",
+      "Bash(python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(python -c \"import flask, jwt, cryptography, mysql.connector\")",
+      "Read(//c/Docs Youssef/Youssef/SESAME/2eme/PFA/smarthealth_may/**)",
+      "Bash(pip install *)",
+      "Bash(python -m py_compile security.py auth.py)",
+      "Bash(powershell -NoProfile -Command 'Get-Process python -ErrorAction SilentlyContinue | Where-Object {\\($_.Path -ne $null\\)} | Stop-Process -Force')",
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(curl -s -m 2 http://localhost:5000/api/translations/en)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(python -c \"import pika; print\\('pika available'\\)\")",
+      "Bash(python run_migrations.py)",
+      "Bash(curl -s -m 2 -X POST http://localhost:5101/shutdown)",
+      "Bash(ps -W)",
+      "Bash(curl -s -m 2 http://localhost:5101/api/auth/login)"
+    ]
+  }
+}

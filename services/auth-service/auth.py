@@ -11,24 +11,28 @@ from flask import Blueprint, g, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import (
-    JWT_EXP_DELTA_SECONDS,
     GOOGLE_CLIENT_ID,
     FACEBOOK_APP_ID,
     FACEBOOK_APP_SECRET,
     APPLE_CLIENT_ID,
-    EMAIL_DEV_MODE,
+    MAX_FAILED_LOGIN_ATTEMPTS,
+    LOCKOUT_SECONDS,
+    VERIFICATION_CODE_EXPIRY_SECONDS,
+    MFA_CODE_EXPIRY_SECONDS,
 )
-from config import MAX_FAILED_LOGIN_ATTEMPTS, LOCKOUT_SECONDS, VERIFICATION_CODE_EXPIRY_SECONDS, MFA_CODE_EXPIRY_SECONDS
-from database import get_db_connection
-from security import encode_id, decode_id
-from email_utils import send_verification_email, send_mfa_email
 from sh_common import (
     create_access_token,
     decode_auth_token,
+    decode_id,
+    encode_id,
     get_token_from_header,
     roles_required,
+    send_mfa_email,
+    send_verification_email,
     token_required,
 )
+from sh_common.config import EMAIL_DEV_MODE, JWT_EXP_DELTA_SECONDS
+from sh_common.db import get_db_connection
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -312,10 +316,10 @@ def login_apple():
 @token_required
 def logout():
     # Bumping token_version (same mechanism as admin's force-logout in
-    # admin.py) is the only revocation path now: it's checked against the
-    # shared `users` table by every service's token_required, so a logout
-    # handled by this service is immediately honored everywhere -- an
-    # in-memory blacklist here would only be visible to this process.
+    # users-service's admin.py) is the only revocation path: it's checked
+    # against the shared `users` table by every service's token_required, so
+    # a logout handled here is immediately honored everywhere -- an
+    # in-memory blacklist would only be visible to this one process.
     internal_id = decode_id(g.current_user.get("uid"))
     if internal_id is not None:
         conn = get_db_connection()

@@ -27,6 +27,10 @@ dist-ssr
 # User-uploaded files (profile pictures, etc.)
 backend/uploads/
 
+# Local DB dump used to seed the Dockerized mysql container -- contains real
+# user data, never commit it (see backend/database/docker-init/README.md)
+backend/database/docker-init/*dump*.sql
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -14,6 +14,39 @@
    .venv\Scripts\python.exe run_migrations.py
    ```
 
+## Microservices migration
+
+`backend/api/app_backend.py` (this directory) is the original monolith and
+still works standalone as before. It's being split into independently
+runnable services under `../services/` -- see
+`../docs/microservices-migration-plan.html` for the full plan. Each new
+service is verified working against this same MySQL database, just with its
+own scoped DB account (`backend/database/migrations/026_create_service_db_users.sql`).
+
+**Without Docker** (what's been verified so far): each service is a plain
+Flask app with its own `.env` (already configured, see each
+`services/<name>/.env`) -- run any of them directly:
+```bash
+cd services/auth-service && python app.py        # :5101
+cd services/users-service && python app.py       # :5102
+cd services/health-data-service && python app.py # :5103
+cd services/health-data-service && python worker.py  # RabbitMQ consumer
+cd services/doctors-appointments-service && python app.py # :5104
+cd ../mediassist_service && python app.py         # :5001 (unchanged port)
+```
+Requires a local RabbitMQ (`localhost:5672`, default `guest`/`guest`) for the
+appointment-event flow in `doctors-appointments-service` /
+`health-data-service/worker.py` -- everything else works without it.
+
+**With Docker Compose** (`../docker-compose.yml`, untested in this
+environment -- no Docker available here): see
+`database/docker-init/README.md` first, it requires a one-time `mysqldump` of
+your local database before `docker compose up` will have any data. Once
+running, the gateway listens on `http://localhost:8080` -- point the
+frontend's `VITE_API_BASE_URL` and `VITE_MEDIASSIST_URL` at it instead of
+`localhost:5000`/`:5001` to go through the new services instead of the
+monolith.
+
 ## Email verification and MFA
 
 - New registration now stores `is_verified`, `verification_code`, and `verification_expiry`.

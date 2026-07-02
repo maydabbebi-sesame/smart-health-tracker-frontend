@@ -11,11 +11,6 @@ everything to the model, saves the new turn, and returns the parsed JSON reply.
 Usage : python app.py   (listens on http://127.0.0.1:5001)
 """
 
-import base64
-import hashlib
-import hmac
-import os
-
 import json as _json
 
 from flask import Flask, jsonify, request
@@ -34,6 +29,9 @@ from prompt_builder import (
 )
 from turn_logger import log_turn
 
+from sh_common import decode_id as _decode_user_id
+from sh_common.db import get_db_connection as _connect_db
+
 # Lighter general-purpose model for the Doctor Agent's recommend-or-not
 # decision — it reasons over signals MediAssist already distilled, not raw
 # patient data, so it doesn't need medgemma1.5's long medical "thinking" chain.
@@ -46,66 +44,27 @@ DOCTOR_AGENT_FALLBACK = {
     "message": "Je n'ai pas pu analyser ta situation pour l'instant, mais tu peux chercher un médecin manuellement si besoin.",
 }
 
-# ── DB setup ──────────────────────────────────────────────────────────────────
-# Load credentials from backend/api/.env (the .env backend/api/config.py
-# itself reads) if dotenv is available, otherwise fall back to environment
-# variables already set in the shell.
-try:
-    from dotenv import load_dotenv
-    _env_path = os.path.join(os.path.dirname(__file__), '..', 'backend', 'api', '.env')
-    load_dotenv(dotenv_path=_env_path, override=False)
-except ImportError:
-    pass
-
-_DB_CONFIG = {
-    "host":     os.getenv("DB_HOST", "localhost"),
-    "port":     int(os.getenv("DB_PORT", "3306")),
-    "database": os.getenv("DB_DATABASE", "smarthealth"),
-    "user":     os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-}
-
-try:
-    import mysql.connector
-    from mysql.connector import Error as _MySQLError
-    _MYSQL_OK = True
-except ImportError:
-    _MYSQL_OK = False
+_MYSQL_OK = True
 
 
 def _get_db():
-    if not _MYSQL_OK:
-        return None
+    """mediassist_service treats the DB as best-effort (chat still works
+    without history/persistence) -- every call site already expects None on
+    failure, so swallow connection errors here rather than at each call site."""
     try:
-        return mysql.connector.connect(**_DB_CONFIG)
-    except _MySQLError:
-        return None
-
-
-# mediassist_history keys rows by the numeric users.id, like every other
-# per-user table (vitals, medical_history...). The frontend never has that
-# raw id though — it only holds the signed "uid" token backend/api/security.py
-# hands out (encode_id), so every request still arrives with that token and
-# gets decoded here. Duplicated from security.py's decode_id rather than
-# imported because mediassist_service is a standalone Flask app with no
-# dependency on the backend/api package; keep the two in sync if either
-# changes.
-_SECRET_KEY = os.getenv("SECRET_KEY", "smarthealth-secret-2026")
-
-
-def _decode_user_id(public_uid: str):
-    if not public_uid:
-        return None
-    try:
-        padded = public_uid + "=" * (-len(public_uid) % 4)
-        token = base64.urlsafe_b64decode(padded)
-        payload, signature = token.split(b".", 1)
-        expected = hmac.new(_SECRET_KEY.encode("utf-8"), payload, hashlib.sha256).digest()
-        if hmac.compare_digest(signature, expected):
-            return int(payload.decode("utf-8"))
+        return _connect_db()
     except Exception:
         return None
-    return None
+
+
+# mediassist_history/mediassist_recommendations key rows by the numeric
+# users.id, like every other per-user table (vitals, medical_history...).
+# The frontend never has that raw id though — it only holds the signed "uid"
+# token sh_common.encode_id hands out, so every request still arrives with
+# that token and gets decoded here via the same shared HMAC scheme every
+# other service uses (this used to be a hand-copied duplicate of
+# security.py's decode_id with a comment warning to keep the two in sync --
+# now it's the one shared implementation).
 
 
 def _load_history(user_id: int, session_id: str) -> list:
@@ -479,4 +438,4 @@ def health():
 if __name__ == "__main__":
     # use_reloader=False — the file-watcher restart drops in-flight connections,
     # which is fatal for requests that hold a long-running LLM call open.
-    app.run(host="127.0.0.1", port=5001, debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=5001, debug=True, use_reloader=False)

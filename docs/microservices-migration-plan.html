@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SmartHealth — Migration to Microservices: Plan</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161922;
+    --border: #2a2f3a;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --accent: #4f9dff;
+    --good: #4cd97b;
+    --warn: #f5b942;
+    --code-bg: #1c2030;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 96px; }
+  h1 { font-size: 1.8rem; margin-bottom: 4px; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  h3 { font-size: 1.05rem; color: var(--accent); margin-top: 1.6rem; }
+  .subtitle { color: var(--muted); margin-top: 0; margin-bottom: 1.5rem; }
+  .context-box {
+    background: linear-gradient(135deg, #16202a, #131a22);
+    border: 1px solid #214055;
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 1.5rem 0;
+  }
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 1rem 0 0;
+  }
+  .choice {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+  .choice .k { color: var(--muted); display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.92rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--panel); color: var(--accent); }
+  td code, p code, li code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #c9d6ff;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin-bottom: 0.6rem; }
+  .phase {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+  }
+  .phase .num {
+    display: inline-block;
+    background: var(--accent);
+    color: #0b1320;
+    font-weight: 700;
+    font-size: 0.78rem;
+    width: 22px; height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  .limitations {
+    background: #221a10;
+    border: 1px solid #5a4420;
+    border-left: 4px solid var(--warn);
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+  footer { margin-top: 3rem; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>SmartHealth — Migration to Microservices</h1>
+  <p class="subtitle">Implementation plan, derived from <a href="microservices-analysis.html">microservices-analysis.html</a></p>
+
+  <h2>Context</h2>
+  <div class="context-box">
+    <p style="margin-top:0;">
+      The current backend is a modular monolith: <code>backend/api/app_backend.py</code> is one
+      Flask process registering 11 blueprints (auth, users, doctors, appointments, vitals,
+      alerts, forms, admin, translations, medical_history, vaccinations), all sharing one
+      MySQL connection and one database (<code>smarthealth</code>). A second process,
+      <code>mediassist_service/app.py</code>, makes things worse: it connects to the
+      <strong>same</strong> database directly and duplicates the auth-token decoding logic
+      from <code>backend/api/security.py</code> instead of calling an API — a
+      "distributed monolith," not microservices.
+    </p>
+    <p style="margin-bottom:0;">This plan is scoped for a 2nd-year PFA project. Chosen parameters:</p>
+    <div class="choices">
+      <div class="choice"><span class="k">Granularity</span>5 services + gateway</div>
+      <div class="choice"><span class="k">Orchestration</span>Docker Compose</div>
+      <div class="choice"><span class="k">Inter-service comms</span>RabbitMQ + sync REST</div>
+      <div class="choice"><span class="k">Data ownership</span>One MySQL instance, per-service DB users/grants</div>
+    </div>
+  </div>
+
+  <h2>Target architecture</h2>
+  <pre>
+                         ┌─────────────────────┐
+        frontend  ───────▶      Gateway (nginx)│  single entrypoint, path-based routing
+                         └──────────┬──────────┘
+              ┌─────────────┬───────┼───────────────┬───────────────┐
+              ▼             ▼       ▼               ▼               ▼
+        ┌──────────┐ ┌─────────────┐ ┌────────────┐ ┌─────────────┐ ┌────────────┐
+        │   Auth   │ │ Users +     │ │ Health-Data│ │ Doctors +   │ │ MediAssist │
+        │ Service  │ │ HealthRecs  │ │  Service   │ │Appointments │ │  Service   │
+        │          │ │  Service    │ │ vitals/    │ │  Service    │ │            │
+        │login/MFA/│ │users/admin/ │ │forms/alerts│ │doctors/     │ │chat relay +│
+        │OAuth/JWT │ │med-history/ │ │            │ │appointments │ │trend       │
+        │          │ │vaccinations/│ │            │ │             │ │analysis    │
+        │          │ │translations │ │            │ │             │ │            │
+        └────┬─────┘ └──────┬──────┘ └─────┬──────┘ └──────┬──────┘ └─────┬──────┘
+             │              │              │               │              │
+             └──────────────┴──────┬───────┴───────────────┴──────────────┘
+                                   ▼
+                       ┌───────────────────────┐        ┌────────────────┐
+                       │   MySQL (1 instance)  │        │   RabbitMQ     │
+                       │  per-service DB user  │        │  event bus     │
+                       │  + table-level GRANTs │        └────────────────┘
+                       └───────────────────────┘
+  </pre>
+  <p>
+    Every service is its own Flask app (reuses the existing Flask/MySQL skill already in the
+    codebase — no new language/framework introduced), its own Dockerfile, its own
+    <code>requirements.txt</code>, and is registered as its own entry in <code>docker-compose.yml</code>.
+  </p>
+
+  <h2>Service boundary map (from current code)</h2>
+  <table>
+    <thead><tr><th>New service</th><th>Absorbs</th><th>DB tables owned</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>auth-service</strong></td>
+        <td><code>backend/api/auth.py</code></td>
+        <td><code>users</code> (auth fields only)</td>
+        <td>Owns login/register/MFA/OAuth/JWT issuance. <code>token_required</code> /
+          <code>roles_required</code> / <code>encode_id</code> / <code>decode_id</code> move into a
+          <strong>shared library</strong> — every other service verifies JWTs locally, no
+          network hop per request.</td>
+      </tr>
+      <tr>
+        <td><strong>users-service</strong></td>
+        <td><code>users.py</code>, <code>admin.py</code>, <code>medical_history.py</code>,
+          <code>vaccinations.py</code>, <code>translations.py</code></td>
+        <td><code>users</code>, <code>medical_history</code>, <code>vaccinations</code>, <code>translations</code></td>
+        <td><code>admin.py</code>'s statistics/activity-log endpoints become REST fan-out calls
+          to other services' lightweight <code>/internal/stats</code> endpoints instead of
+          direct table reads. <code>translations.py</code> (30 LOC, public, zero coupling)
+          folds in for free. Also serves <code>/uploads/&lt;file&gt;</code> (profile pictures).</td>
+      </tr>
+      <tr>
+        <td><strong>health-data-service</strong></td>
+        <td><code>vitals.py</code>, <code>forms.py</code>, <code>alerts.py</code></td>
+        <td><code>vitals</code>, <code>forms</code>, <code>alerts</code></td>
+        <td>The current coupling (<code>forms.py</code>/<code>vitals.py</code> do
+          <code>from alerts import insert_alert</code>) becomes a non-issue: all three now
+          live in one process. Also the <strong>broker consumer</strong> for cross-service
+          alert-creation events.</td>
+      </tr>
+      <tr>
+        <td><strong>doctors-appointments-service</strong></td>
+        <td><code>doctors.py</code>, <code>appointments.py</code></td>
+        <td><code>external_doctors</code>, <code>doctor_ratings</code>, <code>appointments</code>, <code>health_centers</code></td>
+        <td>Owns the only true cross-entity join (<code>appointments.user_id</code> +
+          <code>appointments.doctor_id</code>). Publishes appointment lifecycle events to the
+          broker instead of only sending email directly.</td>
+      </tr>
+      <tr>
+        <td><strong>mediassist-service</strong></td>
+        <td><code>mediassist_service/</code> (already separate)</td>
+        <td><code>mediassist_history</code>, <code>mediassist_recommendations</code></td>
+        <td>Stop reading <code>backend/api/.env</code> and duplicating
+          <code>_decode_user_id</code> (<code>app.py:78-101</code>). Switch to the shared auth
+          library and its own DB grants.</td>
+      </tr>
+      <tr>
+        <td><strong>gateway</strong></td>
+        <td>new</td>
+        <td>none</td>
+        <td>nginx reverse proxy, path-prefix routing only. Preserves every existing path so
+          <code>src/constants/apiEndpoints.ts</code> needs <strong>no changes</strong> — only
+          <code>VITE_API_BASE_URL</code> changes (and <code>VITE_MEDIASSIST_URL</code> is retired).</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Shared library: <code>libs/sh_common</code></h2>
+  <p>Extracted from <code>backend/api/security.py</code> + the auth bits of <code>config.py</code>:</p>
+  <ul>
+    <li><code>encode_id</code> / <code>decode_id</code> (HMAC UID scheme) — currently <code>security.py:13-29</code>.</li>
+    <li><code>token_required</code> / <code>roles_required</code> decorators — currently <code>auth.py:212-268</code>,
+      imported by every blueprint today; becomes a library that verifies the JWT signature
+      locally with the shared <code>JWT_SECRET_KEY</code>.</li>
+    <li>The <code>publicize_*</code> functions (<code>security.py:32-256</code>) move with the
+      data they format — e.g. <code>publicize_vital</code> → health-data-service,
+      <code>publicize_appointment</code> → doctors-appointments-service.</li>
+  </ul>
+  <p>
+    Each service installs <code>sh_common</code> as a local path dependency in Compose. This
+    directly replaces what <code>mediassist_service/app.py:78-86</code> currently does by
+    copy-pasting <code>decode_id</code> — its own comment ("keep the two in sync if either
+    changes") is exactly the smell this library removes.
+  </p>
+
+  <h2>Messaging (RabbitMQ)</h2>
+  <p>Only used for genuine cross-service events — not for vitals/forms→alerts, since that coupling disappears once they're co-located.</p>
+  <table>
+    <thead><tr><th>Event</th><th>Publisher</th><th>Consumer</th><th>Replaces</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>appointment.confirmed</code>, <code>appointment.cancelled</code>,<br><code>appointment.reminder_due</code></td>
+        <td>doctors-appointments-service</td>
+        <td>health-data-service (creates an in-app <code>alerts</code> row)</td>
+        <td>Today, <code>appointments.py</code> only sends email (<code>appointments.py:114, 334</code>) — no in-app alert is created.</td>
+      </tr>
+      <tr>
+        <td><code>mediassist.recommendation.flagged</code> <em>(stretch goal)</em></td>
+        <td>mediassist-service</td>
+        <td>health-data-service (creates an alert)</td>
+        <td>Today recommendations are only visible via <code>/api/mediassist/recommendations</code>, never surfaced as an alert. Implement after the core split is verified.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>One topic exchange (<code>smarthealth.events</code>) via <code>pika</code> is enough at this scale.</p>
+
+  <h2>Database approach</h2>
+  <ol>
+    <li>Create one DB user per service (<code>auth_svc</code>, <code>users_svc</code>,
+      <code>healthdata_svc</code>, <code>doctorsappt_svc</code>, <code>mediassist_svc</code>) via
+      a new migration <code>backend/database/migrations/026_create_service_db_users.sql</code>.</li>
+    <li><code>GRANT SELECT, INSERT, UPDATE, DELETE</code> only on the tables each service owns.
+      E.g. <code>healthdata_svc</code> can't query <code>users</code> or <code>appointments</code>
+      even though they're in the same schema.</li>
+    <li><code>doctors-appointments-service</code> gets read-only (<code>SELECT</code>) access to
+      <code>users</code> to resolve name/email for confirmation messages.</li>
+    <li>Each service's <code>config.py</code> gets its own DB credentials env vars — no more one
+      shared <code>DB_CONFIG</code> for every process.</li>
+  </ol>
+  <p>This enforces "no service reaches into another's tables" without paying for N database containers.</p>
+
+  <h2>Gateway (nginx)</h2>
+  <pre>location /api/auth/             { proxy_pass http://auth-service:5000; }
+location /api/users/            { proxy_pass http://users-service:5001; }
+location /api/admin/            { proxy_pass http://users-service:5001; }
+location /api/medical-history/  { proxy_pass http://users-service:5001; }
+location /api/vaccinations/     { proxy_pass http://users-service:5001; }
+location /api/translations/     { proxy_pass http://users-service:5001; }
+location /uploads/              { proxy_pass http://users-service:5001; }
+location /api/vitals/           { proxy_pass http://health-data-service:5002; }
+location /api/forms/            { proxy_pass http://health-data-service:5002; }
+location /api/alerts/           { proxy_pass http://health-data-service:5002; }
+location /api/doctors/          { proxy_pass http://doctors-appointments-service:5003; }
+location /api/appointments/     { proxy_pass http://doctors-appointments-service:5003; }
+location /mediassist/           { proxy_pass http://mediassist-service:5004; }</pre>
+  <p>
+    A 1:1 mapping of today's paths (<code>src/constants/apiEndpoints.ts:7-123</code>) — the
+    frontend's <code>apiClient.js</code> baseURL just becomes the gateway's address
+    (<code>http://localhost:8080</code> in dev), and <code>VITE_MEDIASSIST_URL</code> is retired.
+  </p>
+
+  <h2>Docker Compose</h2>
+  <p>
+    New top-level <code>docker-compose.yml</code> with: <code>mysql</code>, <code>rabbitmq</code>,
+    <code>auth-service</code>, <code>users-service</code>, <code>health-data-service</code>,
+    <code>doctors-appointments-service</code>, <code>mediassist-service</code>, <code>gateway</code>.
+    Each service folder gets its own small <code>Dockerfile</code>
+    (<code>python:3.11-slim</code> + <code>pip install -r requirements.txt</code> + <code>flask run</code>/<code>gunicorn</code>).
+    Frontend keeps running with <code>npm run dev</code> outside Compose, pointed at the gateway's exposed port.
+  </p>
+
+  <h2>Migration order (strangler fig — verify after each phase)</h2>
+
+  <div class="phase"><span class="num">1</span><strong>Extract <code>libs/sh_common</code></strong> from <code>security.py</code> + the decorator/JWT logic in <code>auth.py</code>, without changing topology yet. Run <code>backend/api/test_auth_flow.py</code> to confirm zero behavior change.</div>
+  <div class="phase"><span class="num">2</span><strong>Stand up the gateway + Compose</strong> in front of the still-monolithic <code>backend/api</code> (renamed <code>legacy-monolith</code>) and point the frontend at the gateway. Confirms routing/Compose work before any split.</div>
+  <div class="phase"><span class="num">3</span><strong>Extract auth-service</strong> (smallest blast radius; everyone else depends on it). Update gateway routes for <code>/api/auth/*</code>.</div>
+  <div class="phase"><span class="num">4</span><strong>Extract users-service</strong> (<code>users.py</code>, <code>admin.py</code>, <code>medical_history.py</code>, <code>vaccinations.py</code>, <code>translations.py</code>, <code>/uploads</code>). Apply the <code>users_svc</code> DB grants.</div>
+  <div class="phase"><span class="num">5</span><strong>Extract health-data-service</strong> (<code>vitals.py</code>, <code>forms.py</code>, <code>alerts.py</code>). <code>insert_alert</code> stays an in-process call inside the new service.</div>
+  <div class="phase"><span class="num">6</span><strong>Extract doctors-appointments-service</strong> (<code>doctors.py</code>, <code>appointments.py</code>). Add the RabbitMQ publisher for appointment events; health-data-service adds the consumer.</div>
+  <div class="phase"><span class="num">7</span><strong>Refactor <code>mediassist_service</code></strong> to use <code>sh_common</code> instead of its duplicated <code>_decode_user_id</code>, get its own DB grants, optionally publish <code>mediassist.recommendation.flagged</code>.</div>
+  <div class="phase"><span class="num">8</span><strong>Decommission <code>backend/api/app_backend.py</code></strong> once all 11 blueprints have moved out; delete the legacy-monolith Compose entry.</div>
+
+  <h2>Verification per phase</h2>
+  <ul>
+    <li>Each service keeps/moves the relevant existing tests (<code>test_api.py</code>, <code>test_auth_flow.py</code>) and the Postman collection — update base URLs to the gateway and re-run after each extraction step.</li>
+    <li>After step 2, manually exercise login + one read endpoint through the gateway before extracting anything.</li>
+    <li>After each extraction (3–7), re-run the full Postman collection against the gateway, and click through login, vitals entry, appointment booking, and the MediAssist chat in the running frontend.</li>
+    <li>After step 6, trigger an appointment confirmation and confirm an <code>alerts</code> row appears via RabbitMQ, not a direct DB write.</li>
+    <li>Final pass: <code>docker-compose up</code>, run the test suites, manual click-through of the full app.</li>
+  </ul>
+
+  <h2>Known limitations / explicitly out of scope</h2>
+  <div class="limitations">
+    <ul style="margin-bottom:0;">
+      <li>Single MySQL instance remains a single point of failure / scaling bottleneck — accepted tradeoff for this project's scope.</li>
+      <li>Auth token revocation list (<code>auth.py:36</code>, in-memory) stays single-instance since auth-service is one container; would need Redis if ever scaled horizontally.</li>
+      <li>Admin's cross-domain statistics becomes REST fan-out (synchronous), not event-sourced — fine at this scale, but not real-time like a proper read-model.</li>
+    </ul>
+  </div>
+
+  <footer>
+    Derived from a direct inspection of every blueprint in <code>backend/api/</code>,
+    <code>backend/database/schema_*.sql</code> &amp; <code>migrations/</code>, <code>mediassist_service/app.py</code>,
+    and the frontend's <code>src/services</code> / <code>src/constants/apiEndpoints.ts</code>.
+  </footer>
+
+</div>
+</body>
+</html>

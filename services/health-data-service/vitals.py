@@ -1,0 +1,907 @@
+from flask import Blueprint, jsonify, request, g
+
+from sh_common import decode_id, encode_id, token_required
+from sh_common.db import get_db_connection
+
+from security import publicize_vital
+from validators import validate_json_fields, get_request_data
+from alerts import insert_alert
+from flask import Response
+import csv
+import io
+from datetime import datetime, timezone
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.pdfgen import canvas
+    REPORTLAB_AVAILABLE = True
+except Exception:
+    REPORTLAB_AVAILABLE = False
+
+vitals_bp = Blueprint("vitals", __name__, url_prefix="/api/vitals")
+
+
+def _gather_vital_alerts(vitals: dict) -> tuple[bool, str, str]:
+    warnings = []
+
+    heart_rate = vitals.get("heart_rate")
+    if heart_rate is not None:
+        if heart_rate < 50 or heart_rate > 100:
+            warnings.append(f"heart_rate={heart_rate}")
+
+    systolic_bp = vitals.get("systolic_bp")
+    diastolic_bp = vitals.get("diastolic_bp")
+    if systolic_bp is not None and diastolic_bp is not None:
+        if systolic_bp > 140 or systolic_bp < 90:
+            warnings.append(f"systolic_bp={systolic_bp}")
+        if diastolic_bp > 90 or diastolic_bp < 60:
+            warnings.append(f"diastolic_bp={diastolic_bp}")
+
+    temperature = vitals.get("temperature")
+    if temperature is not None and (temperature > 38.0 or temperature < 36.0):
+        warnings.append(f"temperature={temperature}")
+
+    oxygen = vitals.get("oxygen_saturation")
+    if oxygen is not None and oxygen < 95:
+        warnings.append(f"oxygen_saturation={oxygen}")
+
+    respiratory_rate = vitals.get("respiratory_rate")
+    if respiratory_rate is not None and (respiratory_rate > 20 or respiratory_rate < 12):
+        warnings.append(f"respiratory_rate={respiratory_rate}")
+
+    if warnings:
+        title = "Signes vitaux anormaux détectés"
+        message = "Valeurs anormales : " + ", ".join(warnings)
+        return True, title, message
+    return False, "", ""
+
+
+# Absolute validation limits to avoid absurd values
+ABSOLUTE_LIMITS = {
+    "heart_rate": (20, 300),
+    "systolic_bp": (50, 300),
+    "diastolic_bp": (30, 200),
+    "temperature": (30.0, 45.0),
+    "oxygen_saturation": (50.0, 100.0),
+    "respiratory_rate": (5, 60),
+    "weight": (20.0, 500.0),
+    "glycemia": (0.0, 50.0),
+    "weight_variation_kg": (-200.0, 200.0),
+}
+
+
+@vitals_bp.route("", methods=["POST"])
+@token_required
+def submit_vitals():
+    """Submit health vital constants for a user."""
+    required_fields = ["user_uid"]
+    data, error = validate_json_fields(required_fields)
+    if error:
+        return error
+
+    user_id = decode_id(data["user_uid"])
+    if user_id is None:
+        return jsonify({"error": "Invalid user UID"}), 400
+
+    if g.current_user.get("role") != "admin" and g.current_user.get("uid") != data["user_uid"]:
+        return jsonify({"error": "Forbidden"}), 403
+
+    try:
+        heart_rate = int(data["heart_rate"]) if data.get("heart_rate") is not None else None
+        systolic_bp = int(data["systolic_bp"]) if data.get("systolic_bp") is not None else None
+        diastolic_bp = int(data["diastolic_bp"]) if data.get("diastolic_bp") is not None else None
+    except (TypeError, ValueError):
+        return jsonify({"error": "Vital fields must be numeric"}), 400
+
+    temperature = data.get("temperature")
+    oxygen_saturation = data.get("oxygen_saturation")
+    respiratory_rate = data.get("respiratory_rate")
+    notes = data.get("notes", "")
+
+    # Additional fields from frontend forms
+    age = data.get("age")
+    gender = data.get("gender") or data.get("biologicalSex")
+    height = data.get("height")
+    weight = data.get("weight")
+    glycemia = data.get("glycemia")
+    weight_variation = data.get("weightVariation") or data.get("weight_variation")
+    weight_variation_kg = data.get("weightVariationKg") or data.get("weight_variation_kg")
+    health_issues_history = data.get("health_issues_history") or data.get("chronicDiseases")
+    drug_allergies_flag = data.get("drug_allergies_flag") if data.get("drug_allergies_flag") is not None else (data.get("hasDrugAllergies") in ("Oui", "yes", "Yes", "true", True))
+    drug_allergies = data.get("drug_allergies") or data.get("drugAllergies")
+    family_health_issues = data.get("family_health_issues") or data.get("familyHistory")
+    smoking = data.get("smoking") if data.get("smoking") is not None else (data.get("tobacco") in ("Oui", "yes", "Yes", "true", True))
+    cigarettes_per_day = data.get("cigarettes_per_day") or data.get("tobaccoQuantity")
+    alcohol = data.get("alcohol") if data.get("alcohol") is not None else (data.get("alcohol") in ("Oui", "yes", "Yes", "true", True))
+    alcohol_glasses = data.get("alcohol_glasses") or data.get("alcoholQuantity")
+    current_treatment = data.get("current_treatment") if data.get("current_treatment") is not None else (data.get("hasCurrentMedications") in ("Oui", "yes", "Yes", "true", True))
+    current_treatments = data.get("current_treatments") or data.get("currentMedications")
+    complements = data.get("complements") if data.get("complements") is not None else (data.get("hasSupplements") in ("Oui", "yes", "Yes", "true", True))
+    complements_text = data.get("complements_text") or data.get("supplements")
+    observance = data.get("observance") or data.get("treatmentAdherence")
+    symptoms = data.get("symptoms") or data.get("mainSymptoms")
+    pain_intensity = data.get("pain_intensity") or data.get("painIntensity")
+    symptoms_description = data.get("symptoms_description") or data.get("description") or data.get("otherSymptoms")
+    symptoms_duration = data.get("symptoms_duration") or data.get("symptomDuration")
+    pain_location = data.get("pain_location") or data.get("painLocation")
+    triggers = data.get("triggers")
+    general_state = data.get("general_state") or data.get("generalState")
+    pregnancy_status = data.get("pregnancy_status") or data.get("pregnancyStatus")
+    physical_activity = data.get("physical_activity") or data.get("physicalActivity")
+    diet = data.get("diet")
+    sleep_quality = data.get("sleep_quality") or data.get("sleepQuality")
+    stress_level = data.get("stress_level") if data.get("stress_level") is not None else data.get("stressLevel")
+
+    if temperature is not None:
+        try:
+            temperature = float(temperature)
+        except (TypeError, ValueError):
+            return jsonify({"error": "temperature must be numeric"}), 400
+
+    if oxygen_saturation is not None:
+        try:
+            oxygen_saturation = float(oxygen_saturation)
+        except (TypeError, ValueError):
+            return jsonify({"error": "oxygen_saturation must be numeric"}), 400
+
+    if respiratory_rate is not None:
+        try:
+            respiratory_rate = int(respiratory_rate)
+        except (TypeError, ValueError):
+            return jsonify({"error": "respiratory_rate must be numeric"}), 400
+
+    if age is not None:
+        try:
+            age = int(age)
+        except (TypeError, ValueError):
+            return jsonify({"error": "age must be numeric"}), 400
+
+    if height is not None:
+        try:
+            height = int(height)
+        except (TypeError, ValueError):
+            return jsonify({"error": "height must be numeric"}), 400
+
+    if weight is not None:
+        try:
+            weight = float(weight)
+        except (TypeError, ValueError):
+            return jsonify({"error": "weight must be numeric"}), 400
+
+    if glycemia is not None:
+        try:
+            glycemia = float(glycemia)
+        except (TypeError, ValueError):
+            return jsonify({"error": "glycemia must be numeric"}), 400
+
+    if weight_variation_kg is not None:
+        try:
+            weight_variation_kg = float(weight_variation_kg)
+        except (TypeError, ValueError):
+            return jsonify({"error": "weight_variation_kg must be numeric"}), 400
+
+    if cigarettes_per_day is not None:
+        try:
+            cigarettes_per_day = int(cigarettes_per_day)
+        except (TypeError, ValueError):
+            return jsonify({"error": "cigarettes_per_day must be numeric"}), 400
+
+    if alcohol_glasses is not None:
+        try:
+            alcohol_glasses = int(alcohol_glasses)
+        except (TypeError, ValueError):
+            return jsonify({"error": "alcohol_glasses must be numeric"}), 400
+
+    if pain_intensity is not None:
+        try:
+            pain_intensity = int(pain_intensity)
+        except (TypeError, ValueError):
+            return jsonify({"error": "pain_intensity must be numeric"}), 400
+
+    if stress_level is not None:
+        try:
+            stress_level = int(stress_level)
+        except (TypeError, ValueError):
+            return jsonify({"error": "stress_level must be numeric"}), 400
+
+    # Validate absolute ranges
+    def _validate_limit(name, value):
+        if value is None:
+            return None
+        lo, hi = ABSOLUTE_LIMITS.get(name, (None, None))
+        if lo is None or hi is None:
+            return None
+        if not (lo <= value <= hi):
+            return (
+                jsonify({"error": f"{name} out of allowed range ({lo} - {hi})"}),
+                400,
+            )
+        return None
+
+    for field, val in (
+        ("age", age),
+        ("heart_rate", heart_rate),
+        ("systolic_bp", systolic_bp),
+        ("diastolic_bp", diastolic_bp),
+        ("temperature", temperature),
+        ("oxygen_saturation", oxygen_saturation),
+        ("respiratory_rate", respiratory_rate),
+        ("weight", weight),
+        ("height", height),
+        ("glycemia", glycemia),
+        ("weight_variation_kg", weight_variation_kg),
+        ("cigarettes_per_day", cigarettes_per_day),
+        ("alcohol_glasses", alcohol_glasses),
+        ("pain_intensity", pain_intensity),
+    ):
+        err = _validate_limit(field, val)
+        if err:
+            return err
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO vitals (user_id, age, gender, height, heart_rate, systolic_bp, diastolic_bp, temperature, oxygen_saturation, respiratory_rate, notes, weight, glycemia, weight_variation, weight_variation_kg, health_issues_history, drug_allergies_flag, drug_allergies, family_health_issues, smoking, cigarettes_per_day, alcohol, alcohol_glasses, current_treatment, current_treatments, complements, complements_text, observance, symptoms, pain_intensity, symptoms_description, symptoms_duration, pain_location, triggers, general_state, pregnancy_status, physical_activity, diet, sleep_quality, stress_level, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())",
+        (
+            user_id,
+            age,
+            gender,
+            height,
+            heart_rate,
+            systolic_bp,
+            diastolic_bp,
+            temperature,
+            oxygen_saturation,
+            respiratory_rate,
+            notes,
+            weight,
+            glycemia,
+            weight_variation,
+            weight_variation_kg,
+            health_issues_history,
+            drug_allergies_flag,
+            drug_allergies,
+            family_health_issues,
+            smoking,
+            cigarettes_per_day,
+            alcohol,
+            alcohol_glasses,
+            current_treatment,
+            current_treatments,
+            complements,
+            complements_text,
+            observance,
+            symptoms,
+            pain_intensity,
+            symptoms_description,
+            symptoms_duration,
+            pain_location,
+            triggers,
+            general_state,
+            pregnancy_status,
+            physical_activity,
+            diet,
+            sleep_quality,
+            stress_level,
+        ),
+    )
+    conn.commit()
+    vital_id = cursor.lastrowid
+
+    should_alert, title, message = _gather_vital_alerts({
+        "heart_rate": heart_rate,
+        "systolic_bp": systolic_bp,
+        "diastolic_bp": diastolic_bp,
+        "temperature": temperature,
+        "oxygen_saturation": oxygen_saturation,
+        "respiratory_rate": respiratory_rate,
+    })
+    if should_alert:
+        insert_alert(conn, user_id, title, message, category="vitals")
+
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Vitals recorded successfully!", "uid": encode_id(vital_id)}), 201
+
+
+@vitals_bp.route("/<uid>", methods=["PUT"])
+@token_required
+def update_vital(uid: str):
+    """Update an existing vital record (owner or admin)."""
+    internal_id = decode_id(uid)
+    if internal_id is None:
+        return jsonify({"error": "Invalid vital UID"}), 400
+
+    data, error = get_request_data()
+    if error:
+        return error
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM vitals WHERE id = %s", (internal_id,))
+    vital = cursor.fetchone()
+    if vital is None:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Vital record not found"}), 404
+
+    if g.current_user.get("role") != "admin" and g.current_user.get("uid") != encode_id(vital["user_id"]):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Forbidden"}), 403
+
+    allowed = ["age", "gender", "height", "heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "notes", "weight", "glycemia", "weight_variation", "weight_variation_kg", "health_issues_history", "drug_allergies_flag", "drug_allergies", "family_health_issues", "smoking", "cigarettes_per_day", "alcohol", "alcohol_glasses", "current_treatment", "current_treatments", "complements", "complements_text", "observance", "symptoms", "pain_intensity", "symptoms_description", "symptoms_duration", "pain_location", "triggers", "general_state", "pregnancy_status", "physical_activity", "diet", "sleep_quality", "stress_level"]
+    update_fields = {}
+    for field in allowed:
+        if field in data:
+            update_fields[field] = data[field]
+
+    if not update_fields:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "No valid fields to update"}), 400
+
+    # parse and validate types
+    try:
+        if "heart_rate" in update_fields:
+            update_fields["heart_rate"] = int(update_fields["heart_rate"])
+        if "systolic_bp" in update_fields:
+            update_fields["systolic_bp"] = int(update_fields["systolic_bp"])
+        if "diastolic_bp" in update_fields:
+            update_fields["diastolic_bp"] = int(update_fields["diastolic_bp"])
+        if "respiratory_rate" in update_fields:
+            update_fields["respiratory_rate"] = int(update_fields["respiratory_rate"])
+        if "temperature" in update_fields:
+            update_fields["temperature"] = float(update_fields["temperature"])
+        if "oxygen_saturation" in update_fields:
+            update_fields["oxygen_saturation"] = float(update_fields["oxygen_saturation"])
+        if "weight" in update_fields:
+            update_fields["weight"] = float(update_fields["weight"])
+        if "height" in update_fields:
+            update_fields["height"] = int(update_fields["height"])
+        if "glycemia" in update_fields:
+            update_fields["glycemia"] = float(update_fields["glycemia"])
+        if "weight_variation_kg" in update_fields:
+            update_fields["weight_variation_kg"] = float(update_fields["weight_variation_kg"])
+        if "cigarettes_per_day" in update_fields:
+            update_fields["cigarettes_per_day"] = int(update_fields["cigarettes_per_day"])
+        if "alcohol_glasses" in update_fields:
+            update_fields["alcohol_glasses"] = int(update_fields["alcohol_glasses"])
+        if "pain_intensity" in update_fields:
+            update_fields["pain_intensity"] = int(update_fields["pain_intensity"])
+    except (TypeError, ValueError):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Invalid types for vitals fields"}), 400
+
+    for field, val in update_fields.items():
+        err = None
+        if field in ABSOLUTE_LIMITS:
+            lo, hi = ABSOLUTE_LIMITS[field]
+            if not (lo <= val <= hi):
+                err = (jsonify({"error": f"{field} out of allowed range ({lo} - {hi})"}), 400)
+        if err:
+            cursor.close()
+            conn.close()
+            return err
+
+    set_clauses = []
+    params = []
+    for field, val in update_fields.items():
+        set_clauses.append(f"{field} = %s")
+        params.append(val)
+    params.append(internal_id)
+
+    cursor.execute(f"UPDATE vitals SET {', '.join(set_clauses)}, updated_at = NOW() WHERE id = %s", tuple(params))
+    conn.commit()
+
+    # re-fetch and check for alerts
+    cursor.execute("SELECT * FROM vitals WHERE id = %s", (internal_id,))
+    updated = cursor.fetchone()
+    should_alert, title, message = _gather_vital_alerts({
+        "heart_rate": updated.get("heart_rate"),
+        "systolic_bp": updated.get("systolic_bp"),
+        "diastolic_bp": updated.get("diastolic_bp"),
+        "temperature": updated.get("temperature"),
+        "oxygen_saturation": updated.get("oxygen_saturation"),
+        "respiratory_rate": updated.get("respiratory_rate"),
+    })
+    if should_alert:
+        insert_alert(conn, updated.get("user_id"), title, message, category="vitals")
+
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Vital updated successfully!"})
+
+
+@vitals_bp.route("/evolution", methods=["GET"])
+@token_required
+def vitals_evolution():
+    """Return data for charting evolution of a single measure.
+
+    Query params: user_uid (optional for admin), measure, from (YYYY-MM-DD), to (YYYY-MM-DD)
+    """
+    measure = request.args.get("measure")
+    if measure not in ("heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "weight", "glycemia"):
+        return jsonify({"error": "Invalid or missing measure parameter"}), 400
+
+    user_uid = request.args.get("user_uid")
+    current = g.current_user
+    if user_uid:
+        user_id = decode_id(user_uid)
+        if user_id is None:
+            return jsonify({"error": "Invalid user UID"}), 400
+        if current.get("role") != "admin" and current.get("uid") != user_uid:
+            return jsonify({"error": "Forbidden"}), 403
+    elif current.get("role") != "admin":
+        user_id = decode_id(current.get("uid"))
+    else:
+        return jsonify({"error": "user_uid required for admin"}), 400
+
+    date_from = request.args.get("from")
+    date_to = request.args.get("to")
+    params = [user_id]
+    query = f"SELECT recorded_at, {measure} as value FROM vitals WHERE user_id = %s"
+    if date_from:
+        query += " AND recorded_at >= %s"
+        params.append(date_from)
+    if date_to:
+        query += " AND recorded_at <= %s"
+        params.append(date_to)
+    query += " ORDER BY recorded_at ASC"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(query, tuple(params))
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify([{"recorded_at": r.get("recorded_at"), "value": r.get("value")} for r in rows])
+
+
+@vitals_bp.route("/export", methods=["GET"])
+@token_required
+def export_vitals():
+    """Export vitals history for a user in CSV or PDF. Query: user_uid, format=csv|pdf, from, to"""
+    fmt = request.args.get("format", "csv").lower()
+    user_uid = request.args.get("user_uid")
+    current = g.current_user
+    if user_uid:
+        user_id = decode_id(user_uid)
+        if user_id is None:
+            return jsonify({"error": "Invalid user UID"}), 400
+        if current.get("role") != "admin" and current.get("uid") != user_uid:
+            return jsonify({"error": "Forbidden"}), 403
+    elif current.get("role") != "admin":
+        user_id = decode_id(current.get("uid"))
+    else:
+        return jsonify({"error": "user_uid required for admin"}), 400
+
+    date_from = request.args.get("from")
+    date_to = request.args.get("to")
+    params = [user_id]
+    query = "SELECT * FROM vitals WHERE user_id = %s"
+    if date_from:
+        query += " AND recorded_at >= %s"
+        params.append(date_from)
+    if date_to:
+        query += " AND recorded_at <= %s"
+        params.append(date_to)
+    query += " ORDER BY recorded_at DESC"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(query, tuple(params))
+    rows = cursor.fetchall()
+
+    if fmt == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["recorded_at", "heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "notes", "weight", "glycemia", "weight_variation", "weight_variation_kg"])
+        for r in rows:
+            writer.writerow([
+                r.get("recorded_at"), r.get("heart_rate"), r.get("systolic_bp"), r.get("diastolic_bp"), r.get("temperature"), r.get("oxygen_saturation"), r.get("respiratory_rate"), r.get("notes"), r.get("weight"), r.get("glycemia"), r.get("weight_variation"), r.get("weight_variation_kg")
+            ])
+        csv_data = output.getvalue()
+        output.close()
+        cursor.close()
+        conn.close()
+        current_date = datetime.now(timezone.utc).date()
+        headers = {
+            "Content-Disposition": f"attachment; filename=vitals_{user_id}_{current_date}.csv",
+            "Content-Type": "text/csv",
+        }
+        return Response(csv_data, headers=headers)
+    elif fmt == "pdf":
+        if not REPORTLAB_AVAILABLE:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "PDF export not available (reportlab not installed)"}), 500
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        y = height - 50
+        current_date = datetime.now(timezone.utc).date()
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(50, y, f"Vitals Export for user {user_id} - {current_date}")
+        y -= 30
+        p.setFont("Helvetica", 10)
+        for r in rows:
+            line = f"{r.get('recorded_at')} | HR:{r.get('heart_rate')} | BP:{r.get('systolic_bp')}/{r.get('diastolic_bp')} | Temp:{r.get('temperature')} | O2:{r.get('oxygen_saturation')} | RR:{r.get('respiratory_rate')}"
+            p.drawString(50, y, line)
+            y -= 14
+            if y < 50:
+                p.showPage()
+                y = height - 50
+        p.save()
+        pdf = buffer.getvalue()
+        buffer.close()
+        cursor.close()
+        conn.close()
+        headers = {
+            "Content-Disposition": f"attachment; filename=vitals_{user_id}_{current_date}.pdf",
+            "Content-Type": "application/pdf",
+        }
+        return Response(pdf, headers=headers)
+    else:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Unsupported export format"}), 400
+
+
+# Maps the frontend's period selector to a day count for the SQL filter.
+PERIOD_TO_DAYS = {"week": 7, "month": 30, "3months": 90}
+PERIOD_LABELS = {"week": "7 derniers jours", "month": "30 derniers jours", "3months": "3 derniers mois"}
+PERIOD_FILENAME_SLUGS = {"week": "Semaine", "month": "Mois", "3months": "3-mois"}
+
+
+def _wrap_lines(text, width=90):
+    """Split a paragraph into reportlab-drawable lines (canvas has no auto-wrap)."""
+    import textwrap
+    if not text:
+        return []
+    return textwrap.wrap(str(text), width=width) or [""]
+
+
+@vitals_bp.route("/analysis-pdf", methods=["POST"])
+@token_required
+def export_analysis_pdf():
+    """Render a trend-analysis result (produced by mediassist_service) as a
+    downloadable PDF. The model call happens upstream; this route only
+    handles auth + layout, reusing the canvas pattern from export_vitals()."""
+    if not REPORTLAB_AVAILABLE:
+        return jsonify({"error": "PDF export not available (reportlab not installed)"}), 500
+
+    data, error = get_request_data()
+    if error:
+        return error
+
+    period = data.get("period")
+    analysis = data.get("analysis") or {}
+    if period not in PERIOD_TO_DAYS:
+        return jsonify({"error": "Invalid period"}), 400
+
+    user_uid = data.get("user_uid")
+    current = g.current_user
+    if user_uid:
+        user_id = decode_id(user_uid)
+        if user_id is None:
+            return jsonify({"error": "Invalid user UID"}), 400
+        if current.get("role") != "admin" and current.get("uid") != user_uid:
+            return jsonify({"error": "Forbidden"}), 403
+    elif current.get("role") != "admin":
+        user_id = decode_id(current.get("uid"))
+    else:
+        return jsonify({"error": "user_uid required for admin"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT name FROM users WHERE id = %s", (user_id,))
+    user_row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    patient_name = (user_row or {}).get("name") or f"Patient #{user_id}"
+
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    p.setTitle(f"Analyse de tendances - {PERIOD_LABELS.get(period, period or '')} - {patient_name}")
+    p.setAuthor("Smart Health Tracker")
+    p.setSubject("Rapport d'analyse de tendances de santé")
+    width, height = letter
+    current_date = datetime.now(timezone.utc).date()
+
+    margin = 50
+    header_height = 78
+    footer_y = 40
+    content_top = height - header_height - 24
+    content_bottom = footer_y + 16
+
+    primary_color = colors.HexColor("#00694c")
+    accent_color = colors.HexColor("#0077b6")
+    text_color = colors.HexColor("#171d1a")
+    muted_color = colors.HexColor("#6d7a73")
+    rule_color = colors.HexColor("#bccac1")
+    section_colors = {
+        "tendances": colors.HexColor("#0077b6"),
+        "points": colors.HexColor("#c2410c"),
+        "recommandations": colors.HexColor("#0f766e"),
+    }
+    evolution_colors = {
+        "hausse": colors.HexColor("#c2410c"),
+        "baisse": colors.HexColor("#0077b6"),
+        "stable": colors.HexColor("#3d4943"),
+        "irreguliere": colors.HexColor("#7c3aed"),
+    }
+    urgency_colors = {
+        "critique": colors.HexColor("#ba1a1a"),
+        "elevee": colors.HexColor("#c2410c"),
+        "moderee": colors.HexColor("#b45309"),
+        "normale": colors.HexColor("#0077b6"),
+    }
+    priority_colors = {
+        "haute": colors.HexColor("#ba1a1a"),
+        "moyenne": colors.HexColor("#b45309"),
+        "basse": colors.HexColor("#3d4943"),
+    }
+
+    page_num = 1
+    y = content_top
+
+    def draw_header():
+        p.setFillColor(primary_color)
+        p.rect(0, height - header_height, width, header_height, stroke=0, fill=1)
+        p.setStrokeColor(accent_color)
+        p.setLineWidth(3)
+        p.line(0, height - header_height, width, height - header_height)
+
+        p.setFillColor(colors.white)
+        p.setFont("Helvetica-Bold", 9)
+        p.drawString(margin, height - 22, "SMART HEALTH TRACKER")
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(margin, height - 44, "Rapport d'analyse de tendances de santé")
+        p.setFont("Helvetica", 9)
+        p.drawString(margin, height - 62, PERIOD_LABELS.get(period, period or ""))
+
+        p.setFont("Helvetica", 9)
+        p.drawRightString(width - margin, height - 22, patient_name)
+        p.drawRightString(width - margin, height - 36, f"Généré le {current_date.strftime('%d/%m/%Y')}")
+
+    def draw_footer():
+        p.setStrokeColor(rule_color)
+        p.setLineWidth(0.5)
+        p.line(margin, footer_y + 10, width - margin, footer_y + 10)
+        p.setFillColor(muted_color)
+        p.setFont("Helvetica", 7)
+        p.drawString(margin, footer_y, "Document généré automatiquement - ne remplace pas un avis médical.")
+        p.drawRightString(width - margin, footer_y, f"Page {page_num}")
+
+    def new_page():
+        nonlocal y, page_num
+        draw_footer()
+        p.showPage()
+        page_num += 1
+        draw_header()
+        y = content_top
+
+    def ensure_space(min_height):
+        if y < content_bottom + min_height:
+            new_page()
+
+    def section_title(label, color):
+        nonlocal y
+        ensure_space(30)
+        p.setFillColor(color)
+        p.rect(margin, y - 16, width - 2 * margin, 20, stroke=0, fill=1)
+        p.setFillColor(colors.white)
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(margin + 8, y - 11, label)
+        y -= 32
+
+    def draw_paragraph(text, font="Helvetica", size=10, color=text_color, gap=14, indent=0):
+        nonlocal y
+        if not text:
+            return
+        p.setFillColor(color)
+        p.setFont(font, size)
+        for line in _wrap_lines(text, width=95 if indent == 0 else 88):
+            ensure_space(gap)
+            p.drawString(margin + indent, y, line)
+            y -= gap
+        y -= 4
+
+    def draw_tendance(t):
+        nonlocal y
+        ensure_space(28)
+        indicateur = t.get("indicateur", "")
+        evolution = (t.get("evolution") or "").lower()
+        evo_color = evolution_colors.get(evolution, muted_color)
+        p.setFillColor(text_color)
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(margin, y, indicateur)
+        label_width = p.stringWidth(indicateur, "Helvetica-Bold", 10)
+        p.setFillColor(evo_color)
+        p.setFont("Helvetica-Bold", 9)
+        p.drawString(margin + label_width + 8, y, f"({evolution or 'n/a'})")
+        y -= 14
+        draw_paragraph(t.get("detail"), size=9, color=muted_color, indent=4, gap=12)
+
+    def draw_point(pt):
+        nonlocal y
+        ensure_space(28)
+        urgence = (pt.get("urgence") or "normale").lower()
+        u_color = urgency_colors.get(urgence, accent_color)
+        p.setFillColor(u_color)
+        p.rect(margin, y - 11, 6, 12, stroke=0, fill=1)
+        p.setFillColor(text_color)
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(margin + 12, y, pt.get("titre", ""))
+        p.setFillColor(u_color)
+        p.setFont("Helvetica-Bold", 8)
+        p.drawRightString(width - margin, y, urgence.upper())
+        y -= 14
+        draw_paragraph(pt.get("detail"), size=9, color=muted_color, indent=12, gap=12)
+
+    def draw_recommandation(r):
+        nonlocal y
+        ensure_space(28)
+        priorite = (r.get("priorite") or "basse").lower()
+        pr_color = priority_colors.get(priorite, muted_color)
+        p.setFillColor(pr_color)
+        p.rect(margin, y - 11, 6, 12, stroke=0, fill=1)
+        p.setFillColor(text_color)
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(margin + 12, y, r.get("titre", ""))
+        p.setFillColor(pr_color)
+        p.setFont("Helvetica-Bold", 8)
+        p.drawRightString(width - margin, y, priorite.upper())
+        y -= 14
+        draw_paragraph(r.get("detail"), size=9, color=muted_color, indent=12, gap=12)
+
+    draw_header()
+
+    section_title("SYNTHÈSE", primary_color)
+    draw_paragraph(analysis.get("synthese"))
+
+    tendances = analysis.get("tendances") or []
+    if tendances:
+        section_title("TENDANCES DÉTECTÉES", section_colors["tendances"])
+        for t in tendances:
+            draw_tendance(t)
+            y -= 6
+
+    points = analysis.get("points_attention") or []
+    if points:
+        section_title("POINTS D'ATTENTION", section_colors["points"])
+        for pt in points:
+            draw_point(pt)
+            y -= 6
+
+    recos = analysis.get("recommandations") or []
+    if recos:
+        section_title("RECOMMANDATIONS", section_colors["recommandations"])
+        for r in recos:
+            draw_recommandation(r)
+            y -= 6
+
+    disclaimer = analysis.get("disclaimer")
+    if disclaimer:
+        ensure_space(30)
+        y -= 6
+        p.setStrokeColor(rule_color)
+        p.setLineWidth(0.5)
+        p.line(margin, y, width - margin, y)
+        y -= 14
+        draw_paragraph(disclaimer, font="Helvetica-Oblique", size=8, color=muted_color, gap=11)
+
+    draw_footer()
+    p.save()
+    pdf = buffer.getvalue()
+    buffer.close()
+    filename_period = PERIOD_FILENAME_SLUGS.get(period, period or "periode")
+    filename_date = current_date.strftime("%d-%m-%Y")
+    headers = {
+        "Content-Disposition": f"attachment; filename=Analyse_tendances_{filename_period}_{filename_date}.pdf",
+        "Content-Type": "application/pdf",
+    }
+    return Response(pdf, headers=headers)
+
+
+@vitals_bp.route("", methods=["GET"])
+@token_required
+def list_vitals():
+    """List health vital records for the requesting user or admin.
+
+    Optional query param `period` (week|month|3months) restricts results to
+    vitals recorded in that trailing window, used by the history page's
+    date-grouped view and trend analysis.
+    """
+    user_uid = request.args.get("user_uid")
+    period = request.args.get("period")
+    current_user = g.current_user
+    current_uid = current_user.get("uid")
+    current_role = current_user.get("role")
+
+    if period is not None and period not in PERIOD_TO_DAYS:
+        return jsonify({"error": "Invalid period"}), 400
+
+    if user_uid:
+        user_id = decode_id(user_uid)
+        if user_id is None:
+            return jsonify({"error": "Invalid user UID"}), 400
+        if current_role != "admin" and current_uid != user_uid:
+            return jsonify({"error": "Forbidden"}), 403
+    elif current_role != "admin":
+        user_id = decode_id(current_uid)
+    else:
+        user_id = None
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    query = "SELECT * FROM vitals"
+    params = []
+    if user_id is not None:
+        query += " WHERE user_id = %s"
+        params.append(user_id)
+    if period is not None:
+        query += (" AND" if params else " WHERE") + " recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)"
+        params.append(PERIOD_TO_DAYS[period])
+    query += " ORDER BY recorded_at DESC"
+    cursor.execute(query, tuple(params))
+
+    vitals = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify([publicize_vital(item) for item in vitals])
+
+
+@vitals_bp.route("/<uid>", methods=["GET"])
+@token_required
+def get_vital(uid: str):
+    """Get a specific vital record by UID."""
+    internal_id = decode_id(uid)
+    if internal_id is None:
+        return jsonify({"error": "Invalid vital UID"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM vitals WHERE id = %s", (internal_id,))
+    vital = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if vital is None:
+        return jsonify({"error": "Vital record not found"}), 404
+
+    if g.current_user.get("role") != "admin" and g.current_user.get("uid") != encode_id(vital["user_id"]):
+        return jsonify({"error": "Forbidden"}), 403
+
+    return jsonify(publicize_vital(vital))
+
+
+@vitals_bp.route("/latest/<vital_type>", methods=["GET"])
+@token_required
+def get_latest_vital(vital_type: str):
+    """Get the most recent vital record of a specific type for the current user."""
+    allowed_types = ["heart_rate", "systolic_bp", "diastolic_bp", "temperature", "oxygen_saturation", "respiratory_rate", "weight", "glycemia"]
+    if vital_type not in allowed_types:
+        return jsonify({"error": f"Invalid vital type. Allowed: {', '.join(allowed_types)}"}), 400
+
+    requester = g.current_user
+    internal_id = decode_id(requester.get("uid"))
+    if internal_id is None:
+        return jsonify({"error": "Invalid user"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        f"SELECT * FROM vitals WHERE user_id = %s AND {vital_type} IS NOT NULL ORDER BY created_at DESC LIMIT 1",
+        (internal_id,)
+    )
+    vital = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if vital is None:
+        return jsonify({"error": "No vital records found for this type"}), 404
+
+    return jsonify(publicize_vital(vital))
