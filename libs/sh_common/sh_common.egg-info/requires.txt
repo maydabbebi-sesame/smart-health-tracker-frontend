@@ -1,0 +1,5 @@
+Flask
+PyJWT
+cryptography
+mysql-connector-python
+python-dotenv

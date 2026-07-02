@@ -1,0 +1,195 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pw_2026}
+      MYSQL_DATABASE: smarthealth
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # See backend/database/docker-init/README.md -- 01-dump.sql (your local
+      # data) is git-ignored and must be created once before first boot.
+      - ./backend/database/docker-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: auth_svc
+      DB_PASSWORD: auth_svc_pw_2026
+      DB_DATABASE: smarthealth
+      SECRET_KEY: ${SECRET_KEY:-smarthealth-secret-2026}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-smarthealth-jwt-secret-2026}
+      EMAIL_DEV_MODE: "true"
+      SMTP_ENABLED: "false"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      PORT: "5101"
+    ports:
+      - "5101:5101"
+
+  users-service:
+    build:
+      context: .
+      dockerfile: services/users-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: users_svc
+      DB_PASSWORD: users_svc_pw_2026
+      DB_DATABASE: smarthealth
+      SECRET_KEY: ${SECRET_KEY:-smarthealth-secret-2026}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-smarthealth-jwt-secret-2026}
+      HEALTHDATA_SERVICE_URL: http://health-data-service:5103
+      DOCTORSAPPT_SERVICE_URL: http://doctors-appointments-service:5104
+      PORT: "5102"
+    ports:
+      - "5102:5102"
+    volumes:
+      # Shared with the legacy monolith's upload path during the migration
+      # (see services/users-service/users.py's upload_dir comment).
+      - ./backend/uploads:/app/backend/uploads
+
+  health-data-service:
+    build:
+      context: .
+      dockerfile: services/health-data-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: healthdata_svc
+      DB_PASSWORD: healthdata_svc_pw_2026
+      DB_DATABASE: smarthealth
+      SECRET_KEY: ${SECRET_KEY:-smarthealth-secret-2026}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-smarthealth-jwt-secret-2026}
+      EMAIL_DEV_MODE: "true"
+      SMTP_ENABLED: "false"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      PORT: "5103"
+    ports:
+      - "5103:5103"
+
+  # Separate container, same image as health-data-service, running the
+  # RabbitMQ consumer (worker.py) instead of the HTTP API -- a real worker
+  # process, not a thread inside the Flask app (see worker.py's docstring).
+  health-data-worker:
+    build:
+      context: .
+      dockerfile: services/health-data-service/Dockerfile
+    restart: unless-stopped
+    command: ["python", "worker.py"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: healthdata_svc
+      DB_PASSWORD: healthdata_svc_pw_2026
+      DB_DATABASE: smarthealth
+      SECRET_KEY: ${SECRET_KEY:-smarthealth-secret-2026}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-smarthealth-jwt-secret-2026}
+      EMAIL_DEV_MODE: "true"
+      SMTP_ENABLED: "false"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+
+  doctors-appointments-service:
+    build:
+      context: .
+      dockerfile: services/doctors-appointments-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: doctorsappt_svc
+      DB_PASSWORD: doctorsappt_svc_pw_2026
+      DB_DATABASE: smarthealth
+      SECRET_KEY: ${SECRET_KEY:-smarthealth-secret-2026}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-smarthealth-jwt-secret-2026}
+      EMAIL_DEV_MODE: "true"
+      SMTP_ENABLED: "false"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      PORT: "5104"
+    ports:
+      - "5104:5104"
+
+  mediassist-service:
+    build:
+      context: .
+      dockerfile: mediassist_service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: mediassist_svc
+      DB_PASSWORD: mediassist_svc_pw_2026
+      DB_DATABASE: smarthealth
+      SECRET_KEY: ${SECRET_KEY:-smarthealth-secret-2026}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-smarthealth-jwt-secret-2026}
+    ports:
+      - "5001:5001"
+
+  gateway:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - users-service
+      - health-data-service
+      - doctors-appointments-service
+      - mediassist-service
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+
+volumes:
+  mysql_data:

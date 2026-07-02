@@ -1,3 +1,4 @@
+-e ../libs/sh_common
 flask
 flask-cors
 requests

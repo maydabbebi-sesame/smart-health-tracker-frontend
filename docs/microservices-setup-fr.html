@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>SmartHealth — Documentation Microservices & Guide d'installation</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161922;
+    --border: #2a2f3a;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --accent: #4f9dff;
+    --good: #4cd97b;
+    --warn: #f5b942;
+    --bad: #ff6b6b;
+    --code-bg: #1c2030;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.7;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  /* ── Nav ── */
+  .toc {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 3rem;
+  }
+  .toc h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+  .toc ol { padding-left: 1.2rem; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Headings ── */
+  h1 { font-size: 2rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); margin-bottom: 2.5rem; font-size: 1.05rem; }
+  h2 { font-size: 1.35rem; margin-top: 3rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; scroll-margin-top: 24px; }
+  h3 { font-size: 1.05rem; color: var(--accent); margin-top: 1.8rem; }
+  p { margin-top: 0.8rem; }
+  ul, ol { padding-left: 1.3rem; margin-top: 0.6rem; }
+  li { margin-bottom: 0.5rem; }
+
+  /* ── Code ── */
+  code {
+    background: var(--code-bg);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #c9d6ff;
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin-top: 0.8rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+  }
+  pre .c { color: #6a7a8a; }
+  pre .k { color: #f5b942; }
+  pre .s { color: #4cd97b; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.93rem; }
+  th, td { border: 1px solid var(--border); padding: 10px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--panel); color: var(--accent); font-weight: 600; }
+  tr:nth-child(even) td { background: #12151d; }
+
+  /* ── Callouts ── */
+  .note { background: #13202a; border-left: 4px solid var(--accent); border-radius: 6px; padding: 14px 18px; margin: 1.2rem 0; }
+  .warn { background: #221a10; border-left: 4px solid var(--warn); border-radius: 6px; padding: 14px 18px; margin: 1.2rem 0; }
+  .good { background: #0f2218; border-left: 4px solid var(--good); border-radius: 6px; padding: 14px 18px; margin: 1.2rem 0; }
+
+  /* ── Step list ── */
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps li { counter-increment: step; display: flex; gap: 14px; margin-bottom: 1.2rem; }
+  .steps li::before {
+    content: counter(step);
+    background: var(--accent);
+    color: #0b1320;
+    font-weight: 700;
+    font-size: 0.8rem;
+    min-width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── Service cards ── */
+  .services { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 1rem; }
+  .svc {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .svc .name { font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .svc .port { font-size: 0.8rem; color: var(--accent); font-family: monospace; }
+  .svc .desc { font-size: 0.88rem; color: var(--muted); margin-top: 6px; }
+
+  a { color: var(--accent); }
+  footer { margin-top: 3rem; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>SmartHealth — Documentation Microservices</h1>
+  <p class="subtitle">Vue d'ensemble de l'architecture, guide d'installation complet et accès à la base de données</p>
+
+  <nav class="toc">
+    <h2>Sommaire</h2>
+    <ol>
+      <li><a href="#architecture">Vue d'ensemble de l'architecture</a></li>
+      <li><a href="#services">Référence des services</a></li>
+      <li><a href="#prerequisites">Prérequis</a></li>
+      <li><a href="#setup">Installation sur une nouvelle machine</a></li>
+      <li><a href="#env">Variables d'environnement</a></li>
+      <li><a href="#workbench">Accès à la base de données avec MySQL Workbench</a></li>
+      <li><a href="#dev-mode">Mode développement (sans Docker)</a></li>
+      <li><a href="#troubleshooting">Résolution des problèmes</a></li>
+    </ol>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <h2 id="architecture">1. Vue d'ensemble de l'architecture</h2>
+
+  <p>
+    SmartHealth utilise une <strong>architecture microservices</strong> : le backend est découpé en cinq
+    services Flask déployables indépendamment, chacun disposant de ses propres identifiants MySQL
+    restreints et de son propre domaine de responsabilité. Tout le trafic en provenance du frontend
+    passe par un unique <strong>gateway nginx</strong> sur le port <code>8080</code>, qui achemine
+    chaque requête vers le bon service selon le préfixe d'URL. Un bus d'événements
+    <strong>RabbitMQ</strong> gère les notifications asynchrones entre services (par exemple, la
+    confirmation d'un rendez-vous génère une alerte in-app).
+  </p>
+
+  <pre>
+  Frontend React (npm run dev → :5173)
+        │
+        └── http://localhost:8080  (gateway nginx)
+                  │
+    ┌─────────────┼──────────────────────────────────┐
+    │             │              │                   │
+    ▼             ▼              ▼                   ▼
+auth-service  users-service  health-data-service  doctors-appointments-service
+  :5101          :5102            :5103                    :5104
+                                  │
+                            health-data-worker  ← RabbitMQ ← doctors-appt-service
+                                  │
+                         mediassist-service :5001
+                  │
+        ┌─────────┴──────────┐
+        ▼                    ▼
+     MySQL :3307         RabbitMQ :5672
+  (comptes par service)  (interface de gestion :15672)
+  </pre>
+
+  <h3>Bibliothèque d'authentification partagée (<code>libs/sh_common</code>)</h3>
+  <p>
+    Les cinq services importent un package Python partagé (<code>libs/sh_common</code>) qui fournit :
+    l'émission et la vérification des JWT, le schéma d'identifiants publics basé sur HMAC
+    (<code>encode_id</code> / <code>decode_id</code>), les décorateurs <code>token_required</code> /
+    <code>roles_required</code>, les utilitaires d'envoi d'e-mail, ainsi que les helpers RabbitMQ
+    <code>publish_event</code> / <code>consume_events</code>. Chaque service vérifie les JWT
+    <em>localement</em> grâce à la <code>SECRET_KEY</code> partagée — aucun appel réseau vers
+    auth-service n'est nécessaire par requête.
+  </p>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <h2 id="services">2. Référence des services</h2>
+
+  <div class="services">
+    <div class="svc">
+      <div class="name">auth-service</div>
+      <div class="port">:5101 — /api/auth/*</div>
+      <div class="desc">Connexion, inscription, vérification d'e-mail, MFA, OAuth (Google/Facebook/Apple), émission de JWT, réinitialisation de mot de passe, déconnexion.</div>
+    </div>
+    <div class="svc">
+      <div class="name">users-service</div>
+      <div class="port">:5102 — /api/users/*, /api/admin/*, /api/medical-history/*, /api/vaccinations/*, /api/translations/*, /uploads/*</div>
+      <div class="desc">Profils utilisateurs, gestion administrative, historique médical, vaccinations, traductions i18n, téléversement de photos de profil. L'endpoint des statistiques admin agrège les données des autres services.</div>
+    </div>
+    <div class="svc">
+      <div class="name">health-data-service</div>
+      <div class="port">:5103 — /api/vitals/*, /api/forms/*, /api/alerts/*</div>
+      <div class="desc">Enregistrement des constantes vitales, formulaires de santé, alertes in-app. Les constantes et formulaires déclenchent des alertes en interne. Reçoit les événements de rendez-vous via RabbitMQ et crée des alertes in-app.</div>
+    </div>
+    <div class="svc">
+      <div class="name">health-data-worker</div>
+      <div class="port">aucun port HTTP — processus en arrière-plan</div>
+      <div class="desc">Consommateur RabbitMQ. Écoute les événements <code>appointment.*</code> publiés par doctors-appointments-service et insère des lignes d'alerte dans la table alerts.</div>
+    </div>
+    <div class="svc">
+      <div class="name">doctors-appointments-service</div>
+      <div class="port">:5104 — /api/doctors/*, /api/appointments/*</div>
+      <div class="desc">Annuaire des médecins (plateforme, med.tn, OSM), prise de rendez-vous, disponibilités, évaluations. Publie des événements de rendez-vous vers RabbitMQ.</div>
+    </div>
+    <div class="svc">
+      <div class="name">mediassist-service</div>
+      <div class="port">:5001 — /api/mediassist/*</div>
+      <div class="desc">Relais de chat LLM pour l'analyse des symptômes, l'analyse des tendances, les décisions de l'Agent Médecin et l'historique des recommandations.</div>
+    </div>
+  </div>
+
+  <h3>Services d'infrastructure</h3>
+  <table>
+    <thead><tr><th>Service</th><th>Image</th><th>Ports</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td><strong>gateway</strong></td><td>nginx:alpine</td><td>8080→80</td><td>Point d'entrée unique du frontend, routage par préfixe d'URL, sans logique métier.</td></tr>
+      <tr><td><strong>mysql</strong></td><td>mysql:8.0</td><td>3307→3306</td><td>Instance MySQL unique. Chaque service se connecte avec son propre compte restreint (GRANTs par table/colonne). Le port hôte 3307 évite tout conflit avec un MySQL local.</td></tr>
+      <tr><td><strong>rabbitmq</strong></td><td>rabbitmq:3-management</td><td>5672, 15672</td><td>Bus d'événements AMQP. Exchange de type topic : <code>smarthealth.events</code>. Interface de gestion sur :15672 (guest/guest).</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <h2 id="prerequisites">3. Prérequis</h2>
+
+  <table>
+    <thead><tr><th>Outil</th><th>Version</th><th>Remarques</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Docker Desktop</strong></td><td>4.x ou supérieur</td><td>Inclut Docker Engine et Compose v2. Télécharger sur <a href="https://www.docker.com/products/docker-desktop/" target="_blank">docker.com</a>. Activer le backend WSL 2 sous Windows.</td></tr>
+      <tr><td><strong>Node.js</strong></td><td>18 ou 20 LTS</td><td>Pour lancer le serveur de développement frontend (<code>npm run dev</code>).</td></tr>
+      <tr><td><strong>MySQL Server</strong></td><td>8.0</td><td>Uniquement nécessaire sur la <em>machine d'origine</em> pour générer le dump initial. Non requis sur la nouvelle machine — Docker fournit son propre MySQL.</td></tr>
+      <tr><td><strong>MySQL Workbench</strong></td><td>8.0</td><td>Optionnel — pour parcourir la base de données Dockerisée. Voir <a href="#workbench">Section 6</a>.</td></tr>
+      <tr><td><strong>Git</strong></td><td>toute version</td><td>Pour cloner le dépôt.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <h2 id="setup">4. Installation sur une nouvelle machine</h2>
+
+  <div class="note">
+    <strong>Prérequis unique sur la machine d'origine :</strong> vous devez exporter la base de
+    données sous forme de dump SQL avant toute installation ailleurs. Si vous disposez déjà de
+    <code>backend/database/docker-init/01-dump.sql</code> depuis la machine d'origine, copiez-le
+    au même chemin sur la nouvelle machine et passez directement à l'étape 3.
+  </div>
+
+  <h3>Procédure pas à pas</h3>
+  <ol class="steps">
+    <li>
+      <div>
+        <strong>Cloner le dépôt</strong>
+        <pre>git clone &lt;url-du-dépôt&gt;
+cd smart-health-tracker-frontend</pre>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Générer le dump de la base de données</strong> (machine d'origine uniquement, MySQL local requis)<br>
+        <em>Sous Windows (PowerShell) — utiliser <code>--result-file</code> pour éviter les problèmes d'encodage UTF-16 :</em>
+        <pre>&amp; "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqldump.exe" `
+    -u smarthealth -pTest12#### `
+    --result-file="backend/database/docker-init/01-dump.sql" `
+    smarthealth</pre>
+        <em>Sous macOS / Linux :</em>
+        <pre>mysqldump -u smarthealth -p smarthealth \
+    > backend/database/docker-init/01-dump.sql</pre>
+        <p style="margin-top:8px;color:var(--muted);font-size:0.9rem;">
+          Ce fichier est ignoré par Git (il contient des données réelles). Transférez-le vers le
+          même chemin sur la nouvelle machine via clé USB, SCP ou tout autre outil de transfert.
+        </p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Installer les dépendances du frontend</strong>
+        <pre>npm install</pre>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Configurer les variables d'environnement</strong><br>
+        Le fichier <code>.env</code> à la racine contient déjà les paramètres corrects pour le
+        gateway Docker. Aucune modification n'est nécessaire sauf si vous souhaitez utiliser un
+        vrai serveur SMTP ou un autre Google Client ID. Voir <a href="#env">Section 5</a> pour
+        la référence complète.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Construire et démarrer tous les services</strong>
+        <pre>docker compose up --build</pre>
+        <p style="margin-top:8px;color:var(--muted);font-size:0.9rem;">
+          Le premier lancement prend 5 à 10 minutes : téléchargement des images de base,
+          construction des 5 images de services, initialisation de MySQL depuis le dump,
+          création des comptes DB par service, démarrage de tout l'environnement. Les lancements
+          suivants sont beaucoup plus rapides (couches en cache).
+        </p>
+        <p style="margin-top:6px;">Lorsque tout est prêt, vous verrez les lignes de démarrage de chaque service :</p>
+        <pre><span class="c">auth-service-1         | * Running on http://0.0.0.0:5101
+users-service-1        | * Running on http://0.0.0.0:5102
+health-data-service-1  | * Running on http://0.0.0.0:5103
+doctors-...-service-1  | * Running on http://0.0.0.0:5104
+mediassist-service-1   | * Running on http://0.0.0.0:5001</span></pre>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Vérifier que tous les conteneurs sont en bonne santé</strong>
+        <pre>docker compose ps</pre>
+        Les 9 entrées doivent afficher <code>Up</code> ou <code>Up (healthy)</code>. Si l'une
+        affiche <code>Exit</code>, exécutez <code>docker compose logs &lt;nom-du-service&gt;</code>
+        pour diagnostiquer.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Démarrer le serveur de développement frontend</strong>
+        <pre>npm run dev</pre>
+        Ouvrez <a href="http://localhost:5173" target="_blank">http://localhost:5173</a> dans votre navigateur.
+      </div>
+    </li>
+  </ol>
+
+  <div class="good">
+    <strong>Test rapide de bon fonctionnement :</strong> ouvrez
+    <a href="http://localhost:8080/api/translations/en" target="_blank">http://localhost:8080/api/translations/en</a>
+    dans un navigateur. Si la réponse est un objet JSON contenant des clés de traduction,
+    le gateway, le users-service et MySQL fonctionnent correctement.
+  </div>
+
+  <h3>Arrêter et redémarrer</h3>
+  <pre><span class="c"># Arrêter tous les conteneurs (les données sont conservées dans le volume mysql_data)</span>
+docker compose down
+
+<span class="c"># Redémarrer (sans reconstruction sauf si le code a changé)</span>
+docker compose up
+
+<span class="c"># Reconstruire après des modifications du code</span>
+docker compose up --build
+
+<span class="c"># Remise à zéro complète — supprime toutes les données et repart du dump</span>
+docker compose down -v
+docker compose up --build</pre>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <h2 id="env">5. Variables d'environnement</h2>
+
+  <h3>Frontend (fichier <code>.env</code> à la racine du dépôt)</h3>
+  <table>
+    <thead><tr><th>Variable</th><th>Valeur Docker</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td><code>VITE_API_BASE_URL</code></td><td><code>http://localhost:8080</code></td><td>Tous les appels API passent par le gateway nginx.</td></tr>
+      <tr><td><code>VITE_MEDIASSIST_URL</code></td><td><code>http://localhost:8080</code></td><td>Les appels MediAssist passent également par le gateway (<code>/api/mediassist/*</code>).</td></tr>
+      <tr><td><code>VITE_GOOGLE_CLIENT_ID</code></td><td>votre Google OAuth Client ID</td><td>Laisser vide pour désactiver la connexion Google.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Comptes DB par service (définis dans <code>docker-compose.yml</code>)</h3>
+  <table>
+    <thead><tr><th>Service</th><th>DB_USER</th><th>DB_PASSWORD</th><th>Tables gérées</th></tr></thead>
+    <tbody>
+      <tr><td>auth-service</td><td><code>auth_svc</code></td><td><code>auth_svc_pw_2026</code></td><td>users (accès complet)</td></tr>
+      <tr><td>users-service</td><td><code>users_svc</code></td><td><code>users_svc_pw_2026</code></td><td>users, medical_history, vaccinations, translations</td></tr>
+      <tr><td>health-data-service</td><td><code>healthdata_svc</code></td><td><code>healthdata_svc_pw_2026</code></td><td>vitals, forms, alerts</td></tr>
+      <tr><td>doctors-appointments-service</td><td><code>doctorsappt_svc</code></td><td><code>doctorsappt_svc_pw_2026</code></td><td>external_doctors, doctor_ratings, appointments, health_centers</td></tr>
+      <tr><td>mediassist-service</td><td><code>mediassist_svc</code></td><td><code>mediassist_svc_pw_2026</code></td><td>mediassist_history, mediassist_recommendations</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn">
+    Tous les services partagent les mêmes <code>SECRET_KEY</code> et <code>JWT_SECRET_KEY</code>.
+    Ces valeurs doivent être <strong>identiques</strong> sur chaque service — elles sont utilisées
+    respectivement pour le schéma HMAC des UIDs et la signature des JWT. Si elles diffèrent, les
+    tokens émis par auth-service seront rejetés par tous les autres services.
+  </div>
+
+  <h3>Secrets partagés (section <code>environment</code> de <code>docker-compose.yml</code>)</h3>
+  <table>
+    <thead><tr><th>Variable</th><th>Valeur par défaut</th><th>Remarques</th></tr></thead>
+    <tbody>
+      <tr><td><code>SECRET_KEY</code></td><td><code>smarthealth-secret-2026</code></td><td>Clé HMAC pour encode_id/decode_id. À changer en production.</td></tr>
+      <tr><td><code>JWT_SECRET_KEY</code></td><td><code>smarthealth-jwt-secret-2026</code></td><td>Clé de signature des JWT. À changer en production.</td></tr>
+      <tr><td><code>MYSQL_ROOT_PASSWORD</code></td><td><code>root_pw_2026</code></td><td>Mot de passe root MySQL. Utilisé uniquement pour l'accès administrateur et les scripts d'initialisation.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <h2 id="workbench">6. Accès à la base de données avec MySQL Workbench</h2>
+
+  <p>
+    Le MySQL Docker est mappé sur le port hôte <strong>3307</strong> (et non 3306) afin d'éviter
+    tout conflit avec une éventuelle instance MySQL installée localement.
+  </p>
+
+  <h3>Créer une nouvelle connexion</h3>
+  <ol class="steps">
+    <li><div>Ouvrir MySQL Workbench et cliquer sur l'icône <strong>+</strong> à côté de "MySQL Connections".</div></li>
+    <li>
+      <div>
+        Renseigner les paramètres de connexion :
+        <table style="margin-top:10px;">
+          <thead><tr><th>Champ</th><th>Valeur</th></tr></thead>
+          <tbody>
+            <tr><td>Connection Name</td><td>SmartHealth Docker</td></tr>
+            <tr><td>Connection Method</td><td>Standard (TCP/IP)</td></tr>
+            <tr><td>Hostname</td><td><code>127.0.0.1</code></td></tr>
+            <tr><td>Port</td><td><code>3307</code></td></tr>
+            <tr><td>Username</td><td><code>root</code></td></tr>
+            <tr><td>Password</td><td><code>root_pw_2026</code> (cliquer sur "Store in Vault")</td></tr>
+            <tr><td>Default Schema</td><td><code>smarthealth</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </li>
+    <li><div>Cliquer sur <strong>Test Connection</strong>. Le message "Successfully made the MySQL connection" doit s'afficher.</div></li>
+    <li><div>Cliquer sur <strong>OK</strong>, puis double-cliquer sur la connexion pour l'ouvrir.</div></li>
+  </ol>
+
+  <h3>Connexion avec un compte de service (pour tester les restrictions)</h3>
+  <p>
+    Vous pouvez créer des connexions Workbench supplémentaires en utilisant le compte restreint
+    de chaque service afin de vérifier que l'isolation de la base de données fonctionne
+    correctement. Par exemple, se connecter en tant que
+    <code>healthdata_svc</code> / <code>healthdata_svc_pw_2026</code> permet de confirmer
+    que ce compte peut lire <code>vitals</code> mais ne peut pas accéder à
+    <code>appointments</code> ni à <code>users.password</code>.
+  </p>
+
+  <div class="note">
+    <strong>Docker doit être en cours d'exécution</strong> (<code>docker compose up</code>) pour
+    que Workbench puisse se connecter. Si Docker est arrêté, le port 3307 est fermé et la
+    connexion échouera.
+  </div>
+
+  <h3>Référence des tables principales</h3>
+  <table>
+    <thead><tr><th>Table</th><th>Propriétaire</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td><code>users</code></td><td>auth-service / users-service</td><td>Comptes, identifiants, champs de profil, MFA, token_version</td></tr>
+      <tr><td><code>vitals</code></td><td>health-data-service</td><td>Mesures de santé (fréquence cardiaque, tension, etc.)</td></tr>
+      <tr><td><code>forms</code></td><td>health-data-service</td><td>Réponses aux questionnaires</td></tr>
+      <tr><td><code>alerts</code></td><td>health-data-service</td><td>Notifications in-app</td></tr>
+      <tr><td><code>external_doctors</code></td><td>doctors-appointments-service</td><td>Annuaire des médecins (plateforme, med.tn, OSM)</td></tr>
+      <tr><td><code>appointments</code></td><td>doctors-appointments-service</td><td>Rendez-vous médicaux</td></tr>
+      <tr><td><code>medical_history</code></td><td>users-service</td><td>Entrées d'historique médical du patient</td></tr>
+      <tr><td><code>vaccinations</code></td><td>users-service</td><td>Carnet de vaccination</td></tr>
+      <tr><td><code>mediassist_history</code></td><td>mediassist-service</td><td>Tours de conversation MediAssist (par session)</td></tr>
+      <tr><td><code>mediassist_recommendations</code></td><td>mediassist-service</td><td>Recommandations IA persistées</td></tr>
+      <tr><td><code>translations</code></td><td>users-service (lecture seule)</td><td>Paires clé/valeur pour l'internationalisation</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <h2 id="dev-mode">7. Mode développement (sans Docker)</h2>
+
+  <p>
+    Si Docker n'est pas disponible, vous pouvez exécuter chaque service directement avec Python
+    en utilisant votre MySQL local. Chaque service possède son propre fichier <code>.env</code>
+    préconfiguré pour le développement local.
+  </p>
+
+  <pre><span class="c"># Terminal 1 — auth-service</span>
+cd services/auth-service
+python app.py   <span class="c"># écoute sur :5101</span>
+
+<span class="c"># Terminal 2 — users-service</span>
+cd services/users-service
+python app.py   <span class="c"># écoute sur :5102</span>
+
+<span class="c"># Terminal 3 — health-data-service (API HTTP)</span>
+cd services/health-data-service
+python app.py   <span class="c"># écoute sur :5103</span>
+
+<span class="c"># Terminal 4 — health-data-worker (consommateur RabbitMQ)</span>
+cd services/health-data-service
+python worker.py
+
+<span class="c"># Terminal 5 — doctors-appointments-service</span>
+cd services/doctors-appointments-service
+python app.py   <span class="c"># écoute sur :5104</span>
+
+<span class="c"># Terminal 6 — mediassist-service</span>
+cd mediassist_service
+python app.py   <span class="c"># écoute sur :5001</span></pre>
+
+  <p>
+    En mode développement, le fichier <code>.env</code> du frontend doit pointer directement
+    vers le monolithe legacy ou vers les ports individuels des services. Le gateway nginx
+    n'est actif qu'à l'intérieur de Docker Compose.
+  </p>
+
+  <div class="warn">
+    RabbitMQ doit être installé et en cours d'exécution localement pour que le flux
+    rendez-vous → alerte fonctionne en mode développement. La connexion par défaut est
+    <code>localhost:5672</code> avec les identifiants <code>guest</code> / <code>guest</code>.
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <h2 id="troubleshooting">8. Résolution des problèmes</h2>
+
+  <h3>502 Bad Gateway depuis nginx</h3>
+  <p>Le gateway fonctionne mais ne peut pas atteindre un service en amont.</p>
+  <ul>
+    <li>Exécuter <code>docker compose ps</code> — tout service n'affichant pas <code>Up</code> est le coupable.</li>
+    <li>Exécuter <code>docker compose logs &lt;nom-du-service&gt;</code> pour voir l'erreur de démarrage.</li>
+    <li>L'application Flask à l'intérieur du conteneur doit écouter sur <code>0.0.0.0</code> et non <code>127.0.0.1</code>. Vérifier que chaque appel <code>app.run()</code> contient <code>host="0.0.0.0"</code>.</li>
+  </ul>
+
+  <h3>Accès refusé pour l'utilisateur '…_svc'@'...'</h3>
+  <p>Les comptes MySQL par service n'existent pas — les scripts d'initialisation ne se sont pas exécutés.</p>
+  <ul>
+    <li>Cela se produit lorsque le volume MySQL contient déjà des données d'un lancement précédent. Les scripts de <code>docker-entrypoint-initdb.d</code> ne s'exécutent que sur un volume <strong>vierge</strong>.</li>
+    <li>Solution : <code>docker compose down -v &amp;&amp; docker compose up --build</code></li>
+    <li>S'assurer également que <code>01-dump.sql</code> a été généré avec <code>--result-file</code> et non avec le redirect <code>&gt;</code> de PowerShell (qui produit un encodage UTF-16 illisible par MySQL).</li>
+  </ul>
+
+  <h3>Port 3306 déjà utilisé</h3>
+  <p>Un MySQL installé localement utilise déjà le port 3306. Le MySQL Docker est mappé sur le port <strong>3307</strong> pour éviter ce conflit — aucune action n'est requise.</p>
+
+  <h3>Port 5672 déjà utilisé</h3>
+  <p>Un RabbitMQ installé localement est déjà en cours d'exécution. Arrêtez-le ou modifiez le port hôte dans <code>docker-compose.yml</code> : <code>"5673:5672"</code>.</p>
+
+  <h3>La construction échoue avec "no such file or directory: gcc"</h3>
+  <p>Un package (généralement <code>pycairo</code> via <code>reportlab</code>) nécessite un compilateur C. Tous les Dockerfiles utilisent <code>FROM python:3.11</code> (image complète avec les outils de compilation) — vérifier qu'aucun Dockerfile n'utilise accidentellement <code>python:3.11-slim</code>.</p>
+
+  <h3>Le script d'initialisation MySQL échoue avec "ASCII '\0' appeared in the statement"</h3>
+  <p>Le fichier <code>01-dump.sql</code> a été enregistré en UTF-16 (encodage par défaut du redirect <code>&gt;</code> de PowerShell). Régénérez-le avec <code>--result-file</code> comme indiqué à la <a href="#setup">Section 4, Étape 2</a>.</p>
+
+  <h3>Vérifier les utilisateurs présents dans le MySQL Docker</h3>
+  <pre>docker exec smart-health-tracker-frontend-mysql-1 \
+    mysql -uroot -proot_pw_2026 \
+    -e "SELECT user, host FROM mysql.user WHERE user LIKE '%_svc';"</pre>
+  <p>Vous devriez voir les cinq comptes de service (<code>auth_svc</code>, <code>users_svc</code>, <code>healthdata_svc</code>, <code>doctorsappt_svc</code>, <code>mediassist_svc</code>).</p>
+
+  <footer>
+    Généré à partir d'une inspection complète du code source —
+    <code>docker-compose.yml</code>, tous les <code>services/*/Dockerfile</code>,
+    <code>libs/sh_common</code>, <code>backend/database/docker-init/</code>
+    et <code>gateway/nginx.conf</code>.
+  </footer>
+
+</div>
+</body>
+</html>
