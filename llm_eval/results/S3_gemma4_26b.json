@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-05-26T22:05:14.947470",
+  "scenario_id": "S3",
+  "scenario_label": "Homme 52 ans alcoolique — hépatite / ictère",
+  "urgence_attendue": "elevee",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"critique\",\n  \"alertes\": [\n    \"Jaunisse (ictère) détectée\",\n    \"Perte de poids rapide (6 kg en 1 mois)\",\n    \"Douleur abdominale intense (7/10)\",\n    \"Fatigue extrême\"\n  ],\n  \"resume_situation\": \"Homme de 52 ans avec hépatite alcoolique chronique, présentant une jaunisse, des douleurs abdominales sévères et une perte de poids importante.\",\n  \"analyse\": \"La présence de la jaunisse (yeux et peau jaunes) associée à une douleur intense et une perte de poids rapide est un signal d'alerte majeur. La jaunisse est comme un signal de détresse indiquant que votre foie ou vos voies biliaires ne parviennent plus à évacuer correctement la bile. Combiné à votre perte de poids et vos antécédents, cela nécessite une évaluation médicale immédiate.\",\n  \"recommandations\": [],\n  \"orientation\": {\n    \"niveau\": \"urgences\",\n    \"raison\": \"La combinaison de la jaunisse, de la douleur intense et de la perte de poids rapide constitue une urgence médicale qui nécessite une prise en charge hospitalière immédiate pour évaluer l'état de votre foie.\",\n    \"delai\": \"immédiat\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "critique",
+      "alertes": [
+        "Jaunisse (ictère) détectée",
+        "Perte de poids rapide (6 kg en 1 mois)",
+        "Douleur abdominale intense (7/10)",
+        "Fatigue extrême"
+      ],
+      "resume_situation": "Homme de 52 ans avec hépatite alcoolique chronique, présentant une jaunisse, des douleurs abdominales sévères et une perte de poids importante.",
+      "analyse": "La présence de la jaunisse (yeux et peau jaunes) associée à une douleur intense et une perte de poids rapide est un signal d'alerte majeur. La jaunisse est comme un signal de détresse indiquant que votre foie ou vos voies biliaires ne parviennent plus à évacuer correctement la bile. Combiné à votre perte de poids et vos antécédents, cela nécessite une évaluation médicale immédiate.",
+      "recommandations": [],
+      "orientation": {
+        "niveau": "urgences",
+        "raison": "La combinaison de la jaunisse, de la douleur intense et de la perte de poids rapide constitue une urgence médicale qui nécessite une prise en charge hospitalière immédiate pour évaluer l'état de votre foie.",
+        "delai": "immédiat"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 7357,
+    "urgence_detectee": "critique",
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": 32,
+      "securite_pharmacologique": 23,
+      "detection_langue": 10,
+      "total": 85,
+      "notes": "Ictère + perte de poids + douleur correctement classés critique. Défendable."
+    }
+  }
+}

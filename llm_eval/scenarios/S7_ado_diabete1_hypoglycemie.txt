@@ -1,0 +1,21 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Aucune allergie connue
+Médicaments actuels : Insuline rapide (Novorapid) 3x/j, Insuline lente (Lantus) 1x/j
+Observance : Toujours
+Maladies chroniques : Diabète type 1
+Tabac : Non-fumeur | Alcool : Non
+Âge : 16 ans | Sexe : M
+IMC : 20.1 → Normal
+Glycémie : 0.55 g/L
+Variation poids (1 mois) : Stable
+Symptômes : Tremblements, sueurs froides, sensation de faim intense
+Intensité douleur (EVA) : 2/10
+Durée : Moins de 1h
+Facteurs déclenchants : Effort physique — match de football
+État général : Moyen
+Activité physique : Intense
+Alimentation : Omnivore
+Sommeil : Bon | Stress : 2/5
+
+--- QUESTION ---
+J'ai fait un match de foot ce matin et maintenant je tremble et je transpire beaucoup. Ma glycémie est à 0.55, c'est normal ?

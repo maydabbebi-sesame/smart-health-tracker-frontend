@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-05-28T13:25:38.123460",
+  "scenario_id": "S4",
+  "scenario_label": "Femme 35 ans — maladie cœliaque non observante",
+  "urgence_attendue": "moderee",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"moderee\",\n  \"alertes\": [\n    \"Douleurs abdominales persistantes\",\n    \"Diarrhées fréquentes\",\n    \"Perte de poids récente (3 kg en 1 mois)\",\n    \"Fatigue\",\n    \"IMC insuffisant (18.9)\"\n  ],\n  \"resume_situation\": \"Vous êtes une femme de 35 ans, atteinte de maladie cœliaque, avec un IMC insuffisant. Vous présentez des douleurs abdominales, des ballonnements, des diarrhées fréquentes et de la fatigue depuis plusieurs semaines, suite à une consommation de gluten pendant les fêtes.\",\n  \"analyse\": \"Vos symptômes (douleurs abdominales, ballonnements, diarrhées) sont typiques d'une poussée de votre maladie cœliaque, déclenchée par la consommation de gluten. La fatigue et la perte de poids récente sont également des signes préoccupants qui peuvent indiquer une inflammation intestinale importante ou une mauvaise absorption des nutriments. Votre IMC déjà insuffisant et la perte de poids récente suggèrent que cette situation pourrait s'aggraver. Bien que vos symptômes ne soient pas immédiatement mortels, leur persistance et l'impact sur votre état général nécessitent une évaluation médicale.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Reprenez un régime strict sans gluten\",\n      \"detail\": \"Éliminez complètement le blé, l'orge et le seigle de votre alimentation. Lisez attentivement les étiquettes des aliments transformés. Cela devrait permettre de réduire l'inflammation et d'améliorer vos symptômes.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Hydratez-vous bien\",\n      \"detail\": \"Les diarrhées fréquentes peuvent entraîner une déshydratation. Buvez beaucoup d'eau, de bouillons clairs ou des solutions de réhydratation orale pour compenser les pertes.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Surveillez vos symptômes\",\n      \"detail\": \"Notez la fréquence de vos diarrhées, l'intensité de vos douleurs et votre niveau d'énergie. Cela aidera votre médecin à évaluer l'évolution de votre état.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Envisagez une supplémentation en fer\",\n      \"detail\": \"La maladie cœliaque peut entraîner une carence en fer, surtout avec des diarrhées. Votre médecin pourra vous prescrire une supplémentation si nécessaire, en tenant compte de votre traitement actuel.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Consultez un(e) diététicien(ne)\",\n      \"detail\": \"Un(e) professionnel(le) de la nutrition spécialisé(e) dans la maladie cœliaque peut vous aider à mettre en place un régime sans gluten équilibré et adapté à vos besoins, afin de prévenir les carences et améliorer votre état général.\",\n      \"priorite\": \"basse\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"specialite\": null,\n    \"raison\": \"Évaluation des symptômes persistants de maladie cœliaque (douleurs abdominales, diarrhées, fatigue, perte de poids) et adaptation du traitement.\",\n    \"delai\": \"cette semaine\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "moderee",
+      "alertes": [
+        "Douleurs abdominales persistantes",
+        "Diarrhées fréquentes",
+        "Perte de poids récente (3 kg en 1 mois)",
+        "Fatigue",
+        "IMC insuffisant (18.9)"
+      ],
+      "resume_situation": "Vous êtes une femme de 35 ans, atteinte de maladie cœliaque, avec un IMC insuffisant. Vous présentez des douleurs abdominales, des ballonnements, des diarrhées fréquentes et de la fatigue depuis plusieurs semaines, suite à une consommation de gluten pendant les fêtes.",
+      "analyse": "Vos symptômes (douleurs abdominales, ballonnements, diarrhées) sont typiques d'une poussée de votre maladie cœliaque, déclenchée par la consommation de gluten. La fatigue et la perte de poids récente sont également des signes préoccupants qui peuvent indiquer une inflammation intestinale importante ou une mauvaise absorption des nutriments. Votre IMC déjà insuffisant et la perte de poids récente suggèrent que cette situation pourrait s'aggraver. Bien que vos symptômes ne soient pas immédiatement mortels, leur persistance et l'impact sur votre état général nécessitent une évaluation médicale.",
+      "recommandations": [
+        {
+          "titre": "Reprenez un régime strict sans gluten",
+          "detail": "Éliminez complètement le blé, l'orge et le seigle de votre alimentation. Lisez attentivement les étiquettes des aliments transformés. Cela devrait permettre de réduire l'inflammation et d'améliorer vos symptômes.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Hydratez-vous bien",
+          "detail": "Les diarrhées fréquentes peuvent entraîner une déshydratation. Buvez beaucoup d'eau, de bouillons clairs ou des solutions de réhydratation orale pour compenser les pertes.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Surveillez vos symptômes",
+          "detail": "Notez la fréquence de vos diarrhées, l'intensité de vos douleurs et votre niveau d'énergie. Cela aidera votre médecin à évaluer l'évolution de votre état.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Envisagez une supplémentation en fer",
+          "detail": "La maladie cœliaque peut entraîner une carence en fer, surtout avec des diarrhées. Votre médecin pourra vous prescrire une supplémentation si nécessaire, en tenant compte de votre traitement actuel.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Consultez un(e) diététicien(ne)",
+          "detail": "Un(e) professionnel(le) de la nutrition spécialisé(e) dans la maladie cœliaque peut vous aider à mettre en place un régime sans gluten équilibré et adapté à vos besoins, afin de prévenir les carences et améliorer votre état général.",
+          "priorite": "basse"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "specialite": null,
+        "raison": "Évaluation des symptômes persistants de maladie cœliaque (douleurs abdominales, diarrhées, fatigue, perte de poids) et adaptation du traitement.",
+        "delai": "cette semaine"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 77179,
+    "urgence_detectee": "moderee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 3,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 31,
+      "securite_pharmacologique": 23,
+      "detection_langue": 10,
+      "total": 82,
+      "notes": "Urgence correcte. Gluten + compléments fer pertinents. Nutritionniste recommandé."
+    }
+  }
+}

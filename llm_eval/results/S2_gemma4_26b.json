@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-05-26T22:04:39.466589",
+  "scenario_id": "S2",
+  "scenario_label": "Femme enceinte 28 ans — HTA gestationnelle",
+  "urgence_attendue": "elevee",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"critique\",\n  \"alertes\": [\n    \"Tension artérielle élevée (158/102 mmHg)\",\n    \"Troubles de la vision (vision floue)\",\n    \"Maux de tête intenses (EVA 7/10)\",\n    \"Oedèmes (gonflement des mains et des pieds)\"\n  ],\n  \"resume_situation\": \"Femme enceinte de 32 semaines présentant une hypertension artérielle associée à des symptômes neurologiques et des œdèmes.\",\n  \"analyse\": \"La présence simultanée de maux de tête intenses, de troubles de la vision et d'une tension artérielle élevée pendant la grossesse est un signal d'alerte majeur qui nécessite une évaluation médicale immédiate par une équipe spécialisée.\",\n  \"recommandations\": [],\n  \"orientation\": {\n    \"niveau\": \"urgences\",\n    \"raison\": \"Vos symptômes actuels nécessitent une prise en charge médicale immédiate en milieu hospitalier pour assurer votre sécurité et celle de votre bébé.\",\n    \"delai\": \"immédiat\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "critique",
+      "alertes": [
+        "Tension artérielle élevée (158/102 mmHg)",
+        "Troubles de la vision (vision floue)",
+        "Maux de tête intenses (EVA 7/10)",
+        "Oedèmes (gonflement des mains et des pieds)"
+      ],
+      "resume_situation": "Femme enceinte de 32 semaines présentant une hypertension artérielle associée à des symptômes neurologiques et des œdèmes.",
+      "analyse": "La présence simultanée de maux de tête intenses, de troubles de la vision et d'une tension artérielle élevée pendant la grossesse est un signal d'alerte majeur qui nécessite une évaluation médicale immédiate par une équipe spécialisée.",
+      "recommandations": [],
+      "orientation": {
+        "niveau": "urgences",
+        "raison": "Vos symptômes actuels nécessitent une prise en charge médicale immédiate en milieu hospitalier pour assurer votre sécurité et celle de votre bébé.",
+        "delai": "immédiat"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 10060,
+    "urgence_detectee": "critique",
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": 33,
+      "securite_pharmacologique": 23,
+      "detection_langue": 10,
+      "total": 86,
+      "notes": "Triade pré-éclampsie correctement identifiée. Sur-triage défendable."
+    }
+  }
+}

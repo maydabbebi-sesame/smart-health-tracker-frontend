@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-05-26T22:23:21.463237",
+  "scenario_id": "S11",
+  "scenario_label": "Jeune homme agé de 25ans fatigué",
+  "urgence_attendue": "faible",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"normale\",\n  \"alertes\": [\n    \"Indice de Masse Corporelle (IMC) bas (17.5)\"\n  ],\n  \"resume_situation\": \"Homme de 25 ans, actif physiquement, présentant une fatigue liée à un manque de sommeil et un IMC de 17.5 indiquant une insuffisance pondérale.\",\n  \"analyse\": \"Votre fatigue semble être la conséquence directe de vos cycles de sommeil irréguliers. De plus, votre IMC de 17.5 est inférieur à la zone de santé normale (18.5-25). C'est comme si votre corps fonctionnait avec un réservoir d'essence qui reste toujours proche de la réserve : vous pouvez avancer, mais vous manquez de puissance pour soutenir vos activités physiques (calisthénie et travail physique).\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Régularisation du cycle circadien\",\n      \"detail\": \"Essayez de vous coucher à une heure fixe, même le week-end, pour stabiliser votre horloge biologique, comme on synchronise une montre pour éviter les décalages.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Augmentation de la densité énergétique\",\n      \"detail\": \"Pour soutenir vos efforts physiques, augmentez vos apports en protéines et en bons lipides (avocats, oléagineux) afin de tendre vers un IMC plus sain.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Fractionnement des repas\",\n      \"detail\": \"Ajoutez une ou deux collations nutritives par jour pour augmenter votre apport calorique total sans avoir l'impression de trop manger en une seule fois.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Suivi du poids\",\n      \"detail\": \"Pesez-vous une fois par semaine à jeun pour vérifier si vos ajustements alimentaires permettent une remontée progressive de votre poids.\",\n      \"priorite\": \"basse\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"raison\": \"Un bilan médical est recommandé pour explorer la cause de cet IMC bas et s'assurer que cette fatigue n'est pas liée à une carence nutritionnelle ou un autre déséquilibre.\",\n    \"delai\": \"prochain rendez-vous\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "normale",
+      "alertes": [
+        "Indice de Masse Corporelle (IMC) bas (17.5)"
+      ],
+      "resume_situation": "Homme de 25 ans, actif physiquement, présentant une fatigue liée à un manque de sommeil et un IMC de 17.5 indiquant une insuffisance pondérale.",
+      "analyse": "Votre fatigue semble être la conséquence directe de vos cycles de sommeil irréguliers. De plus, votre IMC de 17.5 est inférieur à la zone de santé normale (18.5-25). C'est comme si votre corps fonctionnait avec un réservoir d'essence qui reste toujours proche de la réserve : vous pouvez avancer, mais vous manquez de puissance pour soutenir vos activités physiques (calisthénie et travail physique).",
+      "recommandations": [
+        {
+          "titre": "Régularisation du cycle circadien",
+          "detail": "Essayez de vous coucher à une heure fixe, même le week-end, pour stabiliser votre horloge biologique, comme on synchronise une montre pour éviter les décalages.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Augmentation de la densité énergétique",
+          "detail": "Pour soutenir vos efforts physiques, augmentez vos apports en protéines et en bons lipides (avocats, oléagineux) afin de tendre vers un IMC plus sain.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Fractionnement des repas",
+          "detail": "Ajoutez une ou deux collations nutritives par jour pour augmenter votre apport calorique total sans avoir l'impression de trop manger en une seule fois.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Suivi du poids",
+          "detail": "Pesez-vous une fois par semaine à jeun pour vérifier si vos ajustements alimentaires permettent une remontée progressive de votre poids.",
+          "priorite": "basse"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "raison": "Un bilan médical est recommandé pour explorer la cause de cet IMC bas et s'assurer que cette fatigue n'est pas liée à une carence nutritionnelle ou un autre déséquilibre.",
+        "delai": "prochain rendez-vous"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 18484,
+    "urgence_detectee": "normale",
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": 28,
+      "securite_pharmacologique": 22,
+      "detection_langue": 10,
+      "total": 80,
+      "notes": "IMC bas et sommeil identifiés. NOTE: urgence_attendue='faible' invalide dans URGENCE_MAP → bug config S11."
+    }
+  }
+}

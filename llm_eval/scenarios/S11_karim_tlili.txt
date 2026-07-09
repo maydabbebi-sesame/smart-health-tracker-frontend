@@ -1,0 +1,23 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : NON
+Médicaments actuels : NON
+Maladies chroniques : NON
+Antécédents familiaux : Ma grand mere a une tension
+Tabac : Non-fumeur | Alcool : Jamais 
+Âge : 25 ans | Sexe : H
+IMC : 17.5 
+Tension : Je sais pas
+FC : Je sais pas
+Variation poids (1 mois) : Stable
+Symptômes : Un peu de Fatigue, manque de sommeil
+Intensité douleur (EVA) : 0/10
+Durée : Sporadique
+Localisation : 
+Facteurs déclenchants : Dormir tard 
+État général : Bien
+Activité physique : Calisthenique + travail physique une fois par semaine
+Alimentation : Omnivore
+Sommeil : Moyen | Stress : 2/5
+
+--- QUESTION ---
+Comment améliorer mon style de vie?

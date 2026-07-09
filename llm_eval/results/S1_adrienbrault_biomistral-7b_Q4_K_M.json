@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-05-27T23:36:51.336993",
+  "scenario_id": "S1",
+  "scenario_label": "Homme 34 ans — fatigue & stress chronique",
+  "urgence_attendue": "normale",
+  "model": "adrienbrault/biomistral-7b:Q4_K_M",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "erreur": "REPONSE_VIDE | finish_reason= | keys=['role', 'content'] | data={'model': 'adrienbrault/biomistral-7b:Q4_K_M', 'created_at': '2026-05-27T22:36:50.658339378Z', 'message': {'role': 'assistant', 'content': ''}, 'done': True, 'done_reason': 'stop', 'total_duration': 5829036685, 'load_duration': 5701093535, 'prompt_eval_count': 1680, 'prompt_eval_duration': 119957369, 'eval_count': 1}",
+    "temps_ms": 6003
+  }
+}

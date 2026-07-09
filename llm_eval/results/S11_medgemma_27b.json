@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-05-28T14:07:24.042687",
+  "scenario_id": "S11",
+  "scenario_label": "Jeune homme agé de 25ans fatigué",
+  "urgence_attendue": "faible",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"normale\",\n  \"alertes\": [],\n  \"resume_situation\": \"Vous êtes un homme de 25 ans, non-fumeur, sans antécédents médicaux personnels ni traitements en cours. Votre IMC est bas (17.5), vous signalez de la fatigue et un sommeil moyen, avec un niveau de stress modéré (2/5). Vous pratiquez une activité physique régulière.\",\n  \"analyse\": \"Votre situation générale semble stable, sans signes d'urgence. Cependant, votre IMC de 17.5 est inférieur à la normale (18.5-24.9), ce qui peut expliquer votre fatigue. Le manque de sommeil et le stress peuvent également contribuer à ce sentiment. Bien que vous ayez une activité physique, votre alimentation et votre sommeil pourraient être optimisés pour améliorer votre bien-être général.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Améliorer la qualité du sommeil\",\n      \"detail\": \"Essayez de vous coucher et de vous lever à des heures régulières, même le week-end, pour réguler votre horloge biologique. Créez une routine relaxante avant de dormir (lecture, bain chaud) et évitez les écrans au moins une heure avant le coucher. Visez 7-9 heures de sommeil par nuit.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Optimiser l'alimentation\",\n      \"detail\": \"Consultez un nutritionniste ou un diététicien pour évaluer vos besoins caloriques et vous assurer d'avoir une alimentation équilibrée et adaptée à votre niveau d'activité physique et à votre IMC. Visez une prise de poids progressive et saine.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Gérer le stress\",\n      \"detail\": \"Identifiez les sources de stress dans votre vie et mettez en place des techniques de relaxation comme la méditation, la respiration profonde, le yoga ou la marche dans la nature. Parlez-en à vos proches ou envisagez une thérapie si le stress est important.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Augmenter l'activité physique (si possible)\",\n      \"detail\": \"Si vous vous sentez capable, vous pourriez envisager d'augmenter légèrement la fréquence ou l'intensité de vos séances de calisthénie ou de travail physique, en veillant à respecter vos limites et à vous reposer suffisamment.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Consulter un médecin généraliste\",\n      \"detail\": \"Bien que vos symptômes ne soient pas alarmants, une consultation médicale pourrait être utile pour écarter d'éventuelles causes médicales à votre fatigue (anémie, problèmes de thyroïde, etc.) et discuter plus en détail de votre IMC et de votre style de vie.\",\n      \"priorite\": \"basse\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"automedication\",\n    \"specialite\": null,\n    \"raison\": \"Amélioration du style de vie (sommeil, alimentation, stress).\",\n    \"delai\": \"cette semaine\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "normale",
+      "alertes": [],
+      "resume_situation": "Vous êtes un homme de 25 ans, non-fumeur, sans antécédents médicaux personnels ni traitements en cours. Votre IMC est bas (17.5), vous signalez de la fatigue et un sommeil moyen, avec un niveau de stress modéré (2/5). Vous pratiquez une activité physique régulière.",
+      "analyse": "Votre situation générale semble stable, sans signes d'urgence. Cependant, votre IMC de 17.5 est inférieur à la normale (18.5-24.9), ce qui peut expliquer votre fatigue. Le manque de sommeil et le stress peuvent également contribuer à ce sentiment. Bien que vous ayez une activité physique, votre alimentation et votre sommeil pourraient être optimisés pour améliorer votre bien-être général.",
+      "recommandations": [
+        {
+          "titre": "Améliorer la qualité du sommeil",
+          "detail": "Essayez de vous coucher et de vous lever à des heures régulières, même le week-end, pour réguler votre horloge biologique. Créez une routine relaxante avant de dormir (lecture, bain chaud) et évitez les écrans au moins une heure avant le coucher. Visez 7-9 heures de sommeil par nuit.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Optimiser l'alimentation",
+          "detail": "Consultez un nutritionniste ou un diététicien pour évaluer vos besoins caloriques et vous assurer d'avoir une alimentation équilibrée et adaptée à votre niveau d'activité physique et à votre IMC. Visez une prise de poids progressive et saine.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Gérer le stress",
+          "detail": "Identifiez les sources de stress dans votre vie et mettez en place des techniques de relaxation comme la méditation, la respiration profonde, le yoga ou la marche dans la nature. Parlez-en à vos proches ou envisagez une thérapie si le stress est important.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Augmenter l'activité physique (si possible)",
+          "detail": "Si vous vous sentez capable, vous pourriez envisager d'augmenter légèrement la fréquence ou l'intensité de vos séances de calisthénie ou de travail physique, en veillant à respecter vos limites et à vous reposer suffisamment.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Consulter un médecin généraliste",
+          "detail": "Bien que vos symptômes ne soient pas alarmants, une consultation médicale pourrait être utile pour écarter d'éventuelles causes médicales à votre fatigue (anémie, problèmes de thyroïde, etc.) et discuter plus en détail de votre IMC et de votre style de vie.",
+          "priorite": "basse"
+        }
+      ],
+      "orientation": {
+        "niveau": "automedication",
+        "specialite": null,
+        "raison": "Amélioration du style de vie (sommeil, alimentation, stress).",
+        "delai": "cette semaine"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 37590,
+    "urgence_detectee": "normale",
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 7,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": 27,
+      "securite_pharmacologique": 22,
+      "detection_langue": 10,
+      "total": 76,
+      "notes": "Sur-triage (normale vs faible). Contradiction orientation='automedication' vs reco 5 qui dit de consulter GP. IMC 17.5 identifié."
+    }
+  }
+}

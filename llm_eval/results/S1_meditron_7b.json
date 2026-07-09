@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-05-27T23:30:52.917330",
+  "scenario_id": "S1",
+  "scenario_label": "Homme 34 ans — fatigue & stress chronique",
+  "urgence_attendue": "normale",
+  "model": "meditron:7b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "--- DONNÉES ASSISTANT ---\nSymptômes : Fatigue persistante, difficultés de concentration\nDurée : Plusieurs semaines\nÉtat général : Moyen\nActivité physique : Sédentaire\nAlimentation : Omnivore\nSommeil : Mauvais | Stress : 4/5\n\n--- QUESTION ---\nJe dors mal depuis des semaines et je n'arrive plus à me concentrer au travail. C'est grave docteur ?",
+    "parsed_json": null,
+    "json_valide": false,
+    "json_propre": false,
+    "fallback_utilise": false,
+    "temps_ms": 693,
+    "urgence_detectee": null,
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 0,
+      "temps_reponse": 10,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": null,
+      "securite_pharmacologique": null,
+      "detection_langue": null,
+      "total": null
+    }
+  }
+}

@@ -1,0 +1,46 @@
+# USER PROMPT — reconstruit à chaque appel LLM
+# Structure : [Contexte patient] + [Question utilisateur]
+
+--- DONNÉES PATIENT (réinjectées à chaque message) ---
+
+# Sécurité pharmacologique en premier
+Allergies médicamenteuses : {allergies}
+Médicaments actuels : {medicaments}
+# Omettre si null :
+Compléments / phytothérapie : {complements}
+Observance : {observance}
+
+# Antécédents
+Maladies chroniques : {maladies_chroniques}
+# Omettre si null :
+Antécédents familiaux : {antecedents_familiaux}
+Tabac : {tabac} | Alcool : {alcool}
+
+# Profil et mesures
+Âge : {age} ans | Sexe : {sexe}
+IMC : {imc} → {categorie_imc}
+# Omettre si null :
+Grossesse : {grossesse}
+Tension : {tension_sys}/{tension_dia} mmHg → {categorie_tension}
+FC : {fc} bpm | SpO₂ : {spo2}% | Temp : {temperature}°C
+Glycémie : {glycemie} g/L
+Variation poids (1 mois) : {variation_poids}
+
+# Symptômes actuels
+Symptômes : {symptomes}
+# Omettre si null :
+Intensité douleur (EVA) : {intensite}/10
+Durée : {duree} | Localisation : {localisation}
+Facteurs déclenchants : {declenchants}
+État général : {etat_general}
+
+# Mode de vie (omettre le bloc entier si tous null)
+Activité physique : {activite_physique}
+Alimentation : {alimentation}
+Sommeil : {sommeil} | Stress : {stress}/5
+
+--- QUESTION DE L'UTILISATEUR ---
+
+{message_utilisateur}
+# Si formulaire sans texte libre → injecter automatiquement :
+# "Analyse mes données et donne-moi tes recommandations."

@@ -1,0 +1,20 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Aucune allergie connue
+Médicaments actuels : Vitamine B12 1000µg/semaine
+Compléments / phytothérapie : Oméga-3 végétal, Fer bisglycinate
+Maladies chroniques : Aucune maladie chronique connue
+Antécédents familiaux : Ostéoporose (mère)
+Tabac : Non-fumeuse | Alcool : Non
+Âge : 42 ans | Sexe : F
+IMC : 20.8 → Normal
+Variation poids (1 mois) : Stable
+Symptômes : Fatigue persistante, crampes musculaires fréquentes, cheveux qui tombent
+Intensité douleur (EVA) : 2/10
+Durée : Plusieurs mois
+État général : Moyen
+Activité physique : Modérée
+Alimentation : Vegan
+Sommeil : Bon | Stress : 2/5
+
+--- QUESTION ---
+Je suis vegan depuis 3 ans, je prends déjà de la B12 mais j'ai toujours les cheveux qui tombent et des crampes la nuit. Il me manque quoi d'autre ?

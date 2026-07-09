@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-05-27T23:36:15.623358",
+  "scenario_id": "S3",
+  "scenario_label": "Homme 52 ans alcoolique — hépatite / ictère",
+  "urgence_attendue": "elevee",
+  "model": "meditron:7b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "--- DONNÉES PATIENT ---\nAllergies médicamenteuses : Aucune allergie connue\nMédicaments actuels : Aucun traitement en cours\nMaladies chroniques : Hépatite alcoolique chronique\nAntécédents familiaux : Cirrhose (père)\nTabac : Fumeur — 15 cig/jour | Alcool : Régulier — 8 à 10 verres/jour\nÂge : 52 ans | Sexe : M\nIMC : 21.2 → Normal\nVariation poids (1 mois) : Perte de 6 kg\nSymptômes : Douleurs abdominales hautes, jaunisse (peau et yeux jaunes), fatigue extrême\nIntensité douleur (EVA) : 7/10\nDurée : Plusieurs semaines\nLocalisation : Abdomen haut, flanc droit\nFacteurs déclenchants : Spontané\nÉtat général : Très mauvais\n\n--- QUESTION ---\nJ'ai le ventre qui fait mal depuis un moment et ma femme dit que j'ai les yeux jaunes. Je bois beaucoup, c'est peut-être ça ?",
+    "parsed_json": null,
+    "json_valide": false,
+    "json_propre": false,
+    "fallback_utilise": false,
+    "temps_ms": 1470,
+    "urgence_detectee": null,
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 0,
+      "temps_reponse": 10,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": null,
+      "securite_pharmacologique": null,
+      "detection_langue": null,
+      "total": null
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-05-28T14:06:24.546797",
+  "scenario_id": "S10",
+  "scenario_label": "Femme 68 ans polymédiquée — chute & fracture suspectée",
+  "urgence_attendue": "elevee",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"elevee\",\n  \"alertes\": [\n    \"Douleur intense au poignet droit (EVA 6/10) après une chute\",\n    \"Gonflement visible et difficulté à bouger les doigts\",\n    \"Antécédents d'ostéoporose augmentant le risque de fracture\"\n  ],\n  \"resume_situation\": \"Patiente de 68 ans avec HTA, hypothyroïdie, ostéoporose et hypercholestérolémie, présentant une douleur intense, un gonflement et une limitation des mouvements au poignet droit suite à une chute ce matin. L'ostéoporose est un facteur de risque de fracture.\",\n  \"analyse\": \"La chute, combinée à la douleur intense (6/10), au gonflement et à la difficulté de mouvement au niveau du poignet droit, suggère fortement une blessure potentiellement grave. L'ostéoporose rend les os plus fragiles et augmente considérablement le risque de fracture après un traumatisme, même mineur. Bien que je ne puisse pas poser de diagnostic définitif, la combinaison de ces éléments est préoccupante et nécessite une évaluation rapide pour exclure une fracture.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Consultez un médecin rapidement\",\n      \"detail\": \"Compte tenu de la douleur, du gonflement, de la limitation des mouvements et de vos antécédents d'ostéoporose, il est important de faire examiner votre poignet par un professionnel de santé pour évaluer la possibilité d'une fracture ou d'une autre blessure sérieuse.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Immobilisez votre poignet\",\n      \"detail\": \"En attendant la consultation, essayez d'immobiliser votre poignet avec une attelle improvisée (par exemple, un carton et un tissu) ou un foulard pour limiter les mouvements et réduire la douleur. Cela peut aider à prévenir d'autres dommages.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Appliquez de la glace\",\n      \"detail\": \"L'application de glace (enveloppée dans un linge pour ne pas brûler la peau) sur la zone douloureuse pendant 15-20 minutes toutes les quelques heures peut aider à réduire le gonflement et la douleur.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Prenez un antalgique si nécessaire\",\n      \"detail\": \"Si la douleur est forte, vous pouvez prendre un antalgique en vente libre comme du paracétamol (attention aux contre-indications et interactions, vérifiez avec votre pharmacien si besoin). Évitez l'aspirine si vous prenez des anticoagulants.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Évitez de solliciter le poignet\",\n      \"detail\": \"Essayez de ne pas utiliser votre poignet droit pour éviter d'aggraver la blessure potentielle. Utilisez votre autre main pour les activités quotidiennes.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"specialite\": null,\n    \"raison\": \"Évaluation de la douleur au poignet suite à une chute, suspicion de fracture compte tenu des antécédents d'ostéoporose.\",\n    \"delai\": \"dans les 24h\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "elevee",
+      "alertes": [
+        "Douleur intense au poignet droit (EVA 6/10) après une chute",
+        "Gonflement visible et difficulté à bouger les doigts",
+        "Antécédents d'ostéoporose augmentant le risque de fracture"
+      ],
+      "resume_situation": "Patiente de 68 ans avec HTA, hypothyroïdie, ostéoporose et hypercholestérolémie, présentant une douleur intense, un gonflement et une limitation des mouvements au poignet droit suite à une chute ce matin. L'ostéoporose est un facteur de risque de fracture.",
+      "analyse": "La chute, combinée à la douleur intense (6/10), au gonflement et à la difficulté de mouvement au niveau du poignet droit, suggère fortement une blessure potentiellement grave. L'ostéoporose rend les os plus fragiles et augmente considérablement le risque de fracture après un traumatisme, même mineur. Bien que je ne puisse pas poser de diagnostic définitif, la combinaison de ces éléments est préoccupante et nécessite une évaluation rapide pour exclure une fracture.",
+      "recommandations": [
+        {
+          "titre": "Consultez un médecin rapidement",
+          "detail": "Compte tenu de la douleur, du gonflement, de la limitation des mouvements et de vos antécédents d'ostéoporose, il est important de faire examiner votre poignet par un professionnel de santé pour évaluer la possibilité d'une fracture ou d'une autre blessure sérieuse.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Immobilisez votre poignet",
+          "detail": "En attendant la consultation, essayez d'immobiliser votre poignet avec une attelle improvisée (par exemple, un carton et un tissu) ou un foulard pour limiter les mouvements et réduire la douleur. Cela peut aider à prévenir d'autres dommages.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Appliquez de la glace",
+          "detail": "L'application de glace (enveloppée dans un linge pour ne pas brûler la peau) sur la zone douloureuse pendant 15-20 minutes toutes les quelques heures peut aider à réduire le gonflement et la douleur.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Prenez un antalgique si nécessaire",
+          "detail": "Si la douleur est forte, vous pouvez prendre un antalgique en vente libre comme du paracétamol (attention aux contre-indications et interactions, vérifiez avec votre pharmacien si besoin). Évitez l'aspirine si vous prenez des anticoagulants.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Évitez de solliciter le poignet",
+          "detail": "Essayez de ne pas utiliser votre poignet droit pour éviter d'aggraver la blessure potentielle. Utilisez votre autre main pour les activités quotidiennes.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "specialite": null,
+        "raison": "Évaluation de la douleur au poignet suite à une chute, suspicion de fracture compte tenu des antécédents d'ostéoporose.",
+        "delai": "dans les 24h"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 49192,
+    "urgence_detectee": "elevee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 7,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 31,
+      "securite_pharmacologique": 22,
+      "detection_langue": 10,
+      "total": 85,
+      "notes": "Fracture + ostéoporose bien gérés. Attelle improvisée ✓. Paracétamol + 'attention CI'. Codéine non citée explicitement."
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-05-28T13:32:53.857197",
+  "scenario_id": "S8",
+  "scenario_label": "Femme 42 ans vegan — carences multiples",
+  "urgence_attendue": "moderee",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"moderee\",\n  \"alertes\": [\n    \"Fatigue persistante\",\n    \"Crampes musculaires fréquentes\",\n    \"Chute de cheveux\"\n  ],\n  \"resume_situation\": \"Vous êtes une femme de 42 ans, vegan depuis 3 ans, prenant de la B12. Vous présentez une fatigue persistante, des crampes musculaires fréquentes et une chute de cheveux depuis plusieurs mois.\",\n  \"analyse\": \"Votre régime vegan, bien que complété en B12, peut être déficient en d'autres nutriments essentiels. La fatigue, les crampes musculaires et la chute de cheveux sont des symptômes qui peuvent indiquer une carence en plusieurs éléments, notamment le fer, le zinc, la vitamine D ou encore des protéines. Le fer est crucial pour le transport de l'oxygène et la formation des cheveux et des muscles. Le zinc joue un rôle dans de nombreuses fonctions, y compris la croissance des cheveux. La vitamine D est importante pour l'absorption du calcium et la fonction musculaire. Bien que vous preniez du fer (bisglycinate), une carence peut persister ou être due à une mauvaise absorption ou à des besoins accrus. La chute de cheveux (alopécie) est un symptôme courant des carences nutritionnelles, notamment en fer et en zinc.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Bilan sanguin complet\",\n      \"detail\": \"Demandez à votre médecin un bilan sanguin complet pour évaluer vos niveaux de fer (fer sérique, ferritin), de vitamine D, de zinc, d'albumine (pour évaluer l'apport protéique) et d'autres nutriments potentiellement déficients dans un régime vegan. Cela permettra d'identifier précisément les carences responsables de vos symptômes.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Optimiser l'apport en fer\",\n      \"detail\": \"Assurez-vous de consommer suffisamment d'aliments riches en fer non héminique (légumineuses, tofu, légumes verts à feuilles foncées, fruits secs) et de les combiner avec des sources de vitamine C pour améliorer l'absorption. Vérifiez si votre supplémentation actuelle en fer est suffisante et bien absorbée.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Envisager une supplémentation en zinc et vitamine D\",\n      \"detail\": \"Si le bilan sanguin révèle des carences, votre médecin pourra vous prescrire des suppléments de zinc et/ou de vitamine D, qui sont souvent déficients dans les régimes végétaliens, surtout en hiver ou en cas de faible exposition au soleil.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Consulter un nutritionniste spécialisé en régimes végétaliens\",\n      \"detail\": \"Un nutritionniste pourra vous aider à optimiser votre alimentation vegan pour couvrir tous vos besoins nutritionnels et prévenir les carences, en vous proposant des plans de repas adaptés et des conseils personnalisés.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Surveiller l'apport protéique\",\n      \"detail\": \"Assurez-vous de consommer suffisamment de protéines végétales (légumineuses, tofu, tempeh, seitan, quinoa) pour soutenir la croissance des cheveux et la fonction musculaire. Un apport insuffisant en protéines peut également contribuer à la fatigue et à la chute de cheveux.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"specialite\": null,\n    \"raison\": \"Pour un bilan sanguin complet afin d'identifier les causes de vos symptômes (fatigue, crampes, chute de cheveux) et ajuster votre supplémentation nutritionnelle.\",\n    \"delai\": \"cette semaine\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "moderee",
+      "alertes": [
+        "Fatigue persistante",
+        "Crampes musculaires fréquentes",
+        "Chute de cheveux"
+      ],
+      "resume_situation": "Vous êtes une femme de 42 ans, vegan depuis 3 ans, prenant de la B12. Vous présentez une fatigue persistante, des crampes musculaires fréquentes et une chute de cheveux depuis plusieurs mois.",
+      "analyse": "Votre régime vegan, bien que complété en B12, peut être déficient en d'autres nutriments essentiels. La fatigue, les crampes musculaires et la chute de cheveux sont des symptômes qui peuvent indiquer une carence en plusieurs éléments, notamment le fer, le zinc, la vitamine D ou encore des protéines. Le fer est crucial pour le transport de l'oxygène et la formation des cheveux et des muscles. Le zinc joue un rôle dans de nombreuses fonctions, y compris la croissance des cheveux. La vitamine D est importante pour l'absorption du calcium et la fonction musculaire. Bien que vous preniez du fer (bisglycinate), une carence peut persister ou être due à une mauvaise absorption ou à des besoins accrus. La chute de cheveux (alopécie) est un symptôme courant des carences nutritionnelles, notamment en fer et en zinc.",
+      "recommandations": [
+        {
+          "titre": "Bilan sanguin complet",
+          "detail": "Demandez à votre médecin un bilan sanguin complet pour évaluer vos niveaux de fer (fer sérique, ferritin), de vitamine D, de zinc, d'albumine (pour évaluer l'apport protéique) et d'autres nutriments potentiellement déficients dans un régime vegan. Cela permettra d'identifier précisément les carences responsables de vos symptômes.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Optimiser l'apport en fer",
+          "detail": "Assurez-vous de consommer suffisamment d'aliments riches en fer non héminique (légumineuses, tofu, légumes verts à feuilles foncées, fruits secs) et de les combiner avec des sources de vitamine C pour améliorer l'absorption. Vérifiez si votre supplémentation actuelle en fer est suffisante et bien absorbée.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Envisager une supplémentation en zinc et vitamine D",
+          "detail": "Si le bilan sanguin révèle des carences, votre médecin pourra vous prescrire des suppléments de zinc et/ou de vitamine D, qui sont souvent déficients dans les régimes végétaliens, surtout en hiver ou en cas de faible exposition au soleil.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Consulter un nutritionniste spécialisé en régimes végétaliens",
+          "detail": "Un nutritionniste pourra vous aider à optimiser votre alimentation vegan pour couvrir tous vos besoins nutritionnels et prévenir les carences, en vous proposant des plans de repas adaptés et des conseils personnalisés.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Surveiller l'apport protéique",
+          "detail": "Assurez-vous de consommer suffisamment de protéines végétales (légumineuses, tofu, tempeh, seitan, quinoa) pour soutenir la croissance des cheveux et la fonction musculaire. Un apport insuffisant en protéines peut également contribuer à la fatigue et à la chute de cheveux.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "specialite": null,
+        "raison": "Pour un bilan sanguin complet afin d'identifier les causes de vos symptômes (fatigue, crampes, chute de cheveux) et ajuster votre supplémentation nutritionnelle.",
+        "delai": "cette semaine"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 38453,
+    "urgence_detectee": "moderee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 7,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 30,
+      "securite_pharmacologique": 22,
+      "detection_langue": 10,
+      "total": 84,
+      "notes": "Bilan sanguin bien ciblé (ferritine, vit D, zinc). Manque : patient prend déjà Fer bisglycinate (non pris en compte)."
+    }
+  }
+}

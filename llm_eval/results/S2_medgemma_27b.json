@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-05-28T13:22:40.077343",
+  "scenario_id": "S2",
+  "scenario_label": "Femme enceinte 28 ans — HTA gestationnelle",
+  "urgence_attendue": "elevee",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"elevee\",\n  \"alertes\": [\n    \"Hypertension artérielle sévère (158/102 mmHg) pendant la grossesse\",\n    \"Maux de tête intenses et vision floue\"\n  ],\n  \"resume_situation\": \"Vous êtes une femme de 28 ans, enceinte de 32 semaines, présentant une hypertension artérielle (158/102 mmHg), des maux de tête intenses (EVA 7/10) et une vision floue depuis 2 jours. Vous êtes en surpoids (IMC 26.1).\",\n  \"analyse\": \"Votre tension artérielle est élevée (158/102 mmHg), ce qui correspond à une hypertension artérielle grade 1. Pendant la grossesse, une tension aussi élevée, surtout associée à des symptômes comme des maux de tête intenses et une vision floue, est très préoccupante. Ces symptômes pourraient indiquer une prééclampsie, une complication grave de la grossesse caractérisée par une hypertension et des atteintes organiques (ici, possiblement cérébrales et visuelles). La prééclampsie peut mettre en danger à la fois votre santé et celle de votre bébé. Votre fréquence cardiaque (95 bpm) est légèrement élevée, ce qui peut être lié à la douleur, à l'anxiété ou à l'hypertension.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Consultez immédiatement un médecin\",\n      \"detail\": \"Votre combinaison de symptômes (hypertension sévère, maux de tête intenses, vision floue) pendant la grossesse nécessite une évaluation médicale urgente pour écarter ou confirmer une prééclampsie et assurer la sécurité de votre bébé et la vôtre.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Surveillez vos symptômes\",\n      \"detail\": \"Notez la fréquence et l'intensité de vos maux de tête, les détails de vos troubles visuels (flou, taches noires, etc.) et tout autre symptôme (douleurs abdominales, nausées, vomissements, diminution des mouvements fœtaux). Ces informations seront utiles au médecin.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Reposez-vous\",\n      \"detail\": \"Essayez de vous reposer sur le côté gauche pour améliorer le flux sanguin vers le placenta et réduire la pression sur votre foie. Évitez les efforts physiques.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Ne prenez pas d'aspirine\",\n      \"detail\": \"L'aspirine est contre-indiquée pendant la grossesse, surtout en cas de suspicion de prééclampsie, car elle peut augmenter le risque de saignement.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Préparez-vous pour la consultation\",\n      \"detail\": \"Ayez à portée de main la liste de vos médicaments (acide folique, fer), vos antécédents médicaux et la date de votre dernier accouchement (si applicable).\",\n      \"priorite\": \"basse\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"urgences\",\n    \"specialite\": null,\n    \"raison\": \"Suspicion de prééclampsie sévère nécessitant une évaluation immédiate.\",\n    \"delai\": \"dans les 24h\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "elevee",
+      "alertes": [
+        "Hypertension artérielle sévère (158/102 mmHg) pendant la grossesse",
+        "Maux de tête intenses et vision floue"
+      ],
+      "resume_situation": "Vous êtes une femme de 28 ans, enceinte de 32 semaines, présentant une hypertension artérielle (158/102 mmHg), des maux de tête intenses (EVA 7/10) et une vision floue depuis 2 jours. Vous êtes en surpoids (IMC 26.1).",
+      "analyse": "Votre tension artérielle est élevée (158/102 mmHg), ce qui correspond à une hypertension artérielle grade 1. Pendant la grossesse, une tension aussi élevée, surtout associée à des symptômes comme des maux de tête intenses et une vision floue, est très préoccupante. Ces symptômes pourraient indiquer une prééclampsie, une complication grave de la grossesse caractérisée par une hypertension et des atteintes organiques (ici, possiblement cérébrales et visuelles). La prééclampsie peut mettre en danger à la fois votre santé et celle de votre bébé. Votre fréquence cardiaque (95 bpm) est légèrement élevée, ce qui peut être lié à la douleur, à l'anxiété ou à l'hypertension.",
+      "recommandations": [
+        {
+          "titre": "Consultez immédiatement un médecin",
+          "detail": "Votre combinaison de symptômes (hypertension sévère, maux de tête intenses, vision floue) pendant la grossesse nécessite une évaluation médicale urgente pour écarter ou confirmer une prééclampsie et assurer la sécurité de votre bébé et la vôtre.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Surveillez vos symptômes",
+          "detail": "Notez la fréquence et l'intensité de vos maux de tête, les détails de vos troubles visuels (flou, taches noires, etc.) et tout autre symptôme (douleurs abdominales, nausées, vomissements, diminution des mouvements fœtaux). Ces informations seront utiles au médecin.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Reposez-vous",
+          "detail": "Essayez de vous reposer sur le côté gauche pour améliorer le flux sanguin vers le placenta et réduire la pression sur votre foie. Évitez les efforts physiques.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Ne prenez pas d'aspirine",
+          "detail": "L'aspirine est contre-indiquée pendant la grossesse, surtout en cas de suspicion de prééclampsie, car elle peut augmenter le risque de saignement.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Préparez-vous pour la consultation",
+          "detail": "Ayez à portée de main la liste de vos médicaments (acide folique, fer), vos antécédents médicaux et la date de votre dernier accouchement (si applicable).",
+          "priorite": "basse"
+        }
+      ],
+      "orientation": {
+        "niveau": "urgences",
+        "specialite": null,
+        "raison": "Suspicion de prééclampsie sévère nécessitant une évaluation immédiate.",
+        "delai": "dans les 24h"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 62366,
+    "urgence_detectee": "elevee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 3,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 32,
+      "securite_pharmacologique": 24,
+      "detection_langue": 10,
+      "total": 84,
+      "notes": "Urgence correcte. Décubitus latéral gauche ✓. Aspirine contre-indiquée ✓. Délai 24h (devrait être immédiat)."
+    }
+  }
+}

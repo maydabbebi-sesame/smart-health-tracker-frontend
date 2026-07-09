@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-05-26T22:04:06.420385",
+  "scenario_id": "S1",
+  "scenario_label": "Homme 34 ans — fatigue & stress chronique",
+  "urgence_attendue": "normale",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"moderee\",\n  \"alertes\": [\n    \"Sommeil de mauvaise qualité\",\n    \"Stress élevé (4/5)\",\n    \"Fatigue persistante\"\n  ],\n  \"resume_situation\": \"Homme de 34 ans présentant une fatigue persistante et des troubles de la concentration depuis plusieurs semaines, dans un contexte de stress élevé et de sommeil perturbé.\",\n  \"analyse\": \"Votre situation ressemble à une batterie de smartphone qui ne se recharge jamais complètement : à cause du stress et du manque de sommeil réparateur, votre 'niveau d'énergie' reste bas, ce qui empêche vos fonctions cognitives (la concentration) de fonctionner à plein régime. La persistance de ces symptômes sur plusieurs semaines suggère que votre organisme est en état de tension prolongée, ce qui nécessite une évaluation pour éviter un épuisement plus marqué.\",\n  \"recommandations\": [\n    {\n  \"titre\": \"Hygiène du sommeil\",\n  \"detail\": \"Essayez de vous coucher et de vous lever à des heures très régulières, même le week-end, pour aider votre horloge biologique à se stabiliser.\",\n  \"priorite\": \"haute\"\n    },\n    {\n  \"titre\": \"Gestion du stress\",\n  \"detail\": \"Pratiquez des exercices de respiration simple, comme la cohérence cardiaque (inspirer 5s, expirer 5s), 5 minutes par jour pour calmer votre système nerveux.\",\n  \"priorite\": \"haute\"\n    },\n    {\n  \"titre\": \"Réactivation physique\",\n  \"detail\": \"Intégrez une marche rapide de 20 à 30 minutes par jour pour rompre la sédentarité, ce qui peut aider à réguler le cycle veille-sommeil.\",\n  \"priorite\": \"moyenne\"\n    },\n    {\n  \"titre\": \"Bilan biologique\",\n  \"detail\": \"Prenez rendez-vous pour un bilan sanguin afin de vérifier l'absence de carences (comme le fer ou le magnésium) qui pourraient expliquer cette fatigue.\",\n  \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"raison\": \"Évaluer l'impact du stress chronique et écarter une cause organique (comme une carence ou un trouble thyroïdien) liée à la fatigue persistante.\",\n    \"delai\": \"cette semaine\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "moderee",
+      "alertes": [
+        "Sommeil de mauvaise qualité",
+        "Stress élevé (4/5)",
+        "Fatigue persistante"
+      ],
+      "resume_situation": "Homme de 34 ans présentant une fatigue persistante et des troubles de la concentration depuis plusieurs semaines, dans un contexte de stress élevé et de sommeil perturbé.",
+      "analyse": "Votre situation ressemble à une batterie de smartphone qui ne se recharge jamais complètement : à cause du stress et du manque de sommeil réparateur, votre 'niveau d'énergie' reste bas, ce qui empêche vos fonctions cognitives (la concentration) de fonctionner à plein régime. La persistance de ces symptômes sur plusieurs semaines suggère que votre organisme est en état de tension prolongée, ce qui nécessite une évaluation pour éviter un épuisement plus marqué.",
+      "recommandations": [
+        {
+          "titre": "Hygiène du sommeil",
+          "detail": "Essayez de vous coucher et de vous lever à des heures très régulières, même le week-end, pour aider votre horloge biologique à se stabiliser.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Gestion du stress",
+          "detail": "Pratiquez des exercices de respiration simple, comme la cohérence cardiaque (inspirer 5s, expirer 5s), 5 minutes par jour pour calmer votre système nerveux.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Réactivation physique",
+          "detail": "Intégrez une marche rapide de 20 à 30 minutes par jour pour rompre la sédentarité, ce qui peut aider à réguler le cycle veille-sommeil.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Bilan biologique",
+          "detail": "Prenez rendez-vous pour un bilan sanguin afin de vérifier l'absence de carences (comme le fer ou le magnésium) qui pourraient expliquer cette fatigue.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "raison": "Évaluer l'impact du stress chronique et écarter une cause organique (comme une carence ou un trouble thyroïdien) liée à la fatigue persistante.",
+        "delai": "cette semaine"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 16921,
+    "urgence_detectee": "moderee",
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": 28,
+      "securite_pharmacologique": 22,
+      "detection_langue": 10,
+      "total": 80,
+      "notes": "Sur-triage léger (moderee vs normale) mais recommandations cliniquement solides."
+    }
+  }
+}

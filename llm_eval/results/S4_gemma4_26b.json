@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-05-26T22:05:51.581299",
+  "scenario_id": "S4",
+  "scenario_label": "Femme 35 ans — maladie cœliaque non observante",
+  "urgence_attendue": "moderee",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"moderee\",\n  \"alertes\": [\n    \"Consommation de gluten malgré un diagnostic de maladie cœliaque\",\n    \"Perte de poids rapide (3 kg en 1 mois)\",\n    \"IMC insuffisant (18.9) associé à une fatigue importante\"\n  ],\n  \"resume_situation\": \"Femme de 35 ans atteinte de la maladie cœliaque, présentant une recrudescence de symptômes digestifs (douleurs, diarrhées) suite à une ingestion de gluten, accompagnée d'une perte de poids et d'un état général altéré.\",\n  \"analyse\": \"L'ingestion de pain et de pâtes classiques a probablement déclenché une réaction inflammatoire dans votre intestin. Pour une personne atteinte de la maladie cœliaque, le gluten agit comme du 'papier de verre' sur la paroi intestinale : il agresse les petites villosités (les minuscules replis de l'intestin) qui servent à absorber les nutriments. Cette agression empêche votre corps de capter l'énergie et les vitamines de vos repas, ce qui explique vos diarrhées, votre fatigue et votre perte de poids récente.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Retour strict au régime sans gluten\",\n      \"detail\": \"Éliminez immédiatement toute trace de blé, d'orge ou de seigle pour permettre à votre paroi intestinale de commencer sa cicatrisation, un peu comme on mettrait un pansement sur une plaie.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Réhydratation active\",\n      \"detail\": \"Les diarrhées fréquentes entraînent une perte d'eau et de sels minéraux. Buvez régulièrement de l'eau ou des bouillons pour compenser ces pertes et éviter la fatigue accrue.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Consultation spécialisée\",\n      \"detail\": \"Prenez rendez-vous avec votre gastro-entérologue pour vérifier l'étendue des dommages intestinaux et l'impact sur vos réserves nutritionnelles.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Surveillance du poids\",\n      \"detail\": \"Continuez à peser votre poids une fois par semaine pour surveiller que la perte de poids s'arrête avec le retour au régime strict.\",\n      \"priorite\": \"basse\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"specialiste\",\n    \"specialite\": \"Gastro-entérologue\",\n    \"raison\": \"Évaluer l'impact de l'exposition au gluten sur la muqueuse intestinale et vérifier l'absence de carences (notamment en fer et vitamine D) suite à la perte de poids.\",\n    \"delai\": \"cette semaine\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "moderee",
+      "alertes": [
+        "Consommation de gluten malgré un diagnostic de maladie cœliaque",
+        "Perte de poids rapide (3 kg en 1 mois)",
+        "IMC insuffisant (18.9) associé à une fatigue importante"
+      ],
+      "resume_situation": "Femme de 35 ans atteinte de la maladie cœliaque, présentant une recrudescence de symptômes digestifs (douleurs, diarrhées) suite à une ingestion de gluten, accompagnée d'une perte de poids et d'un état général altéré.",
+      "analyse": "L'ingestion de pain et de pâtes classiques a probablement déclenché une réaction inflammatoire dans votre intestin. Pour une personne atteinte de la maladie cœliaque, le gluten agit comme du 'papier de verre' sur la paroi intestinale : il agresse les petites villosités (les minuscules replis de l'intestin) qui servent à absorber les nutriments. Cette agression empêche votre corps de capter l'énergie et les vitamines de vos repas, ce qui explique vos diarrhées, votre fatigue et votre perte de poids récente.",
+      "recommandations": [
+        {
+          "titre": "Retour strict au régime sans gluten",
+          "detail": "Éliminez immédiatement toute trace de blé, d'orge ou de seigle pour permettre à votre paroi intestinale de commencer sa cicatrisation, un peu comme on mettrait un pansement sur une plaie.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Réhydratation active",
+          "detail": "Les diarrhées fréquentes entraînent une perte d'eau et de sels minéraux. Buvez régulièrement de l'eau ou des bouillons pour compenser ces pertes et éviter la fatigue accrue.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Consultation spécialisée",
+          "detail": "Prenez rendez-vous avec votre gastro-entérologue pour vérifier l'étendue des dommages intestinaux et l'impact sur vos réserves nutritionnelles.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Surveillance du poids",
+          "detail": "Continuez à peser votre poids une fois par semaine pour surveiller que la perte de poids s'arrête avec le retour au régime strict.",
+          "priorite": "basse"
+        }
+      ],
+      "orientation": {
+        "niveau": "specialiste",
+        "specialite": "Gastro-entérologue",
+        "raison": "Évaluer l'impact de l'exposition au gluten sur la muqueuse intestinale et vérifier l'absence de carences (notamment en fer et vitamine D) suite à la perte de poids.",
+        "delai": "cette semaine"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 12300,
+    "urgence_detectee": "moderee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 33,
+      "securite_pharmacologique": 23,
+      "detection_langue": 10,
+      "total": 91,
+      "notes": "Excellent : gluten identifié comme déclencheur, recommandations et orientation GE appropriées."
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-05-27T23:36:25.769245",
+  "scenario_id": "S4",
+  "scenario_label": "Femme 35 ans — maladie cœliaque non observante",
+  "urgence_attendue": "moderee",
+  "model": "meditron:7b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "--- DONNÉES PATIENT ---\nAllergies médicamenteuses : Aucune allergie connue\nMédicaments actuels : Vitamine D 1000 UI/j, Fer 50mg/j\nCompléments / phytothérapie : Probiotiques\nMaladies chroniques : Maladie cœliaque (diagnostiquée il y a 2 ans)\nObservance : Parfois\nTabac : Non-fumeuse | Alcool : Occasionnel\nÂge : 35 ans | Sexe : F\nIMC : 18.9 → Insuffisant\nVariation poids (1 mois) : Perte de 3 kg\nSymptômes : Douleurs abdominales, ballonnements importants, diarrhées fréquentes, fatigue\nIntensité douleur (EVA) : 5/10\nDurée : Plusieurs semaines\nLocalisation : Abdomen\nFacteurs déclenchants : Repas\nÉtat général : Mauvais\nAlimentation : Sans gluten (non strict)\nSommeil : Mauvais | Stress : 3/5\n\n--- QUESTION ---\nJ'ai repris du pain et des pâtes normales pendant les fêtes, maintenant j'ai mal au ventre tout le temps et je n'arrête pas d'aller aux toilettes. Qu'est-ce que je dois faire ?",
+    "parsed_json": null,
+    "json_valide": false,
+    "json_propre": false,
+    "fallback_utilise": false,
+    "temps_ms": 1605,
+    "urgence_detectee": null,
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 0,
+      "temps_reponse": 10,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": null,
+      "securite_pharmacologique": null,
+      "detection_langue": null,
+      "total": null
+    }
+  }
+}

@@ -1,0 +1,21 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Aucune allergie connue
+Médicaments actuels : Vitamine D 1000 UI/j, Fer 50mg/j
+Compléments / phytothérapie : Probiotiques
+Maladies chroniques : Maladie cœliaque (diagnostiquée il y a 2 ans)
+Observance : Parfois
+Tabac : Non-fumeuse | Alcool : Occasionnel
+Âge : 35 ans | Sexe : F
+IMC : 18.9 → Insuffisant
+Variation poids (1 mois) : Perte de 3 kg
+Symptômes : Douleurs abdominales, ballonnements importants, diarrhées fréquentes, fatigue
+Intensité douleur (EVA) : 5/10
+Durée : Plusieurs semaines
+Localisation : Abdomen
+Facteurs déclenchants : Repas
+État général : Mauvais
+Alimentation : Sans gluten (non strict)
+Sommeil : Mauvais | Stress : 3/5
+
+--- QUESTION ---
+J'ai repris du pain et des pâtes normales pendant les fêtes, maintenant j'ai mal au ventre tout le temps et je n'arrête pas d'aller aux toilettes. Qu'est-ce que je dois faire ?

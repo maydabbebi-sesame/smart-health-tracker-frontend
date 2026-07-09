@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-18T11:11:11.590706",
+  "scenario_id": "S1",
+  "scenario_label": "Homme 34 ans — fatigue & stress chronique",
+  "urgence_attendue": "normale",
+  "model": "medgemma1.5:latest",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "erreur": "TIMEOUT après 300s",
+    "temps_ms": 21061
+  }
+}

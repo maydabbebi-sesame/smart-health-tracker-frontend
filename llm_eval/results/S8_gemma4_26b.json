@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-05-26T22:10:02.953197",
+  "scenario_id": "S8",
+  "scenario_label": "Femme 42 ans vegan — carences multiples",
+  "urgence_attendue": "moderee",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"moderee\",\n  \"alertes\": [\n    \"Fatigue persistante\",\n    \"Chute de cheveux\",\n    \"Crampes musculaires fréquentes\"\n  ],\n  \"resume_situation\": \"Femme de 42 ans, suivant un régime vegan depuis 3 ans, présentant des symptômes de fatigue et de carences potentiels malgré une supplémentation en B12 et fer.\",\n  \"analyse\": \"Vos symptômes actuels sont comme les voyants lumineux d'un tableau de bord qui s'allument pour signaler un manque de carburant spécifique. Bien que vous couvriez la B12 et le fer, le régime vegan peut rendre l'accès à certains minéraux plus complexe. La fatigue et la chute de cheveux sont souvent liées à des variations de zinc ou de fer (si vos réserves actuelles sont insuffisantes), tandis que les crampes musculaires nocturnes agissent comme un signal de manque de magnésium ou de calcium. Il est crucial de vérifier si vos apports actuels sont réellement absorbés par votre organisme.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Réaliser un bilan sanguin complet\",\n      \"detail\": \"Demandez à votre médecin un dosage de la ferritine, du zinc, du magnésium, de la vitamine D et de la vitamine B12 pour identifier précisément ce qui manque.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Surveillance du magnésium\",\n      \"detail\": \"En attendant les résultats, privilégiez des aliments riches en magnésium (graines de courge, amandes, chocolat noir) pour aider à détendre les muscles.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Optimisation de l'apport en zinc\",\n      \"detail\": \"Intégrez davantage de légumineuses et de graines de chanvre, car le zinc est essentiel à la structure du cheveu.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"specialite\": \"Médecin généraliste\",\n    \"raison\": \"Nécessité d'un bilan biologique pour confirmer ou infirmer des carences nutritionnelles spécifiques liées au régime vegan.\",\n    \"delai\": \"cette semaine\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "moderee",
+      "alertes": [
+        "Fatigue persistante",
+        "Chute de cheveux",
+        "Crampes musculaires fréquentes"
+      ],
+      "resume_situation": "Femme de 42 ans, suivant un régime vegan depuis 3 ans, présentant des symptômes de fatigue et de carences potentiels malgré une supplémentation en B12 et fer.",
+      "analyse": "Vos symptômes actuels sont comme les voyants lumineux d'un tableau de bord qui s'allument pour signaler un manque de carburant spécifique. Bien que vous couvriez la B12 et le fer, le régime vegan peut rendre l'accès à certains minéraux plus complexe. La fatigue et la chute de cheveux sont souvent liées à des variations de zinc ou de fer (si vos réserves actuelles sont insuffisantes), tandis que les crampes musculaires nocturnes agissent comme un signal de manque de magnésium ou de calcium. Il est crucial de vérifier si vos apports actuels sont réellement absorbés par votre organisme.",
+      "recommandations": [
+        {
+          "titre": "Réaliser un bilan sanguin complet",
+          "detail": "Demandez à votre médecin un dosage de la ferritine, du zinc, du magnésium, de la vitamine D et de la vitamine B12 pour identifier précisément ce qui manque.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Surveillance du magnésium",
+          "detail": "En attendant les résultats, privilégiez des aliments riches en magnésium (graines de courge, amandes, chocolat noir) pour aider à détendre les muscles.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Optimisation de l'apport en zinc",
+          "detail": "Intégrez davantage de légumineuses et de graines de chanvre, car le zinc est essentiel à la structure du cheveu.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "specialite": "Médecin généraliste",
+        "raison": "Nécessité d'un bilan biologique pour confirmer ou infirmer des carences nutritionnelles spécifiques liées au régime vegan.",
+        "delai": "cette semaine"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 11112,
+    "urgence_detectee": "moderee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 30,
+      "securite_pharmacologique": 22,
+      "detection_langue": 10,
+      "total": 87,
+      "notes": "Bilan biologique bien ciblé (ferritine, zinc, Mg, vit D, B12). Conseils alimentaires pratiques."
+    }
+  }
+}

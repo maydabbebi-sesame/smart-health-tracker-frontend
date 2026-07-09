@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-05-26T22:07:21.924499",
+  "scenario_id": "S6",
+  "scenario_label": "Femme 52 ans — interaction Warfarine + Aspirine",
+  "urgence_attendue": "moderee",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"moderee\",\n  \"alertes\": [\n    \"Risque d'interaction médicamenteuse majeure : l'aspirine augmente considérablement le risque de saignement en combinaison avec la warfarine.\"\n  ],\n  \"resume_situation\": \"Femme de 52 ans suivie pour une fibrillation auriculaire sous traitement anticoagulant (warfarine), présentant un mal de tête modéré (4/10) depuis quelques heures.\",\n  \"analyse\": \"L'utilisation d'aspirine est fortement déconseillée dans votre situation. La warfarine est un anticoagulant qui 'fluidifie' votre sang pour éviter la formation de caillots. L'aspirine agit également sur la fluidité du sang en empêchant les plaquettes de s'agglutiner. Prendre les deux revient à ajouter trop d'eau dans une sauce : elle devient trop liquide, ce qui rend le sang trop fluide et augmente le risque de saignements incontrôlables (hémorragies). Votre mal de tête nécessite une évaluation pour s'assurer qu'il n'y a pas de lien avec votre traitement.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Ne pas prendre d'aspirine\",\n      \"detail\": \"Évitez absolument l'aspirine et les anti-inflammatoires (comme l'ibuprofène auquel vous êtes allergique) sans l'accord explicite de votre médecin, car le risque de saignement est trop élevé.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Surveillance des signes neurologiques\",\n      \"detail\": \"Si le mal de tête devient soudainement très intense (comme un coup de tonnerre), ou si vous remarquez une confusion, une faiblesse d'un côté du corps ou des troubles de la parole, appelez immédiatement les secours.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Consultation médicale\",\n      \"detail\": \"Prenez rendez-vous avec votre médecin traitant dans les prochains jours pour discuter d'un traitement de la douleur compatible avec la warfarine (comme le paracétamol, sous réserve de son avis).\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"raison\": \"Évaluer la cause du céphalée et prescrire un antalgique sécuritaire qui ne présente pas d'interaction avec la warfarine.\",\n    \"delai\": \"cette semaine\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "moderee",
+      "alertes": [
+        "Risque d'interaction médicamenteuse majeure : l'aspirine augmente considérablement le risque de saignement en combinaison avec la warfarine."
+      ],
+      "resume_situation": "Femme de 52 ans suivie pour une fibrillation auriculaire sous traitement anticoagulant (warfarine), présentant un mal de tête modéré (4/10) depuis quelques heures.",
+      "analyse": "L'utilisation d'aspirine est fortement déconseillée dans votre situation. La warfarine est un anticoagulant qui 'fluidifie' votre sang pour éviter la formation de caillots. L'aspirine agit également sur la fluidité du sang en empêchant les plaquettes de s'agglutiner. Prendre les deux revient à ajouter trop d'eau dans une sauce : elle devient trop liquide, ce qui rend le sang trop fluide et augmente le risque de saignements incontrôlables (hémorragies). Votre mal de tête nécessite une évaluation pour s'assurer qu'il n'y a pas de lien avec votre traitement.",
+      "recommandations": [
+        {
+          "titre": "Ne pas prendre d'aspirine",
+          "detail": "Évitez absolument l'aspirine et les anti-inflammatoires (comme l'ibuprofène auquel vous êtes allergique) sans l'accord explicite de votre médecin, car le risque de saignement est trop élevé.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Surveillance des signes neurologiques",
+          "detail": "Si le mal de tête devient soudainement très intense (comme un coup de tonnerre), ou si vous remarquez une confusion, une faiblesse d'un côté du corps ou des troubles de la parole, appelez immédiatement les secours.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Consultation médicale",
+          "detail": "Prenez rendez-vous avec votre médecin traitant dans les prochains jours pour discuter d'un traitement de la douleur compatible avec la warfarine (comme le paracétamol, sous réserve de son avis).",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "raison": "Évaluer la cause du céphalée et prescrire un antalgique sécuritaire qui ne présente pas d'interaction avec la warfarine.",
+        "delai": "cette semaine"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 11342,
+    "urgence_detectee": "moderee",
+    "urgence_correcte": true,
+    "securite_ok": true,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 30,
+      "securite_pharmacologique": 25,
+      "detection_langue": 10,
+      "total": 90,
+      "notes": "Modèle a CORRECTEMENT refusé l'aspirine. DISQUALIFIE=faux positif du script (mot présent pour avertir, non recommander)."
+    }
+  }
+}

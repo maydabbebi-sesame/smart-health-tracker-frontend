@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-05-26T22:08:31.924024",
+  "scenario_id": "S7",
+  "scenario_label": "Adolescent 16 ans — hypoglycémie post-effort",
+  "urgence_attendue": "elevee",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"elevee\",\n  \"alertes\": [\n    \"Glycémie très basse (0.55 g/L)\",\n    \"Symptômes d'hypoglycémie détectés (tremblements, sueurs)\"\n  ],\n  \"resume_situation\": \"Adolescent de 16 ans, diabétique de type 1, présentant un épisode d'hypoglycémie suite à un effort physique intense (match de football).\",\n  \"analyse\": \"Votre glycémie à 0.55 g/L est nettement inférieure à la zone de sécurité. C'est ce qu'on appelle une hypoglycémie. Pour bien comprendre, imaginez que votre corps est une voiture et que le glucose est l'essence : votre réservoir est presque vide. L'effort intense du match de foot a consommé votre carburant plus vite que prévu, et les tremblements ainsi que les sueurs sont les signaux d'alerte de votre corps qui vous prévient que le moteur risque de s'arrêter.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Resucrage immédiat\",\n      \"detail\": \"Consommez immédiatement 15g de glucides rapides (ex: 3 morceaux de sucre, 150ml de jus de fruit ou une cuillère de miel) pour remonter le taux de sucre.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Contrôle de suivi\",\n      \"detail\": \"Attendez 15 minutes sans manger d'autre chose, puis effectuez une nouvelle mesure de votre glycémie pour vérifier l'efficacité du resucrage.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Stabilisation\",\n      \"detail\": \"Une fois la glycémie remontée, mangez une petite collation contenant des glucides lents (ex: un morceau de pain ou des biscuits secs) pour maintenir votre taux stable.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"automedication\",\n    \"raison\": \"Correction immédiate de l'épisode d'hypoglycémie par resucrage.\",\n    \"delai\": \"immédiat\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "elevee",
+      "alertes": [
+        "Glycémie très basse (0.55 g/L)",
+        "Symptômes d'hypoglycémie détectés (tremblements, sueurs)"
+      ],
+      "resume_situation": "Adolescent de 16 ans, diabétique de type 1, présentant un épisode d'hypoglycémie suite à un effort physique intense (match de football).",
+      "analyse": "Votre glycémie à 0.55 g/L est nettement inférieure à la zone de sécurité. C'est ce qu'on appelle une hypoglycémie. Pour bien comprendre, imaginez que votre corps est une voiture et que le glucose est l'essence : votre réservoir est presque vide. L'effort intense du match de foot a consommé votre carburant plus vite que prévu, et les tremblements ainsi que les sueurs sont les signaux d'alerte de votre corps qui vous prévient que le moteur risque de s'arrêter.",
+      "recommandations": [
+        {
+          "titre": "Resucrage immédiat",
+          "detail": "Consommez immédiatement 15g de glucides rapides (ex: 3 morceaux de sucre, 150ml de jus de fruit ou une cuillère de miel) pour remonter le taux de sucre.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Contrôle de suivi",
+          "detail": "Attendez 15 minutes sans manger d'autre chose, puis effectuez une nouvelle mesure de votre glycémie pour vérifier l'efficacité du resucrage.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Stabilisation",
+          "detail": "Une fois la glycémie remontée, mangez une petite collation contenant des glucides lents (ex: un morceau de pain ou des biscuits secs) pour maintenir votre taux stable.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "automedication",
+        "raison": "Correction immédiate de l'épisode d'hypoglycémie par resucrage.",
+        "delai": "immédiat"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 16197,
+    "urgence_detectee": "elevee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 32,
+      "securite_pharmacologique": 23,
+      "detection_langue": 10,
+      "total": 90,
+      "notes": "Protocole resucrage correct (15g glucides rapides, contrôle 15min, collation lente)."
+    }
+  }
+}

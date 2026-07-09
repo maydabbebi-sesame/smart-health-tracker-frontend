@@ -1,0 +1,21 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Aucune allergie connue
+Médicaments actuels : Aucun traitement en cours
+Maladies chroniques : Aucune maladie chronique connue
+Antécédents familiaux : Infarctus (père à 55 ans)
+Tabac : Fumeur — 20 cig/jour | Alcool : Non
+Âge : 40 ans | Sexe : M
+IMC : 27.3 → Surpoids
+Tension : 145/88 mmHg → HTA grade 1
+FC : 88 bpm
+Symptômes : Douleur thoracique à l'effort, essoufflement, fatigue à la montée des escaliers
+Intensité douleur (EVA) : 5/10
+Durée : Quelques semaines
+Localisation : Thorax, irradiation épaule gauche
+Facteurs déclenchants : Effort physique
+État général : Moyen
+Activité physique : Légère
+Sommeil : Bon | Stress : 3/5
+
+--- QUESTION ---
+عندي وجع في صدري كل ما مشيت أو طلعت درج، وأحياناً يوجع كتفي اليسار. هل هذا خطير؟

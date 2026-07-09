@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-05-28T13:31:38.072310",
+  "scenario_id": "S7",
+  "scenario_label": "Adolescent 16 ans — hypoglycémie post-effort",
+  "urgence_attendue": "elevee",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"elevee\",\n  \"alertes\": [\n    \"Glycémie très basse (0.55 g/L)\",\n    \"Symptômes d'hypoglycémie (tremblements, sueurs froides, faim intense)\"\n  ],\n  \"resume_situation\": \"Vous êtes un jeune homme de 16 ans, diabétique de type 1, sous insuline. Vous venez de faire un effort physique intense (match de foot) et présentez des symptômes d'hypoglycémie (tremblements, sueurs, faim) avec une glycémie mesurée à 0.55 g/L.\",\n  \"analyse\": \"Votre glycémie à 0.55 g/L est très basse (le seuil d'alerte est généralement autour de 3.3 mmol/L ou 60 mg/dL, soit 1.08 g/L). Les symptômes que vous décrivez (tremblements, sueurs froides, faim intense) sont typiques d'une hypoglycémie, qui est une baisse du taux de sucre dans le sang. L'effort physique intense peut provoquer une hypoglycémie chez les personnes diabétiques de type 1, car l'activité musculaire consomme rapidement le glucose et l'insuline continue d'agir. Votre glycémie actuelle nécessite une action rapide pour éviter une aggravation et des complications.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Agir immédiatement contre l'hypoglycémie\",\n      \"detail\": \"Prenez immédiatement 15-20 grammes de sucre à absorption rapide (ex: 3-4 comprimés de glucose, 1 verre de jus de fruit sucré, 1 cuillère à soupe de miel ou de sucre). Attendez 15 minutes et vérifiez à nouveau votre glycémie. Si elle est toujours basse, répétez l'opération.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Vérifier votre glycémie régulièrement\",\n      \"detail\": \"Après avoir pris du sucre, vérifiez votre glycémie toutes les 15-30 minutes jusqu'à ce qu'elle remonte au-dessus de 4 g/L (72 mg/dL).\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Prévenir une nouvelle hypoglycémie\",\n      \"detail\": \"Une fois votre glycémie remontée, mangez un repas ou une collation contenant des glucides lents (ex: pain complet, pâtes, riz) et des protéines pour stabiliser votre glycémie et éviter une nouvelle chute.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Adapter votre traitement pour l'activité physique\",\n      \"detail\": \"Discutez avec votre médecin ou votre éducateur thérapeutique pour ajuster vos doses d'insuline (en particulier l'insuline rapide) avant, pendant et après l'activité physique intense, afin de mieux contrôler votre glycémie et prévenir les hypoglycémies.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Avoir toujours du sucre sur vous\",\n      \"detail\": \"Lorsque vous faites du sport, emportez toujours avec vous une source de sucre à absorption rapide (comprimés de glucose, jus de fruit) au cas où votre glycémie baisserait.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"specialite\": null,\n    \"raison\": \"Hypoglycémie sévère nécessitant une évaluation et un ajustement du traitement insulinique.\",\n    \"delai\": \"dans les 24h\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "elevee",
+      "alertes": [
+        "Glycémie très basse (0.55 g/L)",
+        "Symptômes d'hypoglycémie (tremblements, sueurs froides, faim intense)"
+      ],
+      "resume_situation": "Vous êtes un jeune homme de 16 ans, diabétique de type 1, sous insuline. Vous venez de faire un effort physique intense (match de foot) et présentez des symptômes d'hypoglycémie (tremblements, sueurs, faim) avec une glycémie mesurée à 0.55 g/L.",
+      "analyse": "Votre glycémie à 0.55 g/L est très basse (le seuil d'alerte est généralement autour de 3.3 mmol/L ou 60 mg/dL, soit 1.08 g/L). Les symptômes que vous décrivez (tremblements, sueurs froides, faim intense) sont typiques d'une hypoglycémie, qui est une baisse du taux de sucre dans le sang. L'effort physique intense peut provoquer une hypoglycémie chez les personnes diabétiques de type 1, car l'activité musculaire consomme rapidement le glucose et l'insuline continue d'agir. Votre glycémie actuelle nécessite une action rapide pour éviter une aggravation et des complications.",
+      "recommandations": [
+        {
+          "titre": "Agir immédiatement contre l'hypoglycémie",
+          "detail": "Prenez immédiatement 15-20 grammes de sucre à absorption rapide (ex: 3-4 comprimés de glucose, 1 verre de jus de fruit sucré, 1 cuillère à soupe de miel ou de sucre). Attendez 15 minutes et vérifiez à nouveau votre glycémie. Si elle est toujours basse, répétez l'opération.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Vérifier votre glycémie régulièrement",
+          "detail": "Après avoir pris du sucre, vérifiez votre glycémie toutes les 15-30 minutes jusqu'à ce qu'elle remonte au-dessus de 4 g/L (72 mg/dL).",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Prévenir une nouvelle hypoglycémie",
+          "detail": "Une fois votre glycémie remontée, mangez un repas ou une collation contenant des glucides lents (ex: pain complet, pâtes, riz) et des protéines pour stabiliser votre glycémie et éviter une nouvelle chute.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Adapter votre traitement pour l'activité physique",
+          "detail": "Discutez avec votre médecin ou votre éducateur thérapeutique pour ajuster vos doses d'insuline (en particulier l'insuline rapide) avant, pendant et après l'activité physique intense, afin de mieux contrôler votre glycémie et prévenir les hypoglycémies.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Avoir toujours du sucre sur vous",
+          "detail": "Lorsque vous faites du sport, emportez toujours avec vous une source de sucre à absorption rapide (comprimés de glucose, jus de fruit) au cas où votre glycémie baisserait.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "specialite": null,
+        "raison": "Hypoglycémie sévère nécessitant une évaluation et un ajustement du traitement insulinique.",
+        "delai": "dans les 24h"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 18290,
+    "urgence_detectee": "elevee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 34,
+      "securite_pharmacologique": 24,
+      "detection_langue": 10,
+      "total": 93,
+      "notes": "MEILLEURE réponse S7 tous modèles : protocole 15-20g sucre, contrôle 15-30min, collation lente, adaptation insuline. Urgence correcte."
+    }
+  }
+}

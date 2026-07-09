@@ -1,0 +1,65 @@
+{
+  "timestamp": "2026-05-26T22:12:46.209814",
+  "scenario_id": "S10",
+  "scenario_label": "Femme 68 ans polymédiquée — chute & fracture suspectée",
+  "urgence_attendue": "elevee",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"elevee\",\n  \"alertes\": [\n    \"Difficulté de mobilité des doigts\",\n    \"Risque élevé de fracture lié à l'ostéoporose\"\n  ],\n  \"resume_situation\": \"Femme de 68 ans, suivie pour ostéoporose et HTA, présentant une douleur aiguë et un gonflement du poignet droit suite à une chute survenue ce matin.\",\n  \"analyse\": \"La combinaison d'une chute, d'une douleur intense (6/10) et d'une perte de mobilité des doigts est un signal d'alerte important. L'ostéoporose rend vos os plus fragiles, un peu comme une branche sèche qui peut se fissurer au moindre choc, contrairement à une branche plus souverte et souple. Bien que je ne puisse pas confirmer une fracture, l'impossibilité de bouger les doigts et le gonflement visible imposent une vérification médicale rapide pour écarter une lésion osseuse.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Immobilisation du poignet\",\n      \"detail\": \"Maintenez votre poignet le plus immobile possible en utilisant une attelle ou une écharpe pour éviter d'aggraver une éventuelle fracture.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Surveillance des signes neurologiques\",\n      \"detail\": \"Surveillez si vos doigts deviennent bleus, très froids ou si vous ressentez des fourmillements, ce qui pourrait indiquer une compression des nerfs ou des vaisseaux.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Application de froid\",\n      \"detail\": \"Appliquez une poche de glace enveloppée dans un linge propre sur la zone gonflée pendant 15 minutes pour aider à réduire l'inflammation.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"specialite\": \"Médecin généraliste ou Service d'imagerie\",\n    \"raison\": \"Une radiographie est indispensable pour confirmer ou exclure une fracture (comme une fracture de Pouteau-Colles) compte tenu de votre antécédent d'ostéoporose.\",\n    \"delai\": \"dans les 24h\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "elevee",
+      "alertes": [
+        "Difficulté de mobilité des doigts",
+        "Risque élevé de fracture lié à l'ostéoporose"
+      ],
+      "resume_situation": "Femme de 68 ans, suivie pour ostéoporose et HTA, présentant une douleur aiguë et un gonflement du poignet droit suite à une chute survenue ce matin.",
+      "analyse": "La combinaison d'une chute, d'une douleur intense (6/10) et d'une perte de mobilité des doigts est un signal d'alerte important. L'ostéoporose rend vos os plus fragiles, un peu comme une branche sèche qui peut se fissurer au moindre choc, contrairement à une branche plus souverte et souple. Bien que je ne puisse pas confirmer une fracture, l'impossibilité de bouger les doigts et le gonflement visible imposent une vérification médicale rapide pour écarter une lésion osseuse.",
+      "recommandations": [
+        {
+          "titre": "Immobilisation du poignet",
+          "detail": "Maintenez votre poignet le plus immobile possible en utilisant une attelle ou une écharpe pour éviter d'aggraver une éventuelle fracture.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Surveillance des signes neurologiques",
+          "detail": "Surveillez si vos doigts deviennent bleus, très froids ou si vous ressentez des fourmillements, ce qui pourrait indiquer une compression des nerfs ou des vaisseaux.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Application de froid",
+          "detail": "Appliquez une poche de glace enveloppée dans un linge propre sur la zone gonflée pendant 15 minutes pour aider à réduire l'inflammation.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "specialite": "Médecin généraliste ou Service d'imagerie",
+        "raison": "Une radiographie est indispensable pour confirmer ou exclure une fracture (comme une fracture de Pouteau-Colles) compte tenu de votre antécédent d'ostéoporose.",
+        "delai": "dans les 24h"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 13174,
+    "urgence_detectee": "elevee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 30,
+      "securite_pharmacologique": 22,
+      "detection_langue": 10,
+      "total": 87,
+      "notes": "Fracture Pouteau-Colles mentionnée, immobilisation et surveillance neuro recommandées."
+    }
+  }
+}

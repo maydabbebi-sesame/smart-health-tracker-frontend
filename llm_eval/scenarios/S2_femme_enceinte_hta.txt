@@ -1,0 +1,19 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Aucune allergie connue
+Médicaments actuels : Acide folique 400µg/j, Fer 50mg/j
+Maladies chroniques : Aucune maladie chronique connue
+Tabac : Non-fumeuse | Alcool : Non
+Âge : 28 ans | Sexe : F
+IMC : 26.1 → Surpoids
+Grossesse : Oui — 32 semaines
+Tension : 158/102 mmHg → HTA grade 1
+FC : 95 bpm
+Symptômes : Maux de tête intenses, vision floue, gonflement des mains et des pieds
+Intensité douleur (EVA) : 7/10
+Durée : 2 jours
+Localisation : Tête
+Facteurs déclenchants : Spontané
+État général : Mauvais
+
+--- QUESTION ---
+J'ai des maux de tête très forts depuis hier soir et je vois flou par moments. Est-ce que mon bébé est en danger ?

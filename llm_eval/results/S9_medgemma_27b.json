@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-05-28T16:49:35.953765",
+  "scenario_id": "S9",
+  "scenario_label": "Homme 40 ans — douleur thoracique (arabe)",
+  "urgence_attendue": "elevee",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"elevee\",\n  \"alertes\": [\n    \"Douleur thoracique à l'effort\",\n    \"Essoufflement à l'effort\",\n    \"Antécédents familiaux d'infarctus du myocarde (père à 55 ans)\",\n    \"HTA grade 1 (145/88 mmHg)\",\n    \"Tabagisme (20 cig/jour)\"\n  ],\n  \"resume_situation\": \"Homme de 40 ans, fumeur, en surpoids, avec HTA grade 1, présentant une douleur thoracique à l'effort irradiant vers l'épaule gauche, accompagnée d'essoufflement et de fatigue, depuis quelques semaines. Antécédents familiaux d'infarctus.\",\n  \"analyse\": \"Vos symptômes (douleur thoracique à l'effort, essoufflement, irradiation vers l'épaule gauche) sont très évocateurs d'une angine de poitrine, qui est une douleur due à un manque d'oxygène du muscle cardiaque (myocarde). Ce manque d'oxygène est souvent causé par un rétrécissement des artères coronaires, les vaisseaux qui alimentent le cœur en sang. Votre tabagisme, votre HTA, votre surpoids et vos antécédents familiaux sont des facteurs de risque importants pour ce type de problème. L'intensité de la douleur (5/10) et sa survenue à l'effort sont des signaux d'alerte. Bien que la douleur ne soit pas actuellement présente, la persistance des symptômes depuis quelques semaines et la présence de facteurs de risque nécessitent une évaluation rapide pour écarter une cause potentiellement grave comme une maladie coronarienne.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Consulter un médecin rapidement\",\n      \"detail\": \"Compte tenu de la nature de vos symptômes (douleur thoracique à l'effort) et de vos facteurs de risque (tabagisme, HTA, antécédents familiaux), il est crucial de consulter un médecin dans les plus brefs délais pour un examen approfondi.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Éviter les efforts intenses\",\n      \"detail\": \"Jusqu'à votre consultation médicale, essayez d'éviter les activités physiques intenses qui déclenchent vos symptômes. Privilégiez des activités douces si vous en ressentez le besoin.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Surveiller vos symptômes\",\n      \"detail\": \"Notez la fréquence, l'intensité et les circonstances de vos douleurs thoraciques. Si la douleur survient au repos, devient plus intense, ou s'accompagne d'autres symptômes comme des sueurs froides, des nausées ou des vertiges, contactez immédiatement les services d'urgence.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Arrêter de fumer\",\n      \"detail\": \"Le tabagisme est un facteur de risque majeur pour les maladies cardiaques. Arrêter de fumer est l'une des meilleures choses que vous puissiez faire pour votre santé. Parlez-en à votre médecin, il pourra vous aider.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Adopter une alimentation saine et faire de l'exercice régulièrement\",\n      \"detail\": \"Une alimentation équilibrée et une activité physique régulière aident à contrôler la tension artérielle, le poids et le cholestérol, réduisant ainsi les risques cardiovasculaires. Votre IMC est de 27.3, ce qui indique un surpoids.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"specialite\": null,\n    \"raison\": \"Évaluation des symptômes thoraciques à l'effort et des facteurs de risque cardiovasculaires.\",\n    \"delai\": \"dans les 24h\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "elevee",
+      "alertes": [
+        "Douleur thoracique à l'effort",
+        "Essoufflement à l'effort",
+        "Antécédents familiaux d'infarctus du myocarde (père à 55 ans)",
+        "HTA grade 1 (145/88 mmHg)",
+        "Tabagisme (20 cig/jour)"
+      ],
+      "resume_situation": "Homme de 40 ans, fumeur, en surpoids, avec HTA grade 1, présentant une douleur thoracique à l'effort irradiant vers l'épaule gauche, accompagnée d'essoufflement et de fatigue, depuis quelques semaines. Antécédents familiaux d'infarctus.",
+      "analyse": "Vos symptômes (douleur thoracique à l'effort, essoufflement, irradiation vers l'épaule gauche) sont très évocateurs d'une angine de poitrine, qui est une douleur due à un manque d'oxygène du muscle cardiaque (myocarde). Ce manque d'oxygène est souvent causé par un rétrécissement des artères coronaires, les vaisseaux qui alimentent le cœur en sang. Votre tabagisme, votre HTA, votre surpoids et vos antécédents familiaux sont des facteurs de risque importants pour ce type de problème. L'intensité de la douleur (5/10) et sa survenue à l'effort sont des signaux d'alerte. Bien que la douleur ne soit pas actuellement présente, la persistance des symptômes depuis quelques semaines et la présence de facteurs de risque nécessitent une évaluation rapide pour écarter une cause potentiellement grave comme une maladie coronarienne.",
+      "recommandations": [
+        {
+          "titre": "Consulter un médecin rapidement",
+          "detail": "Compte tenu de la nature de vos symptômes (douleur thoracique à l'effort) et de vos facteurs de risque (tabagisme, HTA, antécédents familiaux), il est crucial de consulter un médecin dans les plus brefs délais pour un examen approfondi.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Éviter les efforts intenses",
+          "detail": "Jusqu'à votre consultation médicale, essayez d'éviter les activités physiques intenses qui déclenchent vos symptômes. Privilégiez des activités douces si vous en ressentez le besoin.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Surveiller vos symptômes",
+          "detail": "Notez la fréquence, l'intensité et les circonstances de vos douleurs thoraciques. Si la douleur survient au repos, devient plus intense, ou s'accompagne d'autres symptômes comme des sueurs froides, des nausées ou des vertiges, contactez immédiatement les services d'urgence.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Arrêter de fumer",
+          "detail": "Le tabagisme est un facteur de risque majeur pour les maladies cardiaques. Arrêter de fumer est l'une des meilleures choses que vous puissiez faire pour votre santé. Parlez-en à votre médecin, il pourra vous aider.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Adopter une alimentation saine et faire de l'exercice régulièrement",
+          "detail": "Une alimentation équilibrée et une activité physique régulière aident à contrôler la tension artérielle, le poids et le cholestérol, réduisant ainsi les risques cardiovasculaires. Votre IMC est de 27.3, ce qui indique un surpoids.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "specialite": null,
+        "raison": "Évaluation des symptômes thoraciques à l'effort et des facteurs de risque cardiovasculaires.",
+        "delai": "dans les 24h"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 44741,
+    "urgence_detectee": "elevee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 7,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 31,
+      "securite_pharmacologique": 23,
+      "detection_langue": 0,
+      "total": 76,
+      "notes": "[RETEST] ECHEC détection langue : question arabe, réponse française. Meilleur temps (44s). Angine mentionnée, facteurs risque CV corrects. Cardiologue non mentionné."
+    }
+  }
+}

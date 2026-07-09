@@ -1,0 +1,16 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Aucune allergie connue
+Médicaments actuels : Aucun traitement en cours
+Maladies chroniques : Aucune maladie chronique connue
+Tabac : Non-fumeur | Alcool : Non
+Âge : 34 ans | Sexe : M
+IMC : 23.7 → Normal
+Symptômes : Fatigue persistante, difficultés de concentration
+Durée : Plusieurs semaines
+État général : Moyen
+Activité physique : Sédentaire
+Alimentation : Omnivore
+Sommeil : Mauvais | Stress : 4/5
+
+--- QUESTION ---
+Je dors mal depuis des semaines et je n'arrive plus à me concentrer au travail. C'est grave docteur ?

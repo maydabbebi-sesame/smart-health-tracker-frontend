@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-05-28T13:26:51.877597",
+  "scenario_id": "S5",
+  "scenario_label": "Homme 67 ans — tableau AVC CRITIQUE",
+  "urgence_attendue": "critique",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"critique\",\n  \"alertes\": [\n    \"Crise hypertensive sévère (195/115 mmHg)\",\n    \"Maux de tête sévères et soudains\",\n    \"Trouble de la vision\",\n    \"Engourdissement bras gauche\"\n  ],\n  \"resume_situation\": \"Patient de 67 ans, connu pour HTA et diabète type 2, présentant une crise hypertensive sévère (195/115 mmHg) associée à des symptômes neurologiques inquiétants (maux de tête sévères, trouble de la vision, engourdissement bras gauche) survenus soudainement il y a moins d'une heure.\",\n  \"analyse\": \"La combinaison d'une tension artérielle extrêmement élevée (195/115 mmHg, c'est comme une bombe qui menace d'éclater dans votre corps) avec des symptômes neurologiques aigus tels que des maux de tête violents, une vision double et un engourdissement d'un membre est très préoccupante. Ces signes peuvent indiquer une urgence hypertensive sévère, potentiellement associée à un accident vasculaire cérébral (AVC) ou à un risque imminent d'AVC. L'engourdissement du bras gauche est un signal d'alarme majeur. L'intensité de la douleur (9/10) et sa soudaineté renforcent l'urgence.\",\n  \"recommandations\": [],\n  \"orientation\": {\n    \"niveau\": \"urgences\",\n    \"specialite\": null,\n    \"raison\": \"Suspicion d'AVC ou urgence hypertensive sévère nécessitant une évaluation et une prise en charge immédiates.\",\n    \"delai\": \"immédiat\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "critique",
+      "alertes": [
+        "Crise hypertensive sévère (195/115 mmHg)",
+        "Maux de tête sévères et soudains",
+        "Trouble de la vision",
+        "Engourdissement bras gauche"
+      ],
+      "resume_situation": "Patient de 67 ans, connu pour HTA et diabète type 2, présentant une crise hypertensive sévère (195/115 mmHg) associée à des symptômes neurologiques inquiétants (maux de tête sévères, trouble de la vision, engourdissement bras gauche) survenus soudainement il y a moins d'une heure.",
+      "analyse": "La combinaison d'une tension artérielle extrêmement élevée (195/115 mmHg, c'est comme une bombe qui menace d'éclater dans votre corps) avec des symptômes neurologiques aigus tels que des maux de tête violents, une vision double et un engourdissement d'un membre est très préoccupante. Ces signes peuvent indiquer une urgence hypertensive sévère, potentiellement associée à un accident vasculaire cérébral (AVC) ou à un risque imminent d'AVC. L'engourdissement du bras gauche est un signal d'alarme majeur. L'intensité de la douleur (9/10) et sa soudaineté renforcent l'urgence.",
+      "recommandations": [],
+      "orientation": {
+        "niveau": "urgences",
+        "specialite": null,
+        "raison": "Suspicion d'AVC ou urgence hypertensive sévère nécessitant une évaluation et une prise en charge immédiates.",
+        "delai": "immédiat"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 59632,
+    "urgence_detectee": "critique",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 7,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 33,
+      "securite_pharmacologique": 25,
+      "detection_langue": 10,
+      "total": 90,
+      "notes": "Parfait : critique ✓, recos=[] ✓, urgences immédiat ✓. Alertes AVC complètes."
+    }
+  }
+}

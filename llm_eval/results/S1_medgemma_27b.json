@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-05-28T16:51:01.158924",
+  "scenario_id": "S1",
+  "scenario_label": "Homme 34 ans — fatigue & stress chronique",
+  "urgence_attendue": "normale",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"moderee\",\n  \"alertes\": [\n    \"Fatigue persistante\",\n    \"Difficultés de concentration\",\n    \"Mauvais sommeil\",\n    \"Stress élevé (4/5)\"\n  ],\n  \"resume_situation\": \"Vous êtes un homme de 34 ans, non-fumeur, avec un IMC normal, qui présente une fatigue persistante et des difficultés de concentration depuis plusieurs semaines, associées à un mauvais sommeil et un niveau de stress élevé.\",\n  \"analyse\": \"Votre fatigue et vos difficultés de concentration, qui durent depuis plusieurs semaines, sont des signaux d'alerte. Elles peuvent être liées à de nombreux facteurs, comme le stress, le mauvais sommeil, une mauvaise alimentation, un manque d'activité physique, ou encore des causes médicales sous-jacentes (anémie, hypothyroïdie, dépression, etc.). Le stress élevé et le mauvais sommeil peuvent être à la fois des causes et des conséquences de ces symptômes. Bien qu'aucun signe ne suggère une urgence immédiate, la persistance et la combinaison de ces symptômes méritent une évaluation médicale pour en identifier la cause et mettre en place une prise en charge adaptée.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Améliorer l'hygiène du sommeil\",\n      \"detail\": \"Essayez d'établir une routine de sommeil régulière (se coucher et se lever à des heures fixes), d'éviter les écrans avant de dormir, de créer un environnement propice au sommeil (obscurité, calme, fraîcheur) et de limiter la caféine et l'alcool, surtout en soirée. Cela peut aider à améliorer la qualité de votre sommeil et, par conséquent, votre fatigue et votre concentration.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Gérer le stress\",\n      \"detail\": \"Identifiez les sources de stress dans votre vie et essayez de mettre en place des techniques de relaxation (méditation, respiration profonde, yoga) ou des activités que vous aimez pour vous détendre. Si le stress est trop important, n'hésitez pas à en parler à un professionnel.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Augmenter l'activité physique\",\n      \"detail\": \"Même une activité physique modérée (marche rapide, vélo) pendant 30 minutes par jour peut améliorer la qualité du sommeil, réduire le stress et augmenter l'énergie. Commencez progressivement et choisissez une activité que vous appréciez.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Tenir un journal de sommeil et d'activité\",\n      \"detail\": \"Notez chaque jour vos heures de coucher et de lever, la qualité de votre sommeil (si vous vous réveillez souvent, si vous vous sentez reposé), votre niveau de stress et votre activité physique. Cela peut vous aider à identifier des schémas et des facteurs déclencheurs.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Consulter un médecin généraliste\",\n      \"detail\": \"Si vos symptômes persistent malgré ces mesures, ou s'ils s'aggravent, il est important de consulter un médecin généraliste. Il pourra vous interroger plus en détail sur vos antécédents, vous examiner et éventuellement prescrire des examens complémentaires (prise de sang, etc.) pour rechercher une cause médicale sous-jacente.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"medecin_generaliste\",\n    \"specialite\": null,\n    \"raison\": \"Fatigue persistante et difficultés de concentration nécessitant une évaluation pour en déterminer la cause.\",\n    \"delai\": \"cette semaine\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "moderee",
+      "alertes": [
+        "Fatigue persistante",
+        "Difficultés de concentration",
+        "Mauvais sommeil",
+        "Stress élevé (4/5)"
+      ],
+      "resume_situation": "Vous êtes un homme de 34 ans, non-fumeur, avec un IMC normal, qui présente une fatigue persistante et des difficultés de concentration depuis plusieurs semaines, associées à un mauvais sommeil et un niveau de stress élevé.",
+      "analyse": "Votre fatigue et vos difficultés de concentration, qui durent depuis plusieurs semaines, sont des signaux d'alerte. Elles peuvent être liées à de nombreux facteurs, comme le stress, le mauvais sommeil, une mauvaise alimentation, un manque d'activité physique, ou encore des causes médicales sous-jacentes (anémie, hypothyroïdie, dépression, etc.). Le stress élevé et le mauvais sommeil peuvent être à la fois des causes et des conséquences de ces symptômes. Bien qu'aucun signe ne suggère une urgence immédiate, la persistance et la combinaison de ces symptômes méritent une évaluation médicale pour en identifier la cause et mettre en place une prise en charge adaptée.",
+      "recommandations": [
+        {
+          "titre": "Améliorer l'hygiène du sommeil",
+          "detail": "Essayez d'établir une routine de sommeil régulière (se coucher et se lever à des heures fixes), d'éviter les écrans avant de dormir, de créer un environnement propice au sommeil (obscurité, calme, fraîcheur) et de limiter la caféine et l'alcool, surtout en soirée. Cela peut aider à améliorer la qualité de votre sommeil et, par conséquent, votre fatigue et votre concentration.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Gérer le stress",
+          "detail": "Identifiez les sources de stress dans votre vie et essayez de mettre en place des techniques de relaxation (méditation, respiration profonde, yoga) ou des activités que vous aimez pour vous détendre. Si le stress est trop important, n'hésitez pas à en parler à un professionnel.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Augmenter l'activité physique",
+          "detail": "Même une activité physique modérée (marche rapide, vélo) pendant 30 minutes par jour peut améliorer la qualité du sommeil, réduire le stress et augmenter l'énergie. Commencez progressivement et choisissez une activité que vous appréciez.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Tenir un journal de sommeil et d'activité",
+          "detail": "Notez chaque jour vos heures de coucher et de lever, la qualité de votre sommeil (si vous vous réveillez souvent, si vous vous sentez reposé), votre niveau de stress et votre activité physique. Cela peut vous aider à identifier des schémas et des facteurs déclencheurs.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Consulter un médecin généraliste",
+          "detail": "Si vos symptômes persistent malgré ces mesures, ou s'ils s'aggravent, il est important de consulter un médecin généraliste. Il pourra vous interroger plus en détail sur vos antécédents, vous examiner et éventuellement prescrire des examens complémentaires (prise de sang, etc.) pour rechercher une cause médicale sous-jacente.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "medecin_generaliste",
+        "specialite": null,
+        "raison": "Fatigue persistante et difficultés de concentration nécessitant une évaluation pour en déterminer la cause.",
+        "delai": "cette semaine"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 67734,
+    "urgence_detectee": "moderee",
+    "urgence_correcte": false,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 3,
+      "urgence_niveau": 0
+    },
+    "score_manuel": {
+      "pertinence_medicale": 27,
+      "securite_pharmacologique": 22,
+      "detection_langue": 10,
+      "total": 72,
+      "notes": "Sur-triage (moderee vs normale). Bonnes recos hygiène de vie. Orientation GP correcte. [retest: même score]"
+    }
+  }
+}

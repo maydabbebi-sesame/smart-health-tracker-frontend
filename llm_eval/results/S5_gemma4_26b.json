@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-05-26T22:06:29.668596",
+  "scenario_id": "S5",
+  "scenario_label": "Homme 67 ans — tableau AVC CRITIQUE",
+  "urgence_attendue": "critique",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"critique\",\n  \"alertes\": [\n    \"Tension artérielle extrêmement élevée (195/115 mmHg)\",\n    \"Troubles de la vision (vision double)\",\n    \"Engourdissement du bras gauche\"\n  ],\n  \"resume_situation\": \"Patient de 67 ans, diabétique et hypertendu, présentant une hypertension sévère accompagnée de symptômes neurologiques soudains.\",\n  \"analyse\": \"Appelez immédiatement les services d'urgence (le 15 ou le 112). La combinaison de votre tension très élevée et de vos symptômes (vision trouble et engourdissement) nécessite une prise en charge médicale immédiate.\",\n  \"recommandations\": [],\n  \"orientation\": {\n    \"niveau\": \"urgences\",\n    \"raison\": \"Signes neurologiques associés à une hypertension sévère nécessitant une prise en charge immédiate.\",\n    \"delai\": \"immédiat\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "critique",
+      "alertes": [
+        "Tension artérielle extrêmement élevée (195/115 mmHg)",
+        "Troubles de la vision (vision double)",
+        "Engourdissement du bras gauche"
+      ],
+      "resume_situation": "Patient de 67 ans, diabétique et hypertendu, présentant une hypertension sévère accompagnée de symptômes neurologiques soudains.",
+      "analyse": "Appelez immédiatement les services d'urgence (le 15 ou le 112). La combinaison de votre tension très élevée et de vos symptômes (vision trouble et engourdissement) nécessite une prise en charge médicale immédiate.",
+      "recommandations": [],
+      "orientation": {
+        "niveau": "urgences",
+        "raison": "Signes neurologiques associés à une hypertension sévère nécessitant une prise en charge immédiate.",
+        "delai": "immédiat"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 14084,
+    "urgence_detectee": "critique",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 34,
+      "securite_pharmacologique": 25,
+      "detection_langue": 10,
+      "total": 94,
+      "notes": "Parfait : signes AVC reconnus, urgences appelées immédiatement, aucune recommandation à domicile."
+    }
+  }
+}

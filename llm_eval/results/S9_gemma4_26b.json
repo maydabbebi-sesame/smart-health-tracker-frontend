@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-05-26T22:10:48.861043",
+  "scenario_id": "S9",
+  "scenario_label": "Homme 40 ans — douleur thoracique (arabe)",
+  "urgence_attendue": "elevee",
+  "model": "gemma4:26b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"elevee\",\n  \"alertes\": [\n    \"ألم في الصدر مرتبط بالمجهود البدني\",\n    \"ألم يمتد إلى الكتف الأيسر\",\n    \"ارتفاع في ضغط الدم (145/88 mmHg)\",\n    \"تاريخ عائلي لنوبات قلبية في سن مبكرة\"\n  ],\n  \"resume_situation\": \"رجل يبلغ من العمر 40 عاماً يعاني من آلام في الصدر والكتف الأيسر تظهر عند بذل مجهود، مع وجود عوامل خطر تشمل التدخين، زيادة الوزن، وارتفاع ضغط الدم.\",\n  \"analyse\": \"الألم الذي تشعر به عند صعود الدرج أو المشي قد يكون إشارة إلى أن عضلة القلب لا تحصل على كفايتها من الأكسجين أثناء المجهود. تخيل أن الشرايين مثل أنابيب المياه؛ التدخين وارتفاع ضغط الدم قد يسببان ضيقاً في هذه الأنابيب (مثل تراكم الترسبات)، مما يجعل مرور الدم أصعب عندما يحتاج قلبك لبذل جهد إضافي. انتقال الألم إلى الكتف الأيسر هو علامة كلاسيكية تتطلب تقييماً طبياً دقيقاً.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"طلب استشارة طبية عاجلة\",\n      \"detail\": \"يجب عليك مراجعة طبيب في أقرب وقت ممكن (خلال 24 ساعة) لإجراء الفحوصات اللازمة مثل تخطيط القلب.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"تجنب المجهود البدني الشاق\",\n      \"detail\": \"حاول تجنب الأنشطة التي تثير الألم أو تسبب ضيق التنفس حتى يتم فحصك من قبل مختص.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"مراقبة ضغط الدم\",\n      \"detail\": \"قم بقياس ضغط الدم بانتظام في وضع الراحة وسجل القراءات لعرضها على الطبيب.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"تحضير سجل الأعراض\",\n      \"detail\": \"اكتب ملاحظات حول متى يبدأ الألم، مدته، وما إذا كان هناك أي شيء يخففه، لمساعدة الطبيب في التشخيص.\",\n      \"priorite\": \"basse\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"specialiste\",\n    \"specialite\": \"طبيب قلب\",\n    \"raison\": \"تقييم آلام الصدر المرتبطة بالمجهود (Angina) والتحقق من سلامة الشرايين التاجية نظراً لوجود عوامل خطر.\",\n    \"delai\": \"dans les 24h\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "elevee",
+      "alertes": [
+        "ألم في الصدر مرتبط بالمجهود البدني",
+        "ألم يمتد إلى الكتف الأيسر",
+        "ارتفاع في ضغط الدم (145/88 mmHg)",
+        "تاريخ عائلي لنوبات قلبية في سن مبكرة"
+      ],
+      "resume_situation": "رجل يبلغ من العمر 40 عاماً يعاني من آلام في الصدر والكتف الأيسر تظهر عند بذل مجهود، مع وجود عوامل خطر تشمل التدخين، زيادة الوزن، وارتفاع ضغط الدم.",
+      "analyse": "الألم الذي تشعر به عند صعود الدرج أو المشي قد يكون إشارة إلى أن عضلة القلب لا تحصل على كفايتها من الأكسجين أثناء المجهود. تخيل أن الشرايين مثل أنابيب المياه؛ التدخين وارتفاع ضغط الدم قد يسببان ضيقاً في هذه الأنابيب (مثل تراكم الترسبات)، مما يجعل مرور الدم أصعب عندما يحتاج قلبك لبذل جهد إضافي. انتقال الألم إلى الكتف الأيسر هو علامة كلاسيكية تتطلب تقييماً طبياً دقيقاً.",
+      "recommandations": [
+        {
+          "titre": "طلب استشارة طبية عاجلة",
+          "detail": "يجب عليك مراجعة طبيب في أقرب وقت ممكن (خلال 24 ساعة) لإجراء الفحوصات اللازمة مثل تخطيط القلب.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "تجنب المجهود البدني الشاق",
+          "detail": "حاول تجنب الأنشطة التي تثير الألم أو تسبب ضيق التنفس حتى يتم فحصك من قبل مختص.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "مراقبة ضغط الدم",
+          "detail": "قم بقياس ضغط الدم بانتظام في وضع الراحة وسجل القراءات لعرضها على الطبيب.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "تحضير سجل الأعراض",
+          "detail": "اكتب ملاحظات حول متى يبدأ الألم، مدته، وما إذا كان هناك أي شيء يخففه، لمساعدة الطبيب في التشخيص.",
+          "priorite": "basse"
+        }
+      ],
+      "orientation": {
+        "niveau": "specialiste",
+        "specialite": "طبيب قلب",
+        "raison": "تقييم آلام الصدر المرتبطة بالمجهود (Angina) والتحقق من سلامة الشرايين التاجية نظراً لوجود عوامل خطر.",
+        "delai": "dans les 24h"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 12809,
+    "urgence_detectee": "elevee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 31,
+      "securite_pharmacologique": 23,
+      "detection_langue": 10,
+      "total": 89,
+      "notes": "Réponse en arabe correcte. Angine de poitrine suspectée, orientation cardiologue appropriée."
+    }
+  }
+}

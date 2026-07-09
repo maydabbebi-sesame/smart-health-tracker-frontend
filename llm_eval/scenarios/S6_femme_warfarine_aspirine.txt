@@ -1,0 +1,14 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Ibuprofène
+Médicaments actuels : Warfarine 5mg/j (anticoagulant)
+Maladies chroniques : Fibrillation auriculaire
+Tabac : Non-fumeuse | Alcool : Non
+    Âge : 52 ans | Sexe : F
+IMC : 24.1 → Normal
+Symptômes : Maux de tête modérés
+Intensité douleur (EVA) : 4/10
+Durée : Quelques heures
+État général : Moyen
+
+--- QUESTION ---
+Maux de tête modérés

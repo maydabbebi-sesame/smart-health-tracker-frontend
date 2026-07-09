@@ -1,0 +1,18 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Aucune allergie connue
+Médicaments actuels : Aucun traitement en cours
+Maladies chroniques : Hépatite alcoolique chronique
+Antécédents familiaux : Cirrhose (père)
+Tabac : Fumeur — 15 cig/jour | Alcool : Régulier — 8 à 10 verres/jour
+Âge : 52 ans | Sexe : M
+IMC : 21.2 → Normal
+Variation poids (1 mois) : Perte de 6 kg
+Symptômes : Douleurs abdominales hautes, jaunisse (peau et yeux jaunes), fatigue extrême
+Intensité douleur (EVA) : 7/10
+Durée : Plusieurs semaines
+Localisation : Abdomen haut, flanc droit
+Facteurs déclenchants : Spontané
+État général : Très mauvais
+
+--- QUESTION ---
+J'ai le ventre qui fait mal depuis un moment et ma femme dit que j'ai les yeux jaunes. Je bois beaucoup, c'est peut-être ça ?

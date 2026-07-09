@@ -1,0 +1,19 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Aucune allergie connue
+Médicaments actuels : Ramipril 10mg/j, Metformine 850mg 2x/j
+Maladies chroniques : HTA, Diabète type 2
+Antécédents familiaux : AVC (père)
+Tabac : Ex-fumeur | Alcool : Occasionnel
+Âge : 67 ans | Sexe : M
+IMC : 29.8 → Surpoids
+Tension : 195/115 mmHg → Crise hypertensive
+FC : 105 bpm
+Symptômes : Maux de tête sévères et soudains, trouble de la vision, engourdissement bras gauche
+Intensité douleur (EVA) : 9/10
+Durée : Moins de 1h
+Localisation : Tête, bras gauche
+Facteurs déclenchants : Spontané
+État général : Très mauvais
+
+--- QUESTION ---
+J'ai un mal de tête horrible depuis une heure, je vois double et je sens plus mon bras gauche. Qu'est-ce que j'ai ?

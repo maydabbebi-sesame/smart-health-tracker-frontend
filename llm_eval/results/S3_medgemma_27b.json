@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-05-28T16:53:31.482071",
+  "scenario_id": "S3",
+  "scenario_label": "Homme 52 ans alcoolique — hépatite / ictère",
+  "urgence_attendue": "elevee",
+  "model": "medgemma:27b",
+  "gateway": "http://172.26.33.20:12345",
+  "temperature": 0.3,
+  "max_tokens": 3500,
+  "result": {
+    "raw_response": "```json\n{\n  \"urgence\": \"elevee\",\n  \"alertes\": [\n    \"Douleurs abdominales intenses (EVA 7/10)\",\n    \"Jaunisse (peau et yeux jaunes)\",\n    \"Fatigue extrême\",\n    \"Perte de poids récente (6 kg en 1 mois)\",\n    \"Antécédents d'hépatite alcoolique chronique et consommation d'alcool régulière importante\",\n    \"Antécédents familiaux de cirrhose\"\n  ],\n  \"resume_situation\": \"Homme de 52 ans, fumeur et buveur régulier, atteint d'hépatite alcoolique chronique, présentant depuis plusieurs semaines des douleurs abdominales hautes intenses, une jaunisse et une fatigue extrême, avec une perte de poids récente.\",\n  \"analyse\": \"Votre situation présente plusieurs signaux d'alerte préoccupants. La combinaison de douleurs abdominales hautes intenses (7/10), de jaunisse (signe de problème hépatique ou biliaire), de fatigue extrême et de perte de poids récente, sur fond d'hépatite alcoolique chronique et de consommation d'alcool importante, est très inquiétante. Ces symptômes suggèrent une possible aggravation de votre état hépatique (cirrhose, hépatite sévère, carcinome hépatocellulaire) ou une complication aiguë. La jaunisse est comme un panneau d'avertissement indiquant que le foie a du mal à fonctionner ou que la bile ne s'écoule pas correctement. Les douleurs intenses et la perte de poids sont des signaux de gravité.\",\n  \"recommandations\": [\n    {\n      \"titre\": \"Consultez un médecin urgent\",\n      \"detail\": \"Ne tardez pas à consulter un médecin. Vos symptômes nécessitent une évaluation rapide pour déterminer la cause et mettre en place un traitement adapté.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Évitez l'alcool\",\n      \"detail\": \"Arrêtez immédiatement toute consommation d'alcool. L'alcool est toxique pour le foie et peut aggraver votre état.\",\n      \"priorite\": \"haute\"\n    },\n    {\n      \"titre\": \"Notez vos symptômes\",\n      \"detail\": \"Prenez note de l'évolution de vos symptômes (intensité des douleurs, couleur des selles, couleur de l'urine, etc.) pour les communiquer précisément au médecin.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Préparez vos informations médicales\",\n      \"detail\": \"Rassemblez vos antécédents médicaux, vos traitements (même si vous n'en prenez pas actuellement), et vos habitudes de vie (tabac, alcool) pour faciliter le diagnostic.\",\n      \"priorite\": \"moyenne\"\n    },\n    {\n      \"titre\": \"Ne vous automédicamentez pas\",\n      \"detail\": \"Évitez de prendre des médicaments sans avis médical, car certains peuvent être toxiques pour le foie.\",\n      \"priorite\": \"moyenne\"\n    }\n  ],\n  \"orientation\": {\n    \"niveau\": \"urgences\",\n    \"specialite\": null,\n    \"raison\": \"Jaunisse, douleurs abdominales intenses, fatigue extrême, perte de poids et antécédents hépatiques nécessitent une évaluation médicale immédiate pour exclure une urgence hépatique ou abdominale.\",\n    \"delai\": \"dans les 24h\"\n  },\n  \"disclaimer\": \"Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé.\"\n}\n```",
+    "parsed_json": {
+      "urgence": "elevee",
+      "alertes": [
+        "Douleurs abdominales intenses (EVA 7/10)",
+        "Jaunisse (peau et yeux jaunes)",
+        "Fatigue extrême",
+        "Perte de poids récente (6 kg en 1 mois)",
+        "Antécédents d'hépatite alcoolique chronique et consommation d'alcool régulière importante",
+        "Antécédents familiaux de cirrhose"
+      ],
+      "resume_situation": "Homme de 52 ans, fumeur et buveur régulier, atteint d'hépatite alcoolique chronique, présentant depuis plusieurs semaines des douleurs abdominales hautes intenses, une jaunisse et une fatigue extrême, avec une perte de poids récente.",
+      "analyse": "Votre situation présente plusieurs signaux d'alerte préoccupants. La combinaison de douleurs abdominales hautes intenses (7/10), de jaunisse (signe de problème hépatique ou biliaire), de fatigue extrême et de perte de poids récente, sur fond d'hépatite alcoolique chronique et de consommation d'alcool importante, est très inquiétante. Ces symptômes suggèrent une possible aggravation de votre état hépatique (cirrhose, hépatite sévère, carcinome hépatocellulaire) ou une complication aiguë. La jaunisse est comme un panneau d'avertissement indiquant que le foie a du mal à fonctionner ou que la bile ne s'écoule pas correctement. Les douleurs intenses et la perte de poids sont des signaux de gravité.",
+      "recommandations": [
+        {
+          "titre": "Consultez un médecin urgent",
+          "detail": "Ne tardez pas à consulter un médecin. Vos symptômes nécessitent une évaluation rapide pour déterminer la cause et mettre en place un traitement adapté.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Évitez l'alcool",
+          "detail": "Arrêtez immédiatement toute consommation d'alcool. L'alcool est toxique pour le foie et peut aggraver votre état.",
+          "priorite": "haute"
+        },
+        {
+          "titre": "Notez vos symptômes",
+          "detail": "Prenez note de l'évolution de vos symptômes (intensité des douleurs, couleur des selles, couleur de l'urine, etc.) pour les communiquer précisément au médecin.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Préparez vos informations médicales",
+          "detail": "Rassemblez vos antécédents médicaux, vos traitements (même si vous n'en prenez pas actuellement), et vos habitudes de vie (tabac, alcool) pour faciliter le diagnostic.",
+          "priorite": "moyenne"
+        },
+        {
+          "titre": "Ne vous automédicamentez pas",
+          "detail": "Évitez de prendre des médicaments sans avis médical, car certains peuvent être toxiques pour le foie.",
+          "priorite": "moyenne"
+        }
+      ],
+      "orientation": {
+        "niveau": "urgences",
+        "specialite": null,
+        "raison": "Jaunisse, douleurs abdominales intenses, fatigue extrême, perte de poids et antécédents hépatiques nécessitent une évaluation médicale immédiate pour exclure une urgence hépatique ou abdominale.",
+        "delai": "dans les 24h"
+      },
+      "disclaimer": "Ces informations sont indicatives et ne remplacent pas une consultation médicale. En cas de doute, consultez un professionnel de santé."
+    },
+    "json_valide": true,
+    "json_propre": false,
+    "fallback_utilise": true,
+    "temps_ms": 26045,
+    "urgence_detectee": "elevee",
+    "urgence_correcte": true,
+    "securite_ok": null,
+    "score_auto": {
+      "format_json": 10,
+      "temps_reponse": 10,
+      "urgence_niveau": 5
+    },
+    "score_manuel": {
+      "pertinence_medicale": 32,
+      "securite_pharmacologique": 24,
+      "detection_langue": 10,
+      "total": 91,
+      "notes": "[RETEST] Urgence corrigée elevee ✓. 5 recos pertinentes : éviter alcool, pas d'automédication hépatotoxique. Alertes complètes. Délai 24h (devrait être immédiat)."
+    }
+  }
+}

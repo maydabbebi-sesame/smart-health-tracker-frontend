@@ -1,0 +1,24 @@
+--- DONNÉES PATIENT ---
+Allergies médicamenteuses : Sulfamides, Codéine
+Médicaments actuels : Amlodipine 10mg/j, Atorvastatine 40mg/j, Lévothyroxine 75µg/j, Calcium + Vitamine D 1cp/j, Pantoprazole 20mg/j
+Observance : Toujours
+Maladies chroniques : HTA, Hypothyroïdie, Ostéoporose, Hypercholestérolémie
+Antécédents familiaux : Fracture de hanche (mère)
+Tabac : Non-fumeuse | Alcool : Occasionnel — 1 verre/semaine
+Âge : 68 ans | Sexe : F
+IMC : 22.4 → Normal
+Tension : 138/84 mmHg → Élevée
+FC : 72 bpm
+Variation poids (1 mois) : Stable
+Symptômes : Douleur au poignet droit après une chute, gonflement visible, difficulté à bouger les doigts
+Intensité douleur (EVA) : 6/10
+Durée : Depuis ce matin
+Localisation : Poignet droit
+Facteurs déclenchants : Chute en marchant
+État général : Moyen
+Activité physique : Légère
+Alimentation : Omnivore
+Sommeil : Bon | Stress : 2/5
+
+--- QUESTION ---
+Je suis tombée ce matin en marchant et j'ai très mal au poignet droit depuis, il est gonflé et je bouge à peine les doigts. J'ai de l'ostéoporose, est-ce que c'est une fracture ?
